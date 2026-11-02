@@ -11,21 +11,13 @@ _These instructions are also available in [English](./README.md)._
 
 ## Propósito
 
-Este repositorio es el **workspace activo** del proyecto transversal de HealthCore, con entregables que se corresponden con los hitos del curso (Web, Programación, Backend, Telemetría, RAG, Agentes, Workflows, Tiempo real).
+Este repositorio es el workspace activo de HealthCore. El hito actual es **Talent Pipeline Tracker**, una app interna de People & Talent conectada a la API de Talent Tracker.
 
-- Usa `CONTEXT.md` para el hito 1 (sitio web público).
-- Usa `CONTEXT-healthcore.es .md` para el hito 2 (lógica de negocio en TypeScript).
-- Usa `skills/` y los `README.md` por carpeta como guía de trabajo.
+- Aplicación: [`uis/talent-pipeline-tracker/`](./uis/talent-pipeline-tracker/)
+- Contexto de empresa y API: [`CONTEXT.md`](./CONTEXT.md)
+- Especificación funcional: [`SPEC.md`](./SPEC.md)
 
----
-
-## Estado actual de la plantilla
-
-Actualmente el repositorio ofrece una **estructura base de carpetas y documentación**, pero todavía no incluye aplicaciones ejecutables ni scripts globales en la raíz.
-
-- `CONTEXT.md` es un placeholder y debe sustituirse por el contexto de la empresa asignada.
-- No existe todavía un `AGENTS.md` en la raíz.
-- Existe metadata del paquete compartido en `packages/shared/package.json` (`@repo/shared-types`), pero aún no hay runner de workspace en raíz.
+Para iniciar: `cd uis/talent-pipeline-tracker && npm install && npm run dev`. Configura `NEXT_PUBLIC_API_URL` en el `.env.local` de la app.
 
 ---
 
@@ -56,11 +48,10 @@ ai-engineering-company-project-monorepo/
 
 ## Cómo empezar
 
-1. **Usa este repositorio como plantilla** y crea tu propio repo de proyecto.
-2. **Clona** tu repositorio (o ábrelo en Codespaces).
-3. **Reemplaza** `CONTEXT.md` con el contexto completo de tu empresa asignada.
-4. **Revisa** los `README.md` de cada carpeta raíz para entender responsabilidades (`uis/`, `services/`, `data/`, `skills/`, etc.).
-5. **Empieza a implementar** entregables por hito en `uis/` y `services/`, reutilizando `packages/shared/` y `data/` según corresponda.
+1. Abre `uis/talent-pipeline-tracker/` como aplicación activa.
+2. Configura `NEXT_PUBLIC_API_URL=https://playground.4geeks.com/tracker/api/v1` en `.env.local`.
+3. Ejecuta `npm install` y `npm run dev` desde la carpeta de la app.
+4. Valida cambios con `npm run lint` y `npm run build`.
 
 ---
 
@@ -72,7 +63,7 @@ Lee el `README.md` enlazado dentro de cada carpeta antes de empezar a programar 
 
 | Ruta                         | Propósito                                                            | Qué haces aquí                                                                                               |
 | ---------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| [`CONTEXT.md`](./CONTEXT.md) | Fuente única de verdad de tu empresa (Brasaland, TrackFlow o Nexova) | **Primer paso:** copia aquí el briefing de tu empresa para que apps, agentes y prompts usen el mismo dominio |
+| [`CONTEXT.md`](./CONTEXT.md) | Contexto de HealthCore y del hito Talent Pipeline Tracker | Contrato del API, alcance y restricciones funcionales |
 | `docker-compose.yml`         | Orquestación local de todo el stack                                  | Mantener en la raíz del repo — conecta `services/`, bases de datos y otros contenedores desde un solo lugar  |
 | `README.md` / `README.es.md` | Esta guía                                                            | Orientación — estás aquí                                                                                     |
 

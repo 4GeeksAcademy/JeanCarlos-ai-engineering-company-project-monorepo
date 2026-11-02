@@ -11,21 +11,13 @@ _Estas instrucciones tambien estan disponibles en [espanol](./README.es.md)._
 
 ## Purpose
 
-This repository is the **active workspace** for the HealthCore transversal project, with deliverables mapped to course milestones (Web, Programming, Backend, Telemetry, RAG, Agents, Workflows, Real-time).
+This repository is the active HealthCore workspace. The current milestone is **Talent Pipeline Tracker**, an internal People & Talent app that consumes the published Talent Tracker API.
 
-- Use `CONTEXT.md` for milestone 1 (public website scope).
-- Use `CONTEXT-healthcore.es .md` for milestone 2 (TypeScript business logic scope).
-- Use `skills/` and the directory-level `README.md` files as working guidance.
+- Application: [`uis/talent-pipeline-tracker/`](./uis/talent-pipeline-tracker/)
+- Product and API context: [`CONTEXT.md`](./CONTEXT.md)
+- Functional specification: [`SPEC.md`](./SPEC.md)
 
----
-
-## Current status of the template
-
-The repository currently provides a **base folder structure and documentation skeleton**. It does not include runnable apps or global scripts yet.
-
-- `CONTEXT.md` is a placeholder and must be replaced with your assigned company context.
-- There is no root `AGENTS.md` yet.
-- Shared package metadata exists in `packages/shared/package.json` (`@repo/shared-types`), but no workspace runner is configured at root.
+Run the app with `cd uis/talent-pipeline-tracker && npm install && npm run dev`. Configure `NEXT_PUBLIC_API_URL` in the app's `.env.local`.
 
 ---
 
@@ -56,21 +48,16 @@ ai-engineering-company-project-monorepo/
 
 ## How to start
 
-1. **Use this repository as a template** and create your own project repo.
-2. **Clone** your repository (or open it in Codespaces).
-3. **Replace** `CONTEXT.md` with the full context for your assigned company.
-4. **Review** each top-level folder `README.md` to understand intended responsibilities (`uis/`, `services/`, `data/`, `skills/`, etc.).
-5. **Start implementing** milestone deliverables in `uis/` and `services/`, reusing `packages/shared/` and `data/` as needed.
+1. Open `uis/talent-pipeline-tracker/` as the working app.
+2. Set `NEXT_PUBLIC_API_URL=https://playground.4geeks.com/tracker/api/v1` in `.env.local`.
+3. Run `npm install` and `npm run dev` from the app directory.
+4. Run `npm run lint` and `npm run build` there to validate changes.
 
 ---
 
-## Current status of the template
+## Current status
 
-> 💡 This repository currently provides a **base folder structure and documentation skeleton** only. It does not include runnable apps or global scripts yet.
->
-> - `CONTEXT.md` is a placeholder and must be replaced with your assigned company context.
-> - There is no root `AGENTS.md` yet.
-> - Shared package metadata exists in `packages/shared/package.json` (`@repo/shared-types`), but no workspace runner is configured at root.
+The Talent Pipeline Tracker is a runnable Next.js app. Other monorepo folders remain available for the wider course project.
 
 ---
 
@@ -82,7 +69,7 @@ Read the linked `README.md` inside each folder before you start coding there.
 
 | Path                         | Purpose                                                                   | What you do here                                                                                              |
 | ---------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| [`CONTEXT.md`](./CONTEXT.md) | Single source of truth for your company (Brasaland, TrackFlow, or Nexova) | **First step:** copy your assigned company briefing here so every app, agent, and prompt uses the same domain |
+| [`CONTEXT.md`](./CONTEXT.md) | HealthCore and Talent Pipeline Tracker context | API contract, milestone scope, and functional constraints |
 | `docker-compose.yml`         | Local dev orchestration for the whole stack                               | Keep at repo root — wires `services/`, databases, and other containers from one place                         |
 | `README.md` / `README.es.md` | This guide                                                                | Orientation — you are here                                                                                    |
 

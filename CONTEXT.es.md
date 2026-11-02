@@ -1,16 +1,62 @@
-# Contexto de tu empresa
+# CONTEXTO — HealthCore Talent Pipeline Tracker
 
-**Sustituye este archivo** por el CONTEXT de la empresa que te hayan asignado:
+## Empresa y usuarios
 
-- **Brasaland** — `CONTEXT-brasaland-briefing.md` (cadena de restaurantes de comida a la parrilla, Colombia + Florida)
-- **TrackFlow** — `CONTEXT-trackflow-briefing.md` (última milla y almacén, México + España)
-- **Nexova** — `CONTEXT-nexova-briefing.md` (consultoría de RR. HH. y adquisición de talento, Chile + Argentina)
-- **HealthCore** — `CONTEXT-healthcore-briefing.md` (red de clínicas ambulatorias, EE.UU. + Reino Unido)
+HealthCore es la empresa seleccionada para este proyecto: una red de atención ambulatoria con equipos clínicos y administrativos en Estados Unidos y Reino Unido. Esta entrega construye una herramienta interna de People & Talent para organizar el proceso de selección. La interfaz se identifica como HealthCore People & Talent.
 
-Tu instructor o los materiales del hito te indicarán el archivo CONTEXT correcto. Copia aquí su contenido para que todo el trabajo del proyecto y la asistencia de IA usen los mismos datos de dominio, nombres de campos y restricciones.
+El equipo gestiona más de 100 candidaturas en menos de dos semanas. El seguimiento actual se reparte entre hojas de cálculo, notas de entrevista en documentos y actualizaciones por correo. La aplicación centraliza ese flujo conectándose a la API de Talent Tracker.
 
----
+## Alcance del hito
 
-_Hasta que añadas tu contexto, mantén este placeholder para que la estructura del repositorio quede clara._
+- Listar candidaturas y filtrar por estado y etapa.
+- Buscar por nombre completo o correo sin recargar la página.
+- Consultar y editar el detalle de una candidatura.
+- Actualizar estado y etapa, y añadir o eliminar notas internas.
+- Registrar candidaturas desde un formulario.
+- Comunicar estados de carga, éxito y error para todas las operaciones asíncronas.
 
-_These instructions are also available in [English](./CONTEXT.md)._
+## Contrato de la API
+
+El recurso del backend se denomina `Record`. Se preservan exactamente los nombres y valores de sus campos.
+
+```ts
+interface Candidate {
+	id: string;
+	full_name: string;
+	email: string;
+	phone: string;
+	position: string;
+	linkedin_url: string | null;
+	cv_url: string | null;
+	status: "received" | "in_progress" | "selected" | "discarded";
+	stage: "pending" | "review" | "personal_interview" | "technical_interview" | "offer_presented";
+	experience_years: number;
+	notes_count: number;
+	applied_at: string;
+	updated_at: string;
+}
+
+interface CandidateNote {
+	id: string;
+	record_id: string;
+	content: string;
+	created_at: string;
+}
+```
+
+Alta y edición requieren `full_name`, `email`, `phone`, `position` y `experience_years`; `linkedin_url` y `cv_url` son opcionales. No se inventan más campos, políticas de contratación ni etapas que las definidas por el API.
+
+## API y entorno
+
+- Documentación: <https://playground.4geeks.com/tracker/api/v1/docs>
+- URL local: `NEXT_PUBLIC_API_URL=https://playground.4geeks.com/tracker/api/v1`
+- Listado: `GET /records?status=&stage=&search=&page=&limit=`
+- Detalle: `GET /records/{id}`
+- Alta: `POST /records`
+- Edición: `PUT /records/{id}`
+- Pipeline: `PATCH /records/{id}`
+- Notas: `GET/POST /records/{id}/notes`, `DELETE /records/{id}/notes/{note_id}`
+
+La aplicación de este hito está en `uis/talent-pipeline-tracker/` y usa Next.js App Router, React y TypeScript.
+
+_La versión en inglés está en [CONTEXT.md](./CONTEXT.md)._
