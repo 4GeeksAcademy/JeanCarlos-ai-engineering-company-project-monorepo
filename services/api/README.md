@@ -107,3 +107,8 @@ Stock is the global sum of deliveries minus consumptions for each supply, not
 stored in a column and not tracked separately per clinic. Movement creation
 locks the supply row in PostgreSQL so concurrent requests cannot overspend
 stock. A consumption exceeding available stock returns `400` without writing.
+
+The backoffice inventory interface is available at `/inventory/products`.
+Its low-stock badge is an informational UI threshold of 10 units or less; it
+does not change API stock validation. The outbound form shows global stock and
+the API remains authoritative if stock changes concurrently.
