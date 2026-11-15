@@ -62,3 +62,48 @@ requires a bearer token, `current_password` and `new_password`. A password or
 email change invalidates existing access and reset tokens, so users must sign
 in again. Apply rate limits to login and password recovery at the deployment
 gateway, and avoid logging query strings containing reset tokens.
+
+## Inventory
+
+Inventory uses PostgreSQL through SQLModel; users and authentication remain in
+TinyDB and no SQL user table is created. Set `DATABASE_URL` to the PostgreSQL
+connection URL for the intended Supabase project. For Supabase, use a TLS
+connection such as `?sslmode=require` and never commit the URL. Missing or
+unavailable inventory configuration returns `503` on inventory routes without
+disabling the existing TinyDB routes.
+
+To initialize and seed **a development database**, install the requirements,
+configure `DATABASE_URL`, and run the following from the repository root with
+the API stopped:
+
+```bash
+python -m services.api.seed_inventory --user-id EXISTING_TINYDB_USER_UUID
+```
+
+The command verifies that the user exists in TinyDB, creates missing inventory
+tables and inserts the six supplies from the briefing. Its four deliveries and
+three consumptions are **synthetic examples**, not actual clinic records.
+Repeating it with the same user does not duplicate matching example records;
+using another user creates another set of movements. Existing supplies with
+conflicting seed fields cause an error rather than being overwritten. The
+command is intended for initial development setup; `create_all` does not apply
+schema migrations to an existing database.
+
+All `/inventory` routes require a valid bearer token:
+
+- `GET /inventory/products` and `GET /inventory/products/{id}` return supplies
+  with computed `current_stock`; `POST /inventory/products` creates a supply.
+  SKUs are unique, and duplicates return `409`.
+- `POST /inventory/orders/inbound` accepts `supply_id`, `quantity`,
+  `vendor_name` and `clinic_id`. `POST /inventory/orders/outbound` accepts
+  `supply_id`, `quantity`, `consumption_type` and `clinic_id`. Both derive
+  `user_uuid` from the authenticated user rather than accepting it from the
+  request.
+- `GET /inventory/orders` returns `inbound` and `outbound` lists, each movement
+  including its `supply` details. Quantities must be positive 32-bit integers;
+  clinic IDs must be between 1 and 12.
+
+Stock is the global sum of deliveries minus consumptions for each supply, not
+stored in a column and not tracked separately per clinic. Movement creation
+locks the supply row in PostgreSQL so concurrent requests cannot overspend
+stock. A consumption exceeding available stock returns `400` without writing.

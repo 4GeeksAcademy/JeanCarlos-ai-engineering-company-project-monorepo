@@ -7,9 +7,10 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from .database import open_database
+from .database import get_inventory_engine, open_database
 from .core.security import get_settings
 from .routes import auth, auth_password, profiles, suppliers, users
+from .routers import inventory
 from .services.email import reset_expiration_minutes
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,9 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         database.close()
+        if get_inventory_engine.cache_info().currsize:
+            get_inventory_engine().dispose()
+            get_inventory_engine.cache_clear()
 
 
 app = FastAPI(title="HealthCore Supplier Directory", lifespan=lifespan)
@@ -63,3 +67,4 @@ app.include_router(auth_password.router)
 app.include_router(users.router)
 app.include_router(profiles.router)
 app.include_router(suppliers.router)
+app.include_router(inventory.router)
