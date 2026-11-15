@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { CandidateForm } from "@/components/candidate-form";
 import { getCandidates } from "@/lib/api";
 import type { Candidate } from "@/types/tracker";
@@ -23,7 +23,8 @@ const stageLabels = {
 };
 
 function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("es", { dateStyle: "medium" }).format(new Date(value));
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Sin fecha" : new Intl.DateTimeFormat("es", { dateStyle: "medium" }).format(date);
 }
 
 function initials(name: string): string {
@@ -43,16 +44,20 @@ export function CandidateList() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [isPending, startTransition] = useTransition();
+  const requestId = useRef(0);
 
   const loadRecords = useCallback(async () => {
+    const currentRequest = ++requestId.current;
     setLoadState("loading");
     setError("");
     try {
       const result = await getCandidates(new URLSearchParams(queryString));
+      if (currentRequest !== requestId.current) return;
       setRecords(result.data);
       setTotal(result.total);
       setLoadState("success");
     } catch (loadError) {
+      if (currentRequest !== requestId.current) return;
       setError(loadError instanceof Error ? loadError.message : "No se pudo cargar el listado.");
       setLoadState("error");
     }
@@ -65,7 +70,10 @@ export function CandidateList() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadRecords(), 0);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      requestId.current += 1;
+    };
   }, [loadRecords]);
 
   useEffect(() => {

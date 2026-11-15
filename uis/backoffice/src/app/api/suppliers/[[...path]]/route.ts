@@ -27,14 +27,25 @@ async function proxy(
       redirect: "manual",
     });
   } catch (error) {
-    console.error("Supplier API request failed:", error);
+    console.error("Supplier API request failed:", error instanceof Error ? error.name : "UnknownError");
+    return NextResponse.json({ detail: "Servicio no disponible." }, { status: 502 });
+  }
+  if (upstream.status >= 500) {
+    console.error("Supplier API returned status", upstream.status);
     return NextResponse.json({ detail: "Servicio no disponible." }, { status: 502 });
   }
   if (upstream.status >= 300 && upstream.status < 400) {
     console.error("Unexpected redirect from supplier API");
     return NextResponse.json({ detail: "Respuesta inválida." }, { status: 502 });
   }
-  return new NextResponse(upstream.status === 204 ? null : await upstream.text(), {
+  let body: string | null;
+  try {
+    body = upstream.status === 204 ? null : await upstream.text();
+  } catch (error) {
+    console.error("Supplier API response failed:", error instanceof Error ? error.name : "UnknownError");
+    return NextResponse.json({ detail: "Servicio no disponible." }, { status: 502 });
+  }
+  return new NextResponse(body, {
     status: upstream.status,
     headers: { "Content-Type": upstream.headers.get("content-type") ?? "application/json" },
   });

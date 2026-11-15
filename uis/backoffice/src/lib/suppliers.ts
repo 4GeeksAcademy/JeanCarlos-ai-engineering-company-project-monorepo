@@ -4,30 +4,74 @@ import type {
   SupplierFilters,
   SupplierStatus,
 } from "@/types/supplier";
+import { CATEGORIES } from "@/types/supplier";
 
-interface ValidationError {
-  loc: (string | number)[];
-  msg: string;
+function isSupplier(value: unknown): value is Supplier {
+  if (typeof value !== "object" || value === null) return false;
+  const supplier = value as Record<string, unknown>;
+  return typeof supplier.id === "number" && Number.isInteger(supplier.id) && supplier.id > 0
+    && typeof supplier.name === "string"
+    && (supplier.country === "USA" || supplier.country === "UK")
+    && Array.isArray(supplier.categories)
+    && supplier.categories.every((value: unknown) => CATEGORIES.some((category) => category === value))
+    && typeof supplier.monthly_rate === "number" && Number.isFinite(supplier.monthly_rate)
+    && (supplier.currency === "USD" || supplier.currency === "GBP")
+    && (supplier.status === "active" || supplier.status === "suspended")
+    && (supplier.compliance_agreement === null || supplier.compliance_agreement === "BAA" ||
+      supplier.compliance_agreement === "DPA" || supplier.compliance_agreement === "both")
+    && ["contract_renewal_date", "contact_email", "notes"].every(
+      (field) => supplier[field] === null || typeof supplier[field] === "string",
+    )
+    && typeof supplier.updated_at === "string";
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`/api/suppliers${path}`, {
-    ...options,
-    cache: "no-store",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-  });
-  if (!response.ok) {
-    const body = await response.text();
-    let detail = body;
-    if (response.headers.get("content-type")?.includes("application/json")) {
-      const error: { detail?: string | ValidationError[] } = JSON.parse(body);
-      detail = Array.isArray(error.detail)
-        ? error.detail.map((item) => `${item.loc.join(".")}: ${item.msg}`).join("; ")
-        : error.detail ?? body;
-    }
-    throw new Error(`Error ${response.status}: ${detail || response.statusText}`);
+  let response: Response;
+  try {
+    response = await fetch(`/api/suppliers${path}`, {
+      ...options,
+      cache: "no-store",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+    });
+  } catch (error) {
+    if (options?.signal?.aborted) throw error;
+    throw new Error("No se pudo conectar con el servicio. Comprueba tu conexión.");
   }
-  return response.json() as Promise<T>;
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Tu sesión ha caducado. Inicia sesión de nuevo.");
+    }
+    let detail = `No se pudo completar la solicitud (${response.status}).`;
+    if (response.status < 500 && response.headers.get("content-type")?.includes("application/json")) {
+      try {
+        const body: unknown = await response.json();
+        if (typeof body === "object" && body !== null && "detail" in body) {
+          if (typeof body.detail === "string") detail = body.detail;
+          else if (Array.isArray(body.detail)) {
+            const messages = body.detail.flatMap((item: unknown) =>
+              typeof item === "object" && item !== null && "msg" in item &&
+              typeof item.msg === "string" ? [item.msg] : [],
+            );
+            if (messages.length) detail = messages.join("; ");
+          }
+        }
+      } catch {
+        // Keep the generic error when the server does not return valid JSON.
+      }
+    }
+    throw new Error(detail);
+  }
+  try {
+    return await response.json() as T;
+  } catch {
+    throw new Error("El servicio devolvió una respuesta inválida.");
+  }
+}
+
+async function supplierRequest(path: string, options: RequestInit): Promise<Supplier> {
+  const result = await request<unknown>(path, options);
+  if (!isSupplier(result)) throw new Error("El servicio devolvió un proveedor inválido.");
+  return result;
 }
 
 export async function listSuppliers(
@@ -37,11 +81,15 @@ export async function listSuppliers(
   const query = new URLSearchParams();
   if (filters.country) query.set("country", filters.country);
   if (filters.category) query.set("category", filters.category);
-  return await request<Supplier[]>(`?${query}`, { signal });
+  const result = await request<unknown>(`?${query}`, { signal });
+  if (!Array.isArray(result) || !result.every(isSupplier)) {
+    throw new Error("El servicio devolvió un listado inválido.");
+  }
+  return result;
 }
 
 export async function createSupplier(payload: SupplierCreate): Promise<Supplier> {
-  return await request<Supplier>("", {
+  return await supplierRequest("", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -51,7 +99,7 @@ export async function updateSupplierRate(
   id: number,
   monthly_rate: number,
 ): Promise<Supplier> {
-  return await request<Supplier>(`/${id}/rate`, {
+  return await supplierRequest(`/${id}/rate`, {
     method: "PATCH",
     body: JSON.stringify({ monthly_rate }),
   });
@@ -61,7 +109,7 @@ export async function updateSupplierStatus(
   id: number,
   status: SupplierStatus,
 ): Promise<Supplier> {
-  return await request<Supplier>(`/${id}/status`, {
+  return await supplierRequest(`/${id}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
   });

@@ -40,4 +40,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    from json import JSONDecodeError
+
+    try:
+        main()
+    except (OSError, EOFError, JSONDecodeError) as exc:
+        print(f"Administrator setup failed: {type(exc).__name__}", file=sys.stderr)
+        sys.exit(1)

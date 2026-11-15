@@ -1,9 +1,13 @@
 import os
+import logging
 from collections.abc import Iterator
+from json import JSONDecodeError
 from pathlib import Path
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 from tinydb import TinyDB
+
+logger = logging.getLogger(__name__)
 
 
 def open_database() -> TinyDB:
@@ -23,5 +27,9 @@ def open_database() -> TinyDB:
 
 def get_database(request: Request) -> Iterator[TinyDB]:
     # TinyDB is not thread-safe; serialize each complete read/write operation.
-    with request.app.state.database_lock:
-        yield request.app.state.database
+    try:
+        with request.app.state.database_lock:
+            yield request.app.state.database
+    except (OSError, JSONDecodeError) as exc:
+        logger.error("Database operation failed: %s", type(exc).__name__)
+        raise HTTPException(status_code=503, detail="Database temporarily unavailable") from exc

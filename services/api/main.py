@@ -1,4 +1,6 @@
 from contextlib import asynccontextmanager
+from json import JSONDecodeError
+import logging
 from threading import Lock
 
 from fastapi import FastAPI, Request
@@ -9,6 +11,8 @@ from .database import open_database
 from .core.security import get_settings
 from .routes import auth, auth_password, profiles, suppliers, users
 from .services.email import reset_expiration_minutes
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -39,6 +43,19 @@ async def validation_error(_request: Request, error: RequestValidationError):
             ]
         },
     )
+
+
+@app.exception_handler(OSError)
+@app.exception_handler(JSONDecodeError)
+async def storage_error(_request: Request, error: Exception):
+    logger.error("Storage operation failed: %s", type(error).__name__)
+    return JSONResponse(status_code=503, content={"detail": "Database temporarily unavailable"})
+
+
+@app.exception_handler(Exception)
+async def unexpected_error(_request: Request, error: Exception):
+    logger.error("Unexpected API error: %s", type(error).__name__)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
 app.include_router(auth.router)

@@ -38,6 +38,13 @@ Tokens expire according to `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`. Password changes
 invalidate existing tokens; user deletion also invalidates them. Role checks use
 the current database value on every request.
 
+Database read/write failures return a generic `503` response; unexpected API
+failures return a generic `500`. The application error handlers log the error
+type without including passwords, tokens, database contents, or exception
+messages. Configure server and proxy logging separately to protect sensitive
+data. The password recovery request remains neutral even when its lookup or
+email delivery fails; check server logs for those failures.
+
 ## Password recovery
 
 Configure `RESEND_API_KEY`, `RESEND_FROM_EMAIL` (a verified Resend sender) and

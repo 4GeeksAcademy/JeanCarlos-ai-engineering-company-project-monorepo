@@ -18,7 +18,7 @@ export default function SuppliersPage() {
     category: "",
   });
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadState, setLoadState] = useState<"loading" | "fulfilled" | "rejected">("loading");
   const [loadError, setLoadError] = useState("");
   const [createError, setCreateError] = useState("");
   const [message, setMessage] = useState("");
@@ -29,11 +29,13 @@ export default function SuppliersPage() {
   useEffect(() => {
     const controller = new AbortController();
     async function load() {
+      let state: "fulfilled" | "rejected" = "rejected";
       try {
         const result = await listSuppliers(filters, controller.signal);
         if (!controller.signal.aborted) {
           setSuppliers(result);
           setLoadError("");
+          state = "fulfilled";
         }
       } catch (error) {
         if (!controller.signal.aborted) {
@@ -42,7 +44,7 @@ export default function SuppliersPage() {
           );
         }
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted) setLoadState(state);
       }
     }
     void load();
@@ -50,7 +52,7 @@ export default function SuppliersPage() {
   }, [filters, reload]);
 
   function changeFilters(next: SupplierFilters) {
-    setLoading(true);
+    setLoadState("loading");
     setLoadError("");
     setFilters(next);
   }
@@ -63,11 +65,11 @@ export default function SuppliersPage() {
       const supplier = await createSupplier(payload);
       setMessage(`Proveedor ${supplier.name} registrado.`);
       setFormKey((key) => key + 1);
-      setLoading(true);
+      setLoadState("loading");
       setReload((value) => value + 1);
     } catch (error) {
       setCreateError(
-        error instanceof Error ? error.message : "No se pudo crear el proveedor.",
+        `${error instanceof Error ? error.message : "No se pudo crear el proveedor."} Comprueba el directorio antes de volver a enviar el alta.`,
       );
     } finally {
       setCreating(false);
@@ -125,20 +127,21 @@ export default function SuppliersPage() {
             </select>
           </label>
         </div>
-        {loading && <p role="status">Cargando proveedores...</p>}
-        {loadError && (
+        {loadState === "loading" && <p role="status">Cargando proveedores...</p>}
+        {loadState === "rejected" && (
           <div role="alert" className="error">
             <p>{loadError}</p>
             <button type="button" onClick={() => {
-              setLoading(true);
+              setLoadState("loading");
               setLoadError("");
               setReload((value) => value + 1);
             }}>
               Reintentar
             </button>
+            <p><Link href="/login">Iniciar sesión</Link></p>
           </div>
         )}
-        {!loading && !loadError && (
+        {loadState === "fulfilled" && (
           <>
             <p role="status">{suppliers.length} proveedores encontrados.</p>
             <div className="table-scroll" role="region" aria-label="Tabla de proveedores" tabIndex={0}>

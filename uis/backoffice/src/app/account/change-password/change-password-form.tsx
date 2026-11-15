@@ -51,7 +51,7 @@ export default function ChangePasswordForm() {
           <label>Nueva contraseña<input type="password" autoComplete="new-password" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)} /></label>
           <label>Confirmar contraseña<input type="password" autoComplete="new-password" minLength={8} required value={confirmation} onChange={(e) => setConfirmation(e.target.value)} /></label>
           {error && <p className="error" role="alert">{error}</p>}
-          <button disabled={loading}>{loading ? "Guardando..." : "Cambiar contraseña"}</button>
+          <button disabled={loading}>{loading ? "Guardando..." : error ? "Reintentar" : "Cambiar contraseña"}</button>
         </form>
         <p><Link href="/suppliers">Volver a proveedores</Link></p>
       </section>

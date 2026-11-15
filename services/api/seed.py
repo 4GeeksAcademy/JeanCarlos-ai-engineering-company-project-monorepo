@@ -197,5 +197,14 @@ def seed() -> int:
 
 
 if __name__ == "__main__":
+    import sys
+    from json import JSONDecodeError
+
+    from pydantic import ValidationError
+
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-    seed()
+    try:
+        seed()
+    except (OSError, JSONDecodeError, ValidationError) as exc:
+        logger.error("No se pudo completar el seed: %s", type(exc).__name__)
+        sys.exit(1)

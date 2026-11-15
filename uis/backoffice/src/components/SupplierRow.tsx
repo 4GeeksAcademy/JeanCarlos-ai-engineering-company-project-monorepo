@@ -17,16 +17,19 @@ export default function SupplierRow({ supplier, onUpdated }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [failedAction, setFailedAction] = useState<"rate" | "status" | null>(null);
 
-  async function save(operation: () => Promise<Supplier>, success: string) {
+  async function save(operation: () => Promise<Supplier>, success: string, action: "rate" | "status") {
     setBusy(true);
     setError("");
     setMessage("");
+    setFailedAction(null);
     try {
       onUpdated(await operation());
       setMessage(success);
     } catch (error) {
       setError(error instanceof Error ? error.message : "No se pudo guardar.");
+      setFailedAction(action);
     } finally {
       setBusy(false);
     }
@@ -37,11 +40,13 @@ export default function SupplierRow({ supplier, onUpdated }: Props) {
     const value = Number(rate);
     if (!Number.isFinite(value) || value <= 0) {
       setError("La tarifa debe ser mayor que cero.");
+      setFailedAction(null);
       return;
     }
     await save(
       async () => await updateSupplierRate(supplier.id, value),
       "Tarifa actualizada.",
+      "rate",
     );
   }
 
@@ -79,9 +84,9 @@ export default function SupplierRow({ supplier, onUpdated }: Props) {
           <button
             type="submit"
             disabled={busy}
-            aria-label={`Guardar tarifa de ${supplier.name}`}
+            aria-label={`${failedAction === "rate" ? "Reintentar" : "Guardar"} tarifa de ${supplier.name}`}
           >
-            Guardar
+            {failedAction === "rate" ? "Reintentar" : "Guardar"}
           </button>
         </form>
         <small>Tarifa actualizada: {supplier.updated_at}</small>
@@ -94,7 +99,7 @@ export default function SupplierRow({ supplier, onUpdated }: Props) {
         <button
           type="button"
           disabled={busy}
-          aria-label={`${supplier.status === "active" ? "Suspender" : "Activar"} ${supplier.name}`}
+          aria-label={`${failedAction === "status" ? "Reintentar cambio de estado de" : supplier.status === "active" ? "Suspender" : "Activar"} ${supplier.name}`}
           onClick={async () =>
             await save(
               async () =>
@@ -103,10 +108,11 @@ export default function SupplierRow({ supplier, onUpdated }: Props) {
                   supplier.status === "active" ? "suspended" : "active",
                 ),
               "Estado actualizado.",
+              "status",
             )
           }
         >
-          {supplier.status === "active" ? "Suspender" : "Activar"}
+          {failedAction === "status" ? "Reintentar" : supplier.status === "active" ? "Suspender" : "Activar"}
         </button>
         {busy && <p role="status">Guardando...</p>}
         {message && <p role="status">{message}</p>}

@@ -49,8 +49,8 @@ export default function ResetPasswordForm({ token }: { token: string }) {
           <form className="auth-form" onSubmit={submit}>
             <label>Nueva contraseña<input type="password" autoComplete="new-password" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)} /></label>
             <label>Confirmar contraseña<input type="password" autoComplete="new-password" minLength={8} required value={confirmation} onChange={(e) => setConfirmation(e.target.value)} /></label>
-            {error && <p className="error" role="alert">{error}</p>}
-            <button disabled={loading}>{loading ? "Guardando..." : "Cambiar contraseña"}</button>
+            {error && <p className="error" role="alert">{error} <Link href="/forgot-password">Solicitar otro enlace</Link>.</p>}
+            <button disabled={loading}>{loading ? "Guardando..." : error ? "Reintentar" : "Cambiar contraseña"}</button>
           </form>
         )}
       </section>

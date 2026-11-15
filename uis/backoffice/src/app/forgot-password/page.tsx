@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
           <form className="auth-form" onSubmit={submit}>
             <label>Correo electrónico<input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
             {error && <p className="error" role="alert">{error}</p>}
-            <button disabled={loading}>{loading ? "Enviando..." : "Enviar instrucciones"}</button>
+            <button disabled={loading}>{loading ? "Enviando..." : error ? "Reintentar" : "Enviar instrucciones"}</button>
           </form>
         )}
         <p><Link href="/login">Volver a iniciar sesión</Link></p>

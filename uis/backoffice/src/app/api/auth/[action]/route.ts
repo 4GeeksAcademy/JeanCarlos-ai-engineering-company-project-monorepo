@@ -48,11 +48,21 @@ export async function POST(
       method: "POST", headers, body, cache: "no-store", redirect: "manual",
     });
   } catch (error) {
-    console.error("Authentication API request failed:", error);
+    console.error("Authentication API request failed:", error instanceof Error ? error.name : "UnknownError");
+    return NextResponse.json({ detail: "Servicio no disponible." }, { status: 502 });
+  }
+  if (upstream.status >= 500) {
+    console.error("Authentication API returned status", upstream.status);
     return NextResponse.json({ detail: "Servicio no disponible." }, { status: 502 });
   }
   if (action === "login" && upstream.ok) {
-    const data: unknown = await upstream.json();
+    let data: unknown;
+    try {
+      data = await upstream.json();
+    } catch {
+      console.error("Authentication API returned invalid JSON");
+      return NextResponse.json({ detail: "Respuesta inválida." }, { status: 502 });
+    }
     if (
       typeof data !== "object" || data === null ||
       !("access_token" in data) || typeof data.access_token !== "string"
@@ -71,7 +81,13 @@ export async function POST(
     console.error("Unexpected redirect from authentication API");
     return NextResponse.json({ detail: "Respuesta inválida." }, { status: 502 });
   }
-  const text = await upstream.text();
+  let text: string;
+  try {
+    text = await upstream.text();
+  } catch (error) {
+    console.error("Authentication API response failed:", error instanceof Error ? error.name : "UnknownError");
+    return NextResponse.json({ detail: "Servicio no disponible." }, { status: 502 });
+  }
   const response = new NextResponse(text, {
     status: upstream.status,
     headers: { "Content-Type": upstream.headers.get("content-type") ?? "application/json" },

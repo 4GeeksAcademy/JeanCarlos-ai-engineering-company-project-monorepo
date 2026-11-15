@@ -36,7 +36,7 @@ export async function requireSession(): Promise<void> {
       redirect: "manual",
     });
   } catch (error) {
-    console.error("Could not verify session:", error);
+    console.error("Could not verify session:", error instanceof Error ? error.name : "UnknownError");
     throw new Error("No se pudo verificar la sesión.");
   }
   if (response.status === 401) redirect("/login");

@@ -16,12 +16,13 @@ export default function SupplierForm({ busy, onSubmit }: Props) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
-    const monthly_rate = Number(data.get("monthly_rate"));
+    const rawRate = data.get("monthly_rate");
+    const monthly_rate = rawRate === null || rawRate === "" ? NaN : Number(rawRate);
     const categories = CATEGORIES.filter((category) =>
       data.getAll("categories").includes(category),
     );
     if (
-      !String(data.get("name")).trim() ||
+      !String(data.get("name") ?? "").trim() ||
       !Number.isFinite(monthly_rate) ||
       monthly_rate <= 0 ||
       categories.length === 0
@@ -33,7 +34,7 @@ export default function SupplierForm({ busy, onSubmit }: Props) {
     const status = data.get("status");
     setError("");
     await onSubmit({
-      name: String(data.get("name")).trim(),
+      name: String(data.get("name") ?? "").trim(),
       country,
       currency: country === "USA" ? "USD" : "GBP",
       categories,
@@ -43,9 +44,9 @@ export default function SupplierForm({ busy, onSubmit }: Props) {
         agreement === "BAA" || agreement === "DPA" || agreement === "both"
           ? agreement
           : null,
-      contract_renewal_date: String(data.get("contract_renewal_date")) || null,
-      contact_email: String(data.get("contact_email")).trim() || null,
-      notes: String(data.get("notes")).trim() || null,
+      contract_renewal_date: String(data.get("contract_renewal_date") ?? "") || null,
+      contact_email: String(data.get("contact_email") ?? "").trim() || null,
+      notes: String(data.get("notes") ?? "").trim() || null,
     });
   }
 

@@ -40,7 +40,7 @@ export default function LoginForm({ passwordChanged }: { passwordChanged: boolea
           <label>Usuario<input autoComplete="username" required value={username} onChange={(e) => setUsername(e.target.value)} /></label>
           <label>Contraseña<input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} /></label>
           {error && <p className="error" role="alert">{error}</p>}
-          <button disabled={loading}>{loading ? "Iniciando sesión..." : "Entrar"}</button>
+          <button disabled={loading}>{loading ? "Iniciando sesión..." : error ? "Reintentar" : "Entrar"}</button>
         </form>
         <p><Link href="/forgot-password">¿Olvidaste tu contraseña?</Link></p>
       </section>

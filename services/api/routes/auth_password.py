@@ -1,4 +1,5 @@
 from json import JSONDecodeError
+import logging
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from jose import JWTError, jwt
@@ -17,6 +18,7 @@ from ..models.auth import ChangePassword, ForgotPassword, ResetPassword, User
 from ..services.email import reset_expiration_minutes, send_password_reset_email
 
 router = APIRouter(prefix="/auth", tags=["password"])
+logger = logging.getLogger(__name__)
 NEUTRAL_MESSAGE = {"message": "Si existe una cuenta con ese correo, recibirás instrucciones."}
 
 
@@ -35,7 +37,10 @@ async def forgot_password(request: Request, tasks: BackgroundTasks):
         payload = ForgotPassword.model_validate(await request.json())
     except (JSONDecodeError, UnicodeDecodeError, ValidationError):
         return NEUTRAL_MESSAGE
-    await run_in_threadpool(reset_email_task, request, payload.email, tasks)
+    try:
+        await run_in_threadpool(reset_email_task, request, payload.email, tasks)
+    except (OSError, JSONDecodeError, ValidationError) as exc:
+        logger.error("Password recovery lookup failed: %s", type(exc).__name__)
     return NEUTRAL_MESSAGE
 
 

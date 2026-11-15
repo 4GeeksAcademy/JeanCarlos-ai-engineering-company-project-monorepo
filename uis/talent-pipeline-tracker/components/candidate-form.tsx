@@ -33,17 +33,18 @@ export function CandidateForm({ candidate, onSaved }: CandidateFormProps) {
     const form = event.currentTarget;
     if (!form.reportValidity()) return;
     const data = new FormData(form);
-    const experience = Number(data.get("experience_years"));
+    const rawExperience = data.get("experience_years");
+    const experience = rawExperience === null || rawExperience === "" ? NaN : Number(rawExperience);
     if (!Number.isFinite(experience) || experience < 0) {
       setError("Los años de experiencia deben ser un número igual o mayor que cero.");
       return;
     }
 
     const input: CandidateInput = {
-      full_name: String(data.get("full_name")).trim(),
-      email: String(data.get("email")).trim(),
-      phone: String(data.get("phone")).trim(),
-      position: String(data.get("position")).trim(),
+      full_name: String(data.get("full_name") ?? "").trim(),
+      email: String(data.get("email") ?? "").trim(),
+      phone: String(data.get("phone") ?? "").trim(),
+      position: String(data.get("position") ?? "").trim(),
       linkedin_url: String(data.get("linkedin_url") || "").trim() || null,
       cv_url: String(data.get("cv_url") || "").trim() || null,
       experience_years: experience,
@@ -59,7 +60,8 @@ export function CandidateForm({ candidate, onSaved }: CandidateFormProps) {
       dialogRef.current?.close();
       form.reset();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "No se pudo guardar la candidatura.");
+      const message = saveError instanceof Error ? saveError.message : "No se pudo guardar la candidatura.";
+      setError(isEditing ? message : `${message} Comprueba el listado antes de volver a registrar la candidatura.`);
     } finally {
       setBusy(false);
     }
@@ -82,7 +84,7 @@ export function CandidateForm({ candidate, onSaved }: CandidateFormProps) {
           <label>LinkedIn<input name="linkedin_url" type="url" placeholder="https://…" defaultValue={candidate?.linkedin_url ?? ""} /></label>
           <label className="field-wide">Enlace al CV<input name="cv_url" type="url" placeholder="https://…" defaultValue={candidate?.cv_url ?? ""} /></label>
         </div>
-        <div className="form-actions"><button className="button button-secondary" type="button" onClick={() => dialogRef.current?.close()}>Cancelar</button><button className="button button-primary" type="submit" disabled={busy}>{busy ? "Guardando…" : isEditing ? "Guardar cambios" : "Registrar candidatura"}</button></div>
+        <div className="form-actions"><button className="button button-secondary" type="button" onClick={() => dialogRef.current?.close()}>Cancelar</button><button className="button button-primary" type="submit" disabled={busy}>{busy ? "Guardando…" : isEditing && error ? "Reintentar" : isEditing ? "Guardar cambios" : "Registrar candidatura"}</button></div>
       </form>
     </dialog>
   </>;

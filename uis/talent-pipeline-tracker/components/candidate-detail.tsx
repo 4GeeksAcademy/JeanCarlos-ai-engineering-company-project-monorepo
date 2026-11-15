@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { CandidateForm } from "@/components/candidate-form";
 import {
   addCandidateNote,
@@ -58,27 +58,36 @@ export function CandidateDetail({ id }: CandidateDetailProps) {
   const [updating, setUpdating] = useState<"status" | "stage" | null>(null);
   const [noteBusy, setNoteBusy] = useState(false);
   const [deletingNote, setDeletingNote] = useState<string | null>(null);
+  const candidateRequestId = useRef(0);
+  const notesRequestId = useRef(0);
 
   const loadCandidate = useCallback(async () => {
+    const currentRequest = ++candidateRequestId.current;
     setLoadState("loading");
     setError("");
     try {
       const result = await getCandidate(id);
+      if (currentRequest !== candidateRequestId.current) return;
       setCandidate(result);
       setLoadState("success");
     } catch (loadError) {
+      if (currentRequest !== candidateRequestId.current) return;
       setError(loadError instanceof Error ? loadError.message : "No se pudo cargar la candidatura.");
       setLoadState("error");
     }
   }, [id]);
 
   const loadNotes = useCallback(async () => {
+    const currentRequest = ++notesRequestId.current;
     setNotesState("loading");
     setNotesError("");
     try {
-      setNotes(await getCandidateNotes(id));
+      const result = await getCandidateNotes(id);
+      if (currentRequest !== notesRequestId.current) return;
+      setNotes(result);
       setNotesState("success");
     } catch (loadError) {
+      if (currentRequest !== notesRequestId.current) return;
       setNotesError(loadError instanceof Error ? loadError.message : "No se pudieron cargar las notas.");
       setNotesState("error");
     }
@@ -89,7 +98,11 @@ export function CandidateDetail({ id }: CandidateDetailProps) {
       void loadCandidate();
       void loadNotes();
     }, 0);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      candidateRequestId.current += 1;
+      notesRequestId.current += 1;
+    };
   }, [loadCandidate, loadNotes]);
 
   async function updatePipeline(field: "status" | "stage", value: CandidateStatus | CandidateStage) {
@@ -124,7 +137,8 @@ export function CandidateDetail({ id }: CandidateDetailProps) {
       form.reset();
       setFeedback("Nota añadida.");
     } catch (noteError) {
-      setMutationError(noteError instanceof Error ? noteError.message : "No se pudo añadir la nota.");
+      const message = noteError instanceof Error ? noteError.message : "No se pudo añadir la nota.";
+      setMutationError(`${message} Comprueba las notas antes de volver a enviarla.`);
     } finally {
       setNoteBusy(false);
     }
