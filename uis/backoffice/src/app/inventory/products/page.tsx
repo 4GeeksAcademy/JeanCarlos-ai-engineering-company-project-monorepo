@@ -1,38 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { listProducts, useInventoryError } from "@/lib/inventory";
-import type { Product } from "@/types/inventory";
+import { listProducts } from "@/lib/inventory";
+import { useInventoryResource } from "@/lib/useInventoryResource";
 
 const LOW_STOCK_THRESHOLD = 10;
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
-  const [error, setError] = useState("");
-  const [reload, setReload] = useState(0);
-  const errorMessage = useInventoryError();
-
-  useEffect(() => {
-    const controller = new AbortController();
-    async function load() {
-      try {
-        const result = await listProducts(controller.signal);
-        if (!controller.signal.aborted) {
-          setProducts(result);
-          setState("ready");
-        }
-      } catch (error) {
-        if (!controller.signal.aborted) {
-          setError(errorMessage(error, "No se pudo cargar el catálogo."));
-          setState("error");
-        }
-      }
-    }
-    void load();
-    return () => controller.abort();
-  }, [reload, errorMessage]);
+  const { data: products, state, error, retry } = useInventoryResource(
+    listProducts,
+    "No se pudo cargar el catálogo.",
+  );
 
   return (
     <main>
@@ -43,10 +21,10 @@ export default function ProductsPage() {
         {state === "error" && (
           <div className="error" role="alert">
             <p>{error}</p>
-            <button type="button" onClick={() => { setState("loading"); setReload((n) => n + 1); }}>Reintentar</button>
+            <button type="button" onClick={retry}>Reintentar</button>
           </div>
         )}
-        {state === "ready" && (
+        {state === "ready" && products !== null && (
           <div className="table-scroll" role="region" aria-label="Tabla de productos" tabIndex={0}>
             <table>
               <caption className="sr-only">Catálogo de productos</caption>
