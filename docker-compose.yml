@@ -1,0 +1,49 @@
+services:
+  ui:
+    build:
+      context: ./uis
+    init: true
+    environment:
+      SUPPLIERS_API_URL: http://api:8000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://playground.4geeks.com/tracker/api/v1}
+    ports:
+      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3001:3001"
+    volumes:
+      - ./uis/talent-pipeline-tracker:/app/talent-pipeline-tracker
+      - tracker_node_modules:/app/talent-pipeline-tracker/node_modules
+      - tracker_next:/app/talent-pipeline-tracker/.next
+      - ./uis/backoffice:/app/backoffice
+      - backoffice_node_modules:/app/backoffice/node_modules
+      - backoffice_next:/app/backoffice/.next
+    depends_on:
+      - api
+    networks:
+      - healthcore
+
+  api:
+    build:
+      context: ./services
+    init: true
+    env_file:
+      - ${COMPOSE_ENV_FILE:-.env}
+    environment:
+      SUPPLIERS_DB_PATH: /data/suppliers.json
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./services/api:/app/services/api
+      - api_data:/data
+    networks:
+      - healthcore
+
+networks:
+  healthcore:
+    driver: bridge
+
+volumes:
+  tracker_node_modules:
+  tracker_next:
+  backoffice_node_modules:
+  backoffice_next:
+  api_data:
