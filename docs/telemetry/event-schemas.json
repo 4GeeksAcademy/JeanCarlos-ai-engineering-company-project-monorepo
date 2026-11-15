@@ -1,0 +1,598 @@
+{
+  "contract": "HealthCore Telemetry Event Catalog",
+  "format": "custom-event-schema-catalog-v1",
+  "schemaVersion": "1.0.0",
+  "envelope": {
+    "required": [
+      "eventId",
+      "timestamp",
+      "sessionId",
+      "userId",
+      "event_type",
+      "schemaVersion",
+      "requestId",
+      "properties"
+    ],
+    "additionalProperties": false,
+    "fields": {
+      "eventId": {
+        "type": "string",
+        "format": "uuid",
+        "required": true,
+        "description": "ID de evento confiable e idempotente."
+      },
+      "timestamp": {
+        "type": "string",
+        "format": "date-time",
+        "required": true,
+        "description": "ISO 8601 UTC."
+      },
+      "sessionId": {
+        "type": ["string", "null"],
+        "required": true,
+        "description": "ID aleatorio seudónimo; null para jobs."
+      },
+      "userId": {
+        "type": ["string", "null"],
+        "required": true,
+        "description": "Seudónimo HMAC derivado por servidor; null si anónimo."
+      },
+      "event_type": {
+        "type": "string",
+        "pattern": "^[a-z]+_[a-z_]+$",
+        "required": true,
+        "description": "Nombre estable entidad_acción."
+      },
+      "schemaVersion": {
+        "type": "string",
+        "const": "1.0.0",
+        "required": true
+      },
+      "requestId": {
+        "type": ["string", "null"],
+        "required": true,
+        "description": "ID confiable de correlación de request o job."
+      },
+      "properties": {
+        "type": "object",
+        "required": true,
+        "additionalProperties": false,
+        "description": "Debe cumplir el allowlist del event_type."
+      }
+    }
+  },
+  "propertyDescriptor": {
+    "requiredFields": ["type", "required", "description", "sensitive"],
+    "sensitive": "Indica PII, dato operacional restringido o dimensión sensible."
+  },
+  "events": [
+    {
+      "event_type": "inventory_inbound_order_created",
+      "classification": "mandatory_briefing",
+      "source": "RFI de inventario",
+      "category": "business_inventory",
+      "description": "Entrada de inventario confirmada después del commit.",
+      "hypothesisDecision": "Necesitamos entradas diarias por producto y sede para decidir reposición y planificación de recepción.",
+      "delivery": {"mode": "stream", "cadence": "Tras commit; agregado diario"},
+      "privacy": {"containsSensitiveData": true, "handling": "IDs operativos limitados a acceso RBAC; userId seudónimo; no nombre de proveedor."},
+      "allowlist": ["order_id", "supply_id", "quantity", "clinic_id", "country"],
+      "properties": {
+        "order_id": {"type": "integer", "required": true, "description": "ID de entrada de API.", "sensitive": true},
+        "supply_id": {"type": "integer", "required": true, "description": "ID de catálogo; nunca SKU/nombre.", "sensitive": true},
+        "quantity": {"type": "integer", "required": true, "description": "Unidades confirmadas.", "sensitive": true},
+        "clinic_id": {"type": "integer", "required": true, "description": "ID de clínica 1–12.", "sensitive": true},
+        "country": {"type": "string", "enum": ["US", "UK"], "required": true, "description": "País del producto.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "inventory_outbound_order_created",
+      "classification": "mandatory_briefing",
+      "source": "RFI de inventario",
+      "category": "business_inventory",
+      "description": "Salida confirmada después del commit.",
+      "hypothesisDecision": "Necesitamos salidas diarias para decidir planificación de stock y consumo por sede.",
+      "delivery": {"mode": "stream", "cadence": "Tras commit; agregado diario"},
+      "privacy": {"containsSensitiveData": true, "handling": "IDs operativos con acceso RBAC; userId seudónimo."},
+      "allowlist": ["order_id", "supply_id", "quantity", "clinic_id", "consumption_type", "country"],
+      "properties": {
+        "order_id": {"type": "integer", "required": true, "description": "ID de salida de API.", "sensitive": true},
+        "supply_id": {"type": "integer", "required": true, "description": "ID de catálogo.", "sensitive": true},
+        "quantity": {"type": "integer", "required": true, "description": "Unidades confirmadas.", "sensitive": true},
+        "clinic_id": {"type": "integer", "required": true, "description": "ID de clínica 1–12.", "sensitive": true},
+        "consumption_type": {"type": "string", "enum": ["clinical_use", "expiry_waste"], "required": true, "description": "Tipo controlado de consumo.", "sensitive": true},
+        "country": {"type": "string", "enum": ["US", "UK"], "required": true, "description": "País del producto.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "inventory_order_validation_failed",
+      "classification": "mandatory_briefing",
+      "source": "RFI de inventario",
+      "category": "business_inventory",
+      "description": "Validación 422 de entrada o salida rechazada.",
+      "hypothesisDecision": "Necesitamos los códigos y campos que fallan para decidir correcciones de formularios o datos maestros.",
+      "delivery": {"mode": "stream", "cadence": "Muestreo/agrupación de 5 s; agregado diario"},
+      "privacy": {"containsSensitiveData": true, "handling": "Solo nombres/códigos allowlisted; nunca valores, cuerpo ni mensaje bruto."},
+      "allowlist": ["operation", "field_names", "error_codes", "occurrence_count"],
+      "properties": {
+        "operation": {"type": "string", "enum": ["inbound", "outbound"], "required": true, "description": "Flujo de orden.", "sensitive": false},
+        "field_names": {"type": "array", "items": {"type": "string", "enum": ["supply_id", "quantity", "clinic_id", "vendor_name", "consumption_type"]}, "required": true, "description": "Campos allowlisted con error, sin valores.", "sensitive": false},
+        "error_codes": {"type": "array", "items": {"type": "string", "enum": ["missing", "invalid_type", "out_of_range", "invalid_choice", "extra_forbidden"]}, "required": true, "description": "Taxonomía controlada.", "sensitive": false},
+        "occurrence_count": {"type": "integer", "minimum": 1, "required": true, "description": "Cantidad agrupada en ventana.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "inventory_direct_stock_edit_rejected",
+      "classification": "mandatory_briefing",
+      "source": "RFI de inventario / regla de negocio",
+      "category": "security_inventory",
+      "description": "El gateway rechazó un intento de modificar stock fuera de órdenes.",
+      "hypothesisDecision": "Necesitamos detectar intentos de eludir las órdenes trazables para decidir refuerzo de controles.",
+      "delivery": {"mode": "stream", "cadence": "Por intento; alerta en segundos"},
+      "privacy": {"containsSensitiveData": true, "handling": "Solo plantilla de ruta y método; nunca URL/ID/IP/user-agent crudos."},
+      "allowlist": ["attempted_method", "route_template", "response_status", "detection_source"],
+      "properties": {
+        "attempted_method": {"type": "string", "enum": ["POST", "PUT", "PATCH", "DELETE"], "required": true, "description": "Método detectado.", "sensitive": false},
+        "route_template": {"type": "string", "const": "/inventory/products/{supply_id}/stock", "required": true, "description": "Plantilla fija, no path solicitado.", "sensitive": false},
+        "response_status": {"type": "integer", "enum": [403, 404, 405], "required": true, "description": "Rechazo explícito del gateway.", "sensitive": false},
+        "detection_source": {"type": "string", "const": "trusted_gateway", "required": true, "description": "Productor confiable.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "inventory_stock_threshold_triggered",
+      "classification": "mandatory_briefing",
+      "source": "RFI de inventario / badge UI actual",
+      "category": "business_inventory",
+      "description": "Stock global cruza por primera vez hacia <=10 unidades.",
+      "hypothesisDecision": "Necesitamos contar productos que alcanzan el badge bajo para priorizar reposición.",
+      "delivery": {"mode": "stream", "cadence": "Solo cruce >10 a <=10; deduplicado"},
+      "privacy": {"containsSensitiveData": true, "handling": "IDs operativos; sin información de paciente. Confirmar umbral con Operations."},
+      "allowlist": ["supply_id", "current_stock", "threshold", "unit"],
+      "properties": {
+        "supply_id": {"type": "integer", "required": true, "description": "ID de producto.", "sensitive": true},
+        "current_stock": {"type": "integer", "minimum": 0, "required": true, "description": "Stock global calculado.", "sensitive": true},
+        "threshold": {"type": "integer", "const": 10, "required": true, "description": "Umbral informativo actual del badge UI.", "sensitive": false},
+        "unit": {"type": "string", "enum": ["box", "unit", "pack", "vial"], "required": true, "description": "Unidad de inventario.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "inventory_outbound_insufficient_stock_rejected",
+      "classification": "mandatory_briefing",
+      "source": "RFI de inventario / validador de dominio",
+      "category": "business_inventory",
+      "description": "API rechazó una salida que excede stock disponible.",
+      "hypothesisDecision": "Necesitamos entender las solicitudes rechazadas para decidir reposición o cambios en el proceso de solicitud.",
+      "delivery": {"mode": "stream", "cadence": "Por rechazo; agregado diario"},
+      "privacy": {"containsSensitiveData": true, "handling": "No incluye mensaje HTTP completo, usuario real ni datos clínicos."},
+      "allowlist": ["supply_id", "available_quantity", "requested_quantity", "clinic_id"],
+      "properties": {
+        "supply_id": {"type": "integer", "required": true, "description": "ID del producto.", "sensitive": true},
+        "available_quantity": {"type": "integer", "minimum": 0, "required": true, "description": "Stock observado por API.", "sensitive": true},
+        "requested_quantity": {"type": "integer", "minimum": 1, "required": true, "description": "Cantidad rechazada.", "sensitive": true},
+        "clinic_id": {"type": "integer", "minimum": 1, "maximum": 12, "required": true, "description": "Clínica solicitante.", "sensitive": true}
+      }
+    },
+    {
+      "event_type": "claim_denial_rate_calculated",
+      "classification": "mandatory_briefing",
+      "source": "CONTEXT HealthCore / reporte de claims",
+      "category": "business_revenue_cycle",
+      "description": "Tasa de claims denegados por payer o ubicación.",
+      "hypothesisDecision": "Necesitamos comparar la tasa con benchmark 8% para priorizar revisiones de payer/sede.",
+      "delivery": {"mode": "batch", "cadence": "Reporte semanal del lunes"},
+      "privacy": {"containsSensitiveData": true, "handling": "Solo agregado; no patientId, claimId, claimAmount ni motivo individual."},
+      "allowlist": ["group_by", "payerId", "locationId", "periodStart", "periodEnd", "claimsTotal", "claimsDenied", "denialRatePercent", "thresholdPercent"],
+      "properties": {
+        "group_by": {"type": "string", "enum": ["payerId", "locationId"], "required": true, "description": "Dimensión agregada.", "sensitive": false},
+        "payerId": {"type": ["string", "null"], "required": true, "description": "Código payer agregado; null si group_by locationId.", "sensitive": true},
+        "locationId": {"type": ["string", "null"], "required": true, "description": "ID de clínica agregado; null si group_by payerId.", "sensitive": true},
+        "periodStart": {"type": "string", "format": "date", "required": true, "description": "Inicio de ventana agregada.", "sensitive": false},
+        "periodEnd": {"type": "string", "format": "date", "required": true, "description": "Fin de ventana agregada.", "sensitive": false},
+        "claimsTotal": {"type": "integer", "minimum": 1, "required": true, "description": "Denominador.", "sensitive": true},
+        "claimsDenied": {"type": "integer", "minimum": 0, "required": true, "description": "Numerador.", "sensitive": true},
+        "denialRatePercent": {"type": "number", "minimum": 0, "maximum": 100, "required": true, "description": "Porcentaje calculado.", "sensitive": true},
+        "thresholdPercent": {"type": "number", "const": 8, "required": true, "description": "Benchmark HealthCore exacto.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "claim_high_denial_rate_flagged",
+      "classification": "mandatory_briefing",
+      "source": "CONTEXT HealthCore / flagHighDenialPayers",
+      "category": "business_revenue_cycle",
+      "description": "Tasa agregada de payer supera benchmark.",
+      "hypothesisDecision": "Necesitamos identificar payers >8% para decidir orden de revisión de denegaciones.",
+      "delivery": {"mode": "batch", "cadence": "Al generar reporte semanal"},
+      "privacy": {"containsSensitiveData": true, "handling": "Código payer agregado; suprimir grupos pequeños."},
+      "allowlist": ["payerId", "periodStart", "periodEnd", "denialRatePercent", "thresholdPercent", "claimsTotal"],
+      "properties": {
+        "payerId": {"type": "string", "required": true, "description": "Código de payer; no nombre libre.", "sensitive": true},
+        "periodStart": {"type": "string", "format": "date", "required": true, "description": "Inicio de periodo.", "sensitive": false},
+        "periodEnd": {"type": "string", "format": "date", "required": true, "description": "Fin de periodo.", "sensitive": false},
+        "denialRatePercent": {"type": "number", "minimum": 0, "maximum": 100, "required": true, "description": "Tasa calculada.", "sensitive": true},
+        "thresholdPercent": {"type": "number", "const": 8, "required": true, "description": "Benchmark exacto.", "sensitive": false},
+        "claimsTotal": {"type": "integer", "minimum": 10, "required": true, "description": "Tamaño mínimo agregado.", "sensitive": true}
+      }
+    },
+    {
+      "event_type": "appointment_no_show_cost_calculated",
+      "classification": "mandatory_briefing",
+      "source": "CONTEXT HealthCore / calculateNoShowCost",
+      "category": "business_clinical_operations",
+      "description": "Pérdida estimada por no-shows en ventana semanal inclusiva.",
+      "hypothesisDecision": "Necesitamos USD perdidos por sede en siete días para priorizar acciones de confirmación y acceso.",
+      "delivery": {"mode": "batch", "cadence": "Reporte semanal del lunes"},
+      "privacy": {"containsSensitiveData": true, "handling": "Solo total por sede/periodo; no appointmentId, patientId, tarifa individual ni motivo."},
+      "allowlist": ["locationId", "periodStart", "periodEnd", "noShowCount", "estimatedLossUsd"],
+      "properties": {
+        "locationId": {"type": "string", "required": true, "description": "ID de clínica.", "sensitive": true},
+        "periodStart": {"type": "string", "format": "date", "required": true, "description": "Primer día de los siete.", "sensitive": false},
+        "periodEnd": {"type": "string", "format": "date", "required": true, "description": "Último día inclusive.", "sensitive": false},
+        "noShowCount": {"type": "integer", "minimum": 0, "required": true, "description": "Citas agregadas.", "sensitive": true},
+        "estimatedLossUsd": {"type": "number", "minimum": 0, "required": true, "description": "Estimación agregada USD redondeada a 2 decimales.", "sensitive": true}
+      }
+    },
+    {
+      "event_type": "appointment_no_show_rate_calculated",
+      "classification": "mandatory_briefing",
+      "source": "CONTEXT HealthCore / noShowRateByLocation",
+      "category": "business_clinical_operations",
+      "description": "Tasa de no-show por ubicación.",
+      "hypothesisDecision": "Necesitamos comparar tasas con 20% para decidir intervención por clínica.",
+      "delivery": {"mode": "batch", "cadence": "Reporte semanal"},
+      "privacy": {"containsSensitiveData": true, "handling": "Solo agregado por ubicación; no IDs de paciente/cita."},
+      "allowlist": ["locationId", "periodStart", "periodEnd", "appointmentsTotal", "noShowCount", "noShowRatePercent", "thresholdPercent"],
+      "properties": {
+        "locationId": {"type": "string", "required": true, "description": "ID de clínica.", "sensitive": true},
+        "periodStart": {"type": "string", "format": "date", "required": true, "description": "Inicio de periodo.", "sensitive": false},
+        "periodEnd": {"type": "string", "format": "date", "required": true, "description": "Fin de periodo.", "sensitive": false},
+        "appointmentsTotal": {"type": "integer", "minimum": 1, "required": true, "description": "Denominador.", "sensitive": true},
+        "noShowCount": {"type": "integer", "minimum": 0, "required": true, "description": "Numerador.", "sensitive": true},
+        "noShowRatePercent": {"type": "number", "minimum": 0, "maximum": 100, "required": true, "description": "Porcentaje redondeado a 2 decimales.", "sensitive": true},
+        "thresholdPercent": {"type": "number", "const": 20, "required": true, "description": "Umbral interno exacto.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "appointment_high_no_show_rate_flagged",
+      "classification": "mandatory_briefing",
+      "source": "CONTEXT HealthCore / flagHighNoShowLocations",
+      "category": "business_clinical_operations",
+      "description": "Ubicación supera el umbral de no-show.",
+      "hypothesisDecision": "Necesitamos localizar sedes >20% para decidir revisión operativa.",
+      "delivery": {"mode": "batch", "cadence": "Al generar reporte semanal"},
+      "privacy": {"containsSensitiveData": true, "handling": "Grupo agregado; suprimir cohortes <10 citas."},
+      "allowlist": ["locationId", "periodStart", "periodEnd", "noShowRatePercent", "thresholdPercent", "appointmentsTotal"],
+      "properties": {
+        "locationId": {"type": "string", "required": true, "description": "ID de clínica.", "sensitive": true},
+        "periodStart": {"type": "string", "format": "date", "required": true, "description": "Inicio de periodo.", "sensitive": false},
+        "periodEnd": {"type": "string", "format": "date", "required": true, "description": "Fin de periodo.", "sensitive": false},
+        "noShowRatePercent": {"type": "number", "minimum": 0, "maximum": 100, "required": true, "description": "Tasa calculada.", "sensitive": true},
+        "thresholdPercent": {"type": "number", "const": 20, "required": true, "description": "Umbral interno exacto.", "sensitive": false},
+        "appointmentsTotal": {"type": "integer", "minimum": 10, "required": true, "description": "Denominador agregado mínimo.", "sensitive": true}
+      }
+    },
+    {
+      "event_type": "clinician_cme_report_generated",
+      "classification": "mandatory_briefing",
+      "source": "CONTEXT HealthCore / generateCMEReport",
+      "category": "business_workforce_compliance",
+      "description": "Resumen agregado de cumplimiento CME por rol.",
+      "hypothesisDecision": "Necesitamos estado y distribución de horas para decidir seguimiento de CME; Physician requiere 40 y Nurse Practitioner 30 horas/año.",
+      "delivery": {"mode": "batch", "cadence": "Reporte semanal del lunes"},
+      "privacy": {"containsSensitiveData": true, "handling": "Dato laboral sensible: solo agregado por rol, mínimo 10 personas por cohorte; aprobación RR. HH./Compliance."},
+      "allowlist": ["cycleStart", "asOfDate", "clinicianCount", "onTrackCount", "atRiskCount", "overdueCount", "completeCount", "hoursRequiredByRole", "atRiskGapPercentagePoints"],
+      "properties": {
+        "cycleStart": {"type": "string", "format": "date", "required": true, "description": "Inicio de ciclo reportado.", "sensitive": false},
+        "asOfDate": {"type": "string", "format": "date", "required": true, "description": "Fecha de cálculo.", "sensitive": false},
+        "clinicianCount": {"type": "integer", "minimum": 10, "required": true, "description": "Total agregado; publicar solo sobre mínimo de cohorte.", "sensitive": true},
+        "onTrackCount": {"type": "integer", "minimum": 0, "required": true, "description": "Conteo agregado.", "sensitive": true},
+        "atRiskCount": {"type": "integer", "minimum": 0, "required": true, "description": "Conteo agregado.", "sensitive": true},
+        "overdueCount": {"type": "integer", "minimum": 0, "required": true, "description": "Conteo agregado.", "sensitive": true},
+        "completeCount": {"type": "integer", "minimum": 0, "required": true, "description": "Conteo agregado.", "sensitive": true},
+        "hoursRequiredByRole": {"type": "object", "required": true, "additionalProperties": false, "description": "Horas anuales conocidas: physician=40, nurse_practitioner=30; no inferir las demás.", "sensitive": true, "properties": {"physician": {"type": "integer", "const": 40}, "nurse_practitioner": {"type": "integer", "const": 30}}},
+        "atRiskGapPercentagePoints": {"type": "number", "const": 15, "required": true, "description": "Rezago HealthCore exacto.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "clinician_cme_at_risk_detected",
+      "classification": "mandatory_briefing",
+      "source": "CONTEXT HealthCore / getCliniciansAtRisk",
+      "category": "business_workforce_compliance",
+      "description": "Conteo agregado de clínicos en riesgo o overdue.",
+      "hypothesisDecision": "Necesitamos cuantificar cumplimiento atrasado frente a rezago 15 pp para decidir seguimiento preventivo.",
+      "delivery": {"mode": "batch", "cadence": "Reporte semanal; sin alerta individual analítica"},
+      "privacy": {"containsSensitiveData": true, "handling": "Solo conteo agregado de cohorte >=10; no clinicianId/nombre/horas individuales."},
+      "allowlist": ["asOfDate", "atRiskCount", "overdueCount", "atRiskGapPercentagePoints"],
+      "properties": {
+        "asOfDate": {"type": "string", "format": "date", "required": true, "description": "Fecha de cálculo.", "sensitive": false},
+        "atRiskCount": {"type": "integer", "minimum": 0, "required": true, "description": "Conteo agregado en riesgo.", "sensitive": true},
+        "overdueCount": {"type": "integer", "minimum": 0, "required": true, "description": "Conteo agregado vencido.", "sensitive": true},
+        "atRiskGapPercentagePoints": {"type": "number", "const": 15, "required": true, "description": "Umbral exacto del ciclo.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "clinician_license_alert_triggered",
+      "classification": "mandatory_briefing",
+      "source": "CONTEXT HealthCore / getCliniciansWithExpiringLicences",
+      "category": "business_workforce_compliance",
+      "description": "Conteo de alertas de licencia por ventana configurada.",
+      "hypothesisDecision": "Necesitamos saber vencimientos en 90 días y urgentes en 30 para priorizar renovación de credenciales.",
+      "delivery": {"mode": "stream", "cadence": "Evaluación diaria; primera alerta a 90 y urgente a 30 días"},
+      "privacy": {"containsSensitiveData": true, "handling": "Dato laboral regulatorio: solo conteo agregado de cohorte >=10; alerta individual queda en sistema RR. HH. autorizado."},
+      "allowlist": ["asOfDate", "windowDays", "alertLevel", "clinicianCount"],
+      "properties": {
+        "asOfDate": {"type": "string", "format": "date", "required": true, "description": "Fecha de evaluación.", "sensitive": false},
+        "windowDays": {"type": "integer", "enum": [90, 30], "required": true, "description": "Umbral exacto de primera o urgente advertencia.", "sensitive": false},
+        "alertLevel": {"type": "string", "enum": ["warning", "urgent"], "required": true, "description": "90=warning; 30=urgent.", "sensitive": false},
+        "clinicianCount": {"type": "integer", "minimum": 10, "required": true, "description": "Conteo agregado; solo publicar cohorte suficiente.", "sensitive": true}
+      }
+    },
+    {
+      "event_type": "auth_login_succeeded",
+      "classification": "proposed_opportunity",
+      "source": "POST /login",
+      "category": "authentication",
+      "description": "Inicio de sesión completado.",
+      "hypothesisDecision": "Necesitamos adopción agregada por rol para dimensionar soporte y capacidad.",
+      "delivery": {"mode": "batch", "cadence": "Agregación diaria"},
+      "privacy": {"containsSensitiveData": true, "handling": "userId HMAC; no username, email, token o IP; agregar y eliminar detalle según retención."},
+      "allowlist": ["role"],
+      "properties": {"role": {"type": "string", "enum": ["admin", "manager", "user"], "required": true, "description": "Rol vigente, no identidad.", "sensitive": true}}
+    },
+    {
+      "event_type": "auth_login_failed",
+      "classification": "proposed_opportunity",
+      "source": "POST /login 401",
+      "category": "authentication_security",
+      "description": "Autenticación rechazada de forma genérica.",
+      "hypothesisDecision": "Necesitamos tendencia de fallos para decidir mejoras de UX o mitigación de abuso.",
+      "delivery": {"mode": "stream", "cadence": "Alertar por tasa agregada; detalle solo códigos"},
+      "privacy": {"containsSensitiveData": true, "handling": "No incluir username/email/IP/contraseña; evento agregado y neutral."},
+      "allowlist": ["failure_reason"],
+      "properties": {"failure_reason": {"type": "string", "enum": ["invalid_credentials", "rate_limited", "service_unavailable"], "required": true, "description": "Código no identificable.", "sensitive": false}}
+    },
+    {
+      "event_type": "auth_session_rejected",
+      "classification": "proposed_opportunity",
+      "source": "Dependencia de bearer /me y rutas protegidas",
+      "category": "authentication",
+      "description": "Token inválido, expirado o revocado.",
+      "hypothesisDecision": "Necesitamos separar fallos de sesión para decidir cambios de duración o diagnóstico de revocación.",
+      "delivery": {"mode": "batch", "cadence": "Agregado diario; alerta por aumento"},
+      "privacy": {"containsSensitiveData": true, "handling": "Nunca registrar token, claims, cookie o ID de usuario crudo."},
+      "allowlist": ["reason_code", "route_template"],
+      "properties": {
+        "reason_code": {"type": "string", "enum": ["expired", "revoked", "invalid", "missing"], "required": true, "description": "Clase de rechazo.", "sensitive": false},
+        "route_template": {"type": "string", "required": true, "description": "Plantilla de ruta sin IDs ni query.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "auth_password_recovery_requested",
+      "classification": "proposed_opportunity",
+      "source": "POST /auth/forgot-password",
+      "category": "authentication",
+      "description": "Solicitud de recuperación recibida; resultado externo siempre neutro.",
+      "hypothesisDecision": "Necesitamos volumen y fallos del proceso para dimensionar soporte sin revelar si una cuenta existe.",
+      "delivery": {"mode": "batch", "cadence": "Agregado diario"},
+      "privacy": {"containsSensitiveData": true, "handling": "No email, estado known/unknown, token, IP ni resultado de lookup."},
+      "allowlist": ["outcome"],
+      "properties": {"outcome": {"type": "string", "const": "accepted_neutral", "required": true, "description": "No revela existencia de cuenta.", "sensitive": false}}
+    },
+    {
+      "event_type": "user_admin_action_completed",
+      "classification": "proposed_opportunity",
+      "source": "Rutas /users",
+      "category": "administration",
+      "description": "Acción de administración de usuarios completada o rechazada.",
+      "hypothesisDecision": "Necesitamos conocer tipos de operaciones para priorizar controles y soporte administrativo.",
+      "delivery": {"mode": "batch", "cadence": "Agregado diario; acceso denegado alerta"},
+      "privacy": {"containsSensitiveData": true, "handling": "Solo acción, outcome y rol; no ID target, email ni username."},
+      "allowlist": ["action", "outcome", "actor_role"],
+      "properties": {
+        "action": {"type": "string", "enum": ["list", "create", "read", "update", "delete"], "required": true, "description": "Operación normalizada.", "sensitive": false},
+        "outcome": {"type": "string", "enum": ["success", "denied", "not_found", "conflict", "invalid"], "required": true, "description": "Resultado normalizado.", "sensitive": false},
+        "actor_role": {"type": "string", "enum": ["admin", "manager", "user"], "required": true, "description": "Rol, no identidad.", "sensitive": true}
+      }
+    },
+    {
+      "event_type": "profile_access_denied",
+      "classification": "proposed_opportunity",
+      "source": "Autorización de perfil",
+      "category": "security_authorization",
+      "description": "Acceso o transferencia de propiedad de perfil denegado.",
+      "hypothesisDecision": "Necesitamos tendencias de denegación para decidir ajustes de permisos o revisión de abuso.",
+      "delivery": {"mode": "stream", "cadence": "Por patrón de seguridad; agregado diario"},
+      "privacy": {"containsSensitiveData": true, "handling": "Sin IDs de perfil/usuario, nombre, email ni payload."},
+      "allowlist": ["action", "actor_role", "reason_code"],
+      "properties": {
+        "action": {"type": "string", "enum": ["read", "update", "change_owner"], "required": true, "description": "Acción normalizada.", "sensitive": false},
+        "actor_role": {"type": "string", "enum": ["admin", "manager", "user"], "required": true, "description": "Rol.", "sensitive": true},
+        "reason_code": {"type": "string", "enum": ["not_owner", "role_required", "invalid_owner"], "required": true, "description": "Motivo controlado.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "supplier_created",
+      "classification": "proposed_opportunity",
+      "source": "POST /suppliers",
+      "category": "business_procurement",
+      "description": "Proveedor incorporado al directorio.",
+      "hypothesisDecision": "Necesitamos mezcla de altas por categoría y país para decidir cobertura de compras.",
+      "delivery": {"mode": "batch", "cadence": "Agregado semanal"},
+      "privacy": {"containsSensitiveData": true, "handling": "No name, contact_email, notes ni ID; país/categoría restringidos a agregado."},
+      "allowlist": ["country", "categories_count", "status"],
+      "properties": {
+        "country": {"type": "string", "enum": ["USA", "UK"], "required": true, "description": "País del proveedor.", "sensitive": false},
+        "categories_count": {"type": "integer", "minimum": 1, "required": true, "description": "Número de categorías, no texto libre.", "sensitive": false},
+        "status": {"type": "string", "enum": ["active", "suspended"], "required": true, "description": "Estado inicial.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "supplier_rate_updated",
+      "classification": "proposed_opportunity",
+      "source": "PUT /suppliers/{supplier_id}, PATCH /suppliers/{supplier_id}/rate",
+      "category": "business_procurement",
+      "description": "Tarifa mensual actualizada.",
+      "hypothesisDecision": "Necesitamos frecuencia y banda de cambio para decidir cadencia de revisión sin enviar montos confidenciales.",
+      "delivery": {"mode": "batch", "cadence": "Agregado semanal"},
+      "privacy": {"containsSensitiveData": true, "handling": "No monto exacto ni ID de proveedor; usar bandas aprobadas por Procurement."},
+      "allowlist": ["currency", "change_band"],
+      "properties": {
+        "currency": {"type": "string", "enum": ["USD", "GBP"], "required": true, "description": "Moneda.", "sensitive": false},
+        "change_band": {"type": "string", "enum": ["decreased", "unchanged", "increased"], "required": true, "description": "Dirección del cambio, no monto.", "sensitive": true}
+      }
+    },
+    {
+      "event_type": "supplier_status_changed",
+      "classification": "proposed_opportunity",
+      "source": "PUT /suppliers/{supplier_id}, PATCH /suppliers/{supplier_id}/status",
+      "category": "business_procurement",
+      "description": "Estado del proveedor modificado.",
+      "hypothesisDecision": "Necesitamos suspensiones y activaciones por país para decidir revisión de disponibilidad.",
+      "delivery": {"mode": "batch", "cadence": "Agregado diario"},
+      "privacy": {"containsSensitiveData": true, "handling": "Sin nombre, contacto, notas ni ID individual."},
+      "allowlist": ["country", "previous_status", "new_status"],
+      "properties": {
+        "country": {"type": "string", "enum": ["USA", "UK"], "required": true, "description": "País.", "sensitive": false},
+        "previous_status": {"type": "string", "enum": ["active", "suspended"], "required": true, "description": "Estado anterior.", "sensitive": false},
+        "new_status": {"type": "string", "enum": ["active", "suspended"], "required": true, "description": "Estado nuevo.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "inventory_product_created",
+      "classification": "proposed_opportunity",
+      "source": "POST /inventory/products",
+      "category": "business_inventory",
+      "description": "Producto añadido al catálogo.",
+      "hypothesisDecision": "Necesitamos altas por taxonomía para decidir mejoras de catálogo.",
+      "delivery": {"mode": "batch", "cadence": "Agregado diario"},
+      "privacy": {"containsSensitiveData": true, "handling": "No SKU/nombre; usar solo taxonomías de API."},
+      "allowlist": ["category", "unit", "country"],
+      "properties": {
+        "category": {"type": "string", "enum": ["ppe", "wound_care", "diagnostics", "medications", "consumables"], "required": true, "description": "Categoría API.", "sensitive": false},
+        "unit": {"type": "string", "enum": ["box", "unit", "pack", "vial"], "required": true, "description": "Unidad API.", "sensitive": false},
+        "country": {"type": "string", "enum": ["US", "UK"], "required": true, "description": "País API.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "api_latency_aggregated",
+      "classification": "proposed_opportunity",
+      "source": "Middleware FastAPI / gateway",
+      "category": "technical_performance",
+      "description": "Histograma agregado por plantilla de ruta, método y status class.",
+      "hypothesisDecision": "Necesitamos p50/p95 y volumen para decidir qué operación optimizar o escalar.",
+      "delivery": {"mode": "batch", "cadence": "Ventanas de 60 segundos; alertas tras cinco ventanas p95 >200 ms"},
+      "privacy": {"containsSensitiveData": false, "handling": "Ruta plantilla solamente; nunca query, path ID, IP o usuario."},
+      "allowlist": ["route_template", "method", "status_class", "request_count", "p50_ms", "p95_ms"],
+      "properties": {
+        "route_template": {"type": "string", "required": true, "description": "Plantilla FastAPI registrada.", "sensitive": false},
+        "method": {"type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"], "required": true, "description": "Método HTTP.", "sensitive": false},
+        "status_class": {"type": "string", "enum": ["2xx", "3xx", "4xx", "5xx"], "required": true, "description": "Clase de respuesta.", "sensitive": false},
+        "request_count": {"type": "integer", "minimum": 1, "required": true, "description": "Solicitudes en ventana.", "sensitive": false},
+        "p50_ms": {"type": "number", "minimum": 0, "required": true, "description": "Percentil 50.", "sensitive": false},
+        "p95_ms": {"type": "number", "minimum": 0, "required": true, "description": "Percentil 95.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "api_error_aggregated",
+      "classification": "proposed_opportunity",
+      "source": "Middleware FastAPI / gateway",
+      "category": "technical_reliability",
+      "description": "Errores agregados por ruta plantilla y clase de respuesta.",
+      "hypothesisDecision": "Necesitamos saber qué operación y clase de error dominan para decidir prioridad de corrección.",
+      "delivery": {"mode": "batch", "cadence": "Cada minuto; 5xx sostenido en stream"},
+      "privacy": {"containsSensitiveData": false, "handling": "Código controlado; sin detail, stack, body o URL con query."},
+      "allowlist": ["route_template", "status_class", "error_code", "occurrence_count"],
+      "properties": {
+        "route_template": {"type": "string", "required": true, "description": "Plantilla sin ID.", "sensitive": false},
+        "status_class": {"type": "string", "enum": ["4xx", "5xx"], "required": true, "description": "Clase.", "sensitive": false},
+        "error_code": {"type": "string", "enum": ["validation", "unauthorized", "forbidden", "not_found", "conflict", "insufficient_stock", "service_unavailable", "internal"], "required": true, "description": "Taxonomía interna allowlisted.", "sensitive": false},
+        "occurrence_count": {"type": "integer", "minimum": 1, "required": true, "description": "Conteo agrupado.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "frontend_route_viewed",
+      "classification": "proposed_opportunity",
+      "source": "Navegación de UI Next.js",
+      "category": "product_navigation",
+      "description": "Sección del backoffice vista.",
+      "hypothesisDecision": "Necesitamos demanda agregada por sección para decidir prioridades de navegación y soporte.",
+      "delivery": {"mode": "batch", "cadence": "Agregado por minuto; dedupe 30 s por sesión/ruta"},
+      "privacy": {"containsSensitiveData": true, "handling": "No query, fragment, ID, email, token ni URL libre; sessionId seudónimo."},
+      "allowlist": ["route_template", "section"],
+      "properties": {
+        "route_template": {"type": "string", "enum": ["/login", "/suppliers", "/inventory/products", "/inventory/orders", "/inventory/orders/inbound", "/inventory/orders/outbound", "/account/change-password", "/forgot-password", "/reset-password"], "required": true, "description": "Ruta canónica allowlisted.", "sensitive": false},
+        "section": {"type": "string", "enum": ["authentication", "suppliers", "inventory", "account"], "required": true, "description": "Sección.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "frontend_unhandled_error",
+      "classification": "proposed_opportunity",
+      "source": "Boundary/error handler cliente",
+      "category": "technical_reliability",
+      "description": "Excepción inesperada de UI.",
+      "hypothesisDecision": "Necesitamos errores por release/ruta para decidir qué regresiones corregir primero.",
+      "delivery": {"mode": "stream", "cadence": "Al primera ocurrencia por fingerprint/release; luego agregado"},
+      "privacy": {"containsSensitiveData": true, "handling": "Eliminar stack y mensaje crudo; mapear a error_code allowlisted."},
+      "allowlist": ["route_template", "error_code", "release"],
+      "properties": {
+        "route_template": {"type": "string", "required": true, "description": "Ruta canónica; sin path params ni query.", "sensitive": false},
+        "error_code": {"type": "string", "enum": ["render_failure", "network_failure", "chunk_load_failure", "unknown"], "required": true, "description": "Clase sanitizada.", "sensitive": false},
+        "release": {"type": "string", "pattern": "^[a-zA-Z0-9._-]{1,40}$", "required": true, "description": "Versión de despliegue no sensible.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "form_flow_started",
+      "classification": "proposed_opportunity",
+      "source": "Formularios de proveedor/orden",
+      "category": "product_funnel",
+      "description": "Operador inicia un flujo permitido.",
+      "hypothesisDecision": "Necesitamos el denominador de inicios para decidir conversión y priorizar formularios.",
+      "delivery": {"mode": "batch", "cadence": "Agregado diario"},
+      "privacy": {"containsSensitiveData": true, "handling": "Solo nombre de flujo; no valores ingresados."},
+      "allowlist": ["flow_id"],
+      "properties": {"flow_id": {"type": "string", "enum": ["supplier_create", "inventory_inbound", "inventory_outbound"], "required": true, "description": "Flujo controlado.", "sensitive": false}}
+    },
+    {
+      "event_type": "form_flow_abandoned",
+      "classification": "proposed_opportunity",
+      "source": "Formularios de proveedor/orden",
+      "category": "product_funnel",
+      "description": "Flujo sin envío completado al abandonar ruta/sesión.",
+      "hypothesisDecision": "Necesitamos la etapa de abandono para decidir cambios concretos en UX y validaciones.",
+      "delivery": {"mode": "batch", "cadence": "Beacon best-effort; reporte diario"},
+      "privacy": {"containsSensitiveData": true, "handling": "No texto/campos/datos; no atribuir abandono si beacon no confirma estado."},
+      "allowlist": ["flow_id", "step_id", "elapsed_seconds_bucket"],
+      "properties": {
+        "flow_id": {"type": "string", "enum": ["supplier_create", "inventory_inbound", "inventory_outbound"], "required": true, "description": "Flujo.", "sensitive": false},
+        "step_id": {"type": "string", "enum": ["opened", "product_selected", "validation_error", "ready_to_submit"], "required": true, "description": "Último hito alcanzado.", "sensitive": false},
+        "elapsed_seconds_bucket": {"type": "string", "enum": ["0_10", "11_60", "61_300", "over_300"], "required": true, "description": "Bucket de duración, no timestamp individual.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "supplier_filter_applied",
+      "classification": "proposed_opportunity",
+      "source": "Directorio backoffice",
+      "category": "product_navigation",
+      "description": "Filtro categórico del directorio aplicado.",
+      "hypothesisDecision": "Necesitamos patrones de filtro y tamaño de resultados para decidir categorías y filtros útiles.",
+      "delivery": {"mode": "batch", "cadence": "Agregado diario; debounce 500 ms"},
+      "privacy": {"containsSensitiveData": false, "handling": "Valores únicamente de enums conocidos; no query libre."},
+      "allowlist": ["country", "category", "result_count_bucket"],
+      "properties": {
+        "country": {"type": ["string", "null"], "enum": ["USA", "UK", null], "required": true, "description": "Filtro permitido.", "sensitive": false},
+        "category": {"type": ["string", "null"], "enum": ["medical_supplies", "laboratory_services", "pharmaceutical", "clinical_software", "it_infrastructure", "hr_and_payroll_software", "cleaning_and_facilities", "patient_communication", "billing_and_coding_software", "training_platforms", null], "required": true, "description": "Categoría enum.", "sensitive": false},
+        "result_count_bucket": {"type": "string", "enum": ["0", "1_5", "6_20", "over_20"], "required": true, "description": "Conteo agrupado.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "inventory_orders_viewed",
+      "classification": "proposed_opportunity",
+      "source": "GET /inventory/orders",
+      "category": "product_navigation",
+      "description": "Operador abre el historial de movimientos.",
+      "hypothesisDecision": "Necesitamos frecuencia de consultas para decidir paginación y capacidad del historial.",
+      "delivery": {"mode": "batch", "cadence": "Agregado diario; dedupe 30 s"},
+      "privacy": {"containsSensitiveData": true, "handling": "No order IDs, usuario actor ni contenido de filas; sesión pseudónima."},
+      "allowlist": ["view_mode"],
+      "properties": {"view_mode": {"type": "string", "const": "read_only_history", "required": true, "description": "Vista utilizada.", "sensitive": false}}
+    }
+  ]
+}
