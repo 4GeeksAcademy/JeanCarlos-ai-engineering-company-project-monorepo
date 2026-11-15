@@ -21,6 +21,8 @@ export async function POST(
     return NextResponse.json({ detail: "Ruta no encontrada." }, { status: 404 });
   }
   const headers = new Headers();
+  const requestId = request.headers.get("x-request-id");
+  if (requestId && /^[a-f0-9-]{36}$/i.test(requestId)) headers.set("X-Request-ID", requestId);
   let body: string;
   if (action === "login") {
     const data: unknown = await request.json().catch(() => null);
@@ -71,6 +73,8 @@ export async function POST(
       return NextResponse.json({ detail: "Respuesta inválida." }, { status: 502 });
     }
     const response = NextResponse.json({ message: "Sesión iniciada." });
+    const correlation = upstream.headers.get("x-request-id");
+    if (correlation) response.headers.set("X-Request-ID", correlation);
     response.cookies.set(SESSION_COOKIE, data.access_token, {
       httpOnly: true, secure: process.env.NODE_ENV === "production",
       sameSite: "strict", path: "/",
@@ -92,6 +96,8 @@ export async function POST(
     status: upstream.status,
     headers: { "Content-Type": upstream.headers.get("content-type") ?? "application/json" },
   });
+  const correlation = upstream.headers.get("x-request-id");
+  if (correlation) response.headers.set("X-Request-ID", correlation);
   if (action === "change-password" && upstream.ok) {
     response.cookies.delete(SESSION_COOKIE);
   }

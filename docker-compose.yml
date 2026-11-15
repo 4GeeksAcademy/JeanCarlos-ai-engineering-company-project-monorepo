@@ -5,6 +5,8 @@ services:
     init: true
     environment:
       SUPPLIERS_API_URL: http://api:8000
+      NEXT_PUBLIC_TELEMETRY_ENDPOINT: ${NEXT_PUBLIC_TELEMETRY_ENDPOINT:-/api/telemetry/events}
+      TELEMETRY_ENDPOINT: ${TELEMETRY_ENDPOINT:-http://api:8000/telemetry/events}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://playground.4geeks.com/tracker/api/v1}
     ports:
       - "127.0.0.1:3000:3000"
@@ -29,6 +31,7 @@ services:
       - ${COMPOSE_ENV_FILE:-.env}
     environment:
       SUPPLIERS_DB_PATH: /data/suppliers.json
+      TELEMETRY_ENDPOINT: ${TELEMETRY_ENDPOINT:-http://api:8000/telemetry/events}
     ports:
       - "127.0.0.1:8000:8000"
     volumes:

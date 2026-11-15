@@ -3,6 +3,7 @@ from json import JSONDecodeError
 import logging
 from threading import Lock
 from time import perf_counter
+from uuid import UUID, uuid4
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -10,7 +11,7 @@ from fastapi.responses import JSONResponse
 
 from .database import get_inventory_engine, open_database
 from .core.security import get_settings
-from .routes import auth, auth_password, profiles, suppliers, users
+from .routes import auth, auth_password, profiles, suppliers, telemetry, users
 from .routers import inventory
 from .schemas.errors import ErrorResponse, ValidationErrorResponse, ValidationIssue
 from .services.email import reset_expiration_minutes
@@ -23,6 +24,7 @@ timing_logger = logging.getLogger("api.timing")
 async def lifespan(app: FastAPI):
     get_settings()
     reset_expiration_minutes()
+    app.state.telemetry_endpoint = telemetry.telemetry_endpoint()
     database = open_database()
     app.state.database = database
     app.state.database_lock = Lock()
@@ -43,25 +45,31 @@ async def timing_middleware(request: Request, call_next):
     start = perf_counter()
     status_code = 500
     try:
+        request_id = str(UUID(request.headers.get("x-request-id", "")))
+    except ValueError:
+        request_id = str(uuid4())
+    try:
         response = await call_next(request)
         status_code = response.status_code
+        response.headers["X-Request-ID"] = request_id
         return response
     finally:
         route = request.scope.get("route")
         route_path = getattr(route, "path", "unmatched")
         duration_ms = (perf_counter() - start) * 1000
         timing_logger.info(
-            "%s %s -> %s | %.1fms",
+            "%s %s -> %s | %.1fms request_id=%s",
             request.method,
             route_path,
             status_code,
             duration_ms,
+            request_id,
         )
 
 
 @app.exception_handler(RequestValidationError)
 async def validation_error(_request: Request, error: RequestValidationError):
-    if _request.url.path in {"/login", "/auth/forgot-password", "/auth/reset-password"}:
+    if _request.url.path in {"/login", "/auth/forgot-password", "/auth/reset-password", "/telemetry/events"}:
         issues = [ValidationIssue(loc=["body"], msg="Invalid request", type="value_error")]
     else:
         issues = [
@@ -99,3 +107,4 @@ app.include_router(users.router)
 app.include_router(profiles.router)
 app.include_router(suppliers.router)
 app.include_router(inventory.router)
+app.include_router(telemetry.router)

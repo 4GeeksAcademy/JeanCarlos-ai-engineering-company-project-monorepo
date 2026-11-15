@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import TelemetryProvider from "@/components/TelemetryProvider";
 
 export const metadata: Metadata = {
   title: "HealthCore | Directorio de proveedores",
@@ -11,7 +12,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body><TelemetryProvider />{children}</body>
     </html>
   );
 }

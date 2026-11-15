@@ -136,6 +136,7 @@ def create_consumption(payload: SupplyConsumptionCreate, user: CurrentUser, sess
     if payload.quantity > available:
         raise HTTPException(
             status_code=400,
+            headers={"X-Available-Stock": str(available)},
             detail=(
                 f"Insufficient stock for supply '{supply.name}'. "
                 f"Available: {available}, requested: {payload.quantity}."

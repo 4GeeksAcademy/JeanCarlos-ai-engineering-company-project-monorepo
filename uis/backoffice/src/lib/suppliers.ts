@@ -5,6 +5,7 @@ import type {
   SupplierStatus,
 } from "@/types/supplier";
 import { CATEGORIES } from "@/types/supplier";
+import { telemetryFetch, track, withResponseTelemetry } from "@/services/telemetry";
 
 function isSupplier(value: unknown): value is Supplier {
   if (typeof value !== "object" || value === null) return false;
@@ -25,10 +26,14 @@ function isSupplier(value: unknown): value is Supplier {
     && typeof supplier.updated_at === "string";
 }
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+async function request<T>(
+  path: string,
+  options?: RequestInit,
+  capture?: (data: unknown, response: Response) => void,
+): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`/api/suppliers${path}`, {
+    response = await telemetryFetch(`/api/suppliers${path}`, {
       ...options,
       cache: "no-store",
       headers: { "Content-Type": "application/json", ...options?.headers },
@@ -62,14 +67,22 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error(detail);
   }
   try {
-    return await response.json() as T;
+    const data: unknown = await response.json();
+    capture?.(data, response);
+    return data as T;
   } catch {
     throw new Error("El servicio devolvió una respuesta inválida.");
   }
 }
 
-async function supplierRequest(path: string, options: RequestInit): Promise<Supplier> {
-  const result = await request<unknown>(path, options);
+async function supplierRequest(
+  path: string,
+  options: RequestInit,
+  capture?: (supplier: Supplier) => void,
+): Promise<Supplier> {
+  const result = await request<unknown>(path, options, (data, response) => {
+    if (capture && isSupplier(data)) withResponseTelemetry(response, () => capture(data));
+  });
   if (!isSupplier(result)) throw new Error("El servicio devolvió un proveedor inválido.");
   return result;
 }
@@ -81,7 +94,13 @@ export async function listSuppliers(
   const query = new URLSearchParams();
   if (filters.country) query.set("country", filters.country);
   if (filters.category) query.set("category", filters.category);
-  const result = await request<unknown>(`?${query}`, { signal });
+  const result = await request<unknown>(`?${query}`, { signal }, (data, response) => {
+    if (Array.isArray(data) && data.every(isSupplier)) withResponseTelemetry(response, () => track("supplier_filter_applied", {
+      country: filters.country || null,
+      category: filters.category || null,
+      result_count_bucket: data.length === 0 ? "0" : data.length <= 5 ? "1_5" : data.length <= 20 ? "6_20" : "over_20",
+    }));
+  });
   if (!Array.isArray(result) || !result.every(isSupplier)) {
     throw new Error("El servicio devolvió un listado inválido.");
   }
@@ -92,25 +111,38 @@ export async function createSupplier(payload: SupplierCreate): Promise<Supplier>
   return await supplierRequest("", {
     method: "POST",
     body: JSON.stringify(payload),
-  });
+  }, (supplier) => track("supplier_created", {
+    country: supplier.country, categories_count: supplier.categories.length, status: supplier.status,
+  }));
 }
 
 export async function updateSupplierRate(
   id: number,
   monthly_rate: number,
+  previous_rate?: number,
 ): Promise<Supplier> {
   return await supplierRequest(`/${id}/rate`, {
     method: "PATCH",
     body: JSON.stringify({ monthly_rate }),
+  }, (supplier) => {
+    if (previous_rate !== undefined) track("supplier_rate_updated", {
+      currency: supplier.currency,
+      change_band: supplier.monthly_rate === previous_rate ? "unchanged" : supplier.monthly_rate > previous_rate ? "increased" : "decreased",
+    });
   });
 }
 
 export async function updateSupplierStatus(
   id: number,
   status: SupplierStatus,
+  previous_status?: SupplierStatus,
 ): Promise<Supplier> {
   return await supplierRequest(`/${id}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
+  }, (supplier) => {
+    if (previous_status && previous_status !== supplier.status) track("supplier_status_changed", {
+      country: supplier.country, previous_status, new_status: supplier.status,
+    });
   });
 }

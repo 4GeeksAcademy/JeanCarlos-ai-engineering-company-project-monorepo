@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { createInbound, createOutbound, InventoryError, listProducts, useInventoryError } from "@/lib/inventory";
 import type { Product } from "@/types/inventory";
+import { useTelemetryFlow } from "@/lib/useTelemetryFlow";
 
 export default function InventoryMovementForm({
   direction,
@@ -23,6 +24,7 @@ export default function InventoryMovementForm({
   const [busy, setBusy] = useState(false);
   const [reload, setReload] = useState(0);
   const errorMessage = useInventoryError();
+  const telemetryFlow = useTelemetryFlow(direction === "inbound" ? "inventory_inbound" : "inventory_outbound");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -53,9 +55,11 @@ export default function InventoryMovementForm({
     if (!selectedProduct || !Number.isInteger(amount) || amount < 1 || amount > 2147483647 ||
       !Number.isInteger(clinic) || clinic < 1 || clinic > 12 || (direction === "inbound" && !vendor.trim())) {
       setError("Comprueba el producto, la cantidad, la clínica y los demás campos obligatorios.");
+      telemetryFlow.invalid();
       return;
     }
     setBusy(true);
+    telemetryFlow.submitting();
     setError("");
     setMessage("");
     try {
@@ -65,6 +69,7 @@ export default function InventoryMovementForm({
       } else {
         await createOutbound({ ...movement, consumption_type: consumptionType });
       }
+      telemetryFlow.completed();
       setQuantity("");
       setMessage(direction === "inbound" ? "Entrada registrada." : "Salida registrada.");
       try {
@@ -87,6 +92,7 @@ export default function InventoryMovementForm({
         setError(`${detail} Comprueba el historial antes de volver a enviar.`);
       }
     } finally {
+      telemetryFlow.settled();
       setBusy(false);
     }
   }
@@ -102,10 +108,13 @@ export default function InventoryMovementForm({
           <button type="button" onClick={() => { setError(""); setState("loading"); setReload((n) => n + 1); }}>Reintentar carga</button>
         )}
         {state === "ready" && (
-          <form className="auth-form" onSubmit={submit}>
+          <form className="auth-form" onSubmit={submit} onChangeCapture={telemetryFlow.changed} onInvalid={telemetryFlow.invalid}>
             <label>
               Producto
-              <select required value={selectedProduct ? supplyId : ""} onChange={(event) => setSupplyId(event.target.value)}>
+              <select required value={selectedProduct ? supplyId : ""} onChange={(event) => {
+                setSupplyId(event.target.value);
+                telemetryFlow.productSelected();
+              }}>
                 <option value="">Selecciona un producto</option>
                 {products.map((product) => <option key={product.id} value={product.id}>{product.name} ({product.sku})</option>)}
               </select>

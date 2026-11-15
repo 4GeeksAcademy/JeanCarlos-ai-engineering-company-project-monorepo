@@ -44,7 +44,7 @@ export default function SupplierRow({ supplier, onUpdated }: Props) {
       return;
     }
     await save(
-      async () => await updateSupplierRate(supplier.id, value),
+      async () => await updateSupplierRate(supplier.id, value, supplier.monthly_rate),
       "Tarifa actualizada.",
       "rate",
     );
@@ -106,6 +106,7 @@ export default function SupplierRow({ supplier, onUpdated }: Props) {
                 await updateSupplierStatus(
                   supplier.id,
                   supplier.status === "active" ? "suspended" : "active",
+                  supplier.status,
                 ),
               "Estado actualizado.",
               "status",

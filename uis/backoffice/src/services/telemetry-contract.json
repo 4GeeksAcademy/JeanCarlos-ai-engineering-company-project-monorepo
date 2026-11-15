@@ -1,0 +1,1180 @@
+{
+  "schemaVersion": "1.0.0",
+  "events": [
+    {
+      "event_type": "inventory_inbound_order_created",
+      "allowlist": [
+        "order_id",
+        "supply_id",
+        "quantity",
+        "clinic_id",
+        "country"
+      ],
+      "properties": {
+        "order_id": {
+          "type": "integer",
+          "required": true
+        },
+        "supply_id": {
+          "type": "integer",
+          "required": true
+        },
+        "quantity": {
+          "type": "integer",
+          "required": true
+        },
+        "clinic_id": {
+          "type": "integer",
+          "required": true
+        },
+        "country": {
+          "type": "string",
+          "enum": [
+            "US",
+            "UK"
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "inventory_outbound_order_created",
+      "allowlist": [
+        "order_id",
+        "supply_id",
+        "quantity",
+        "clinic_id",
+        "consumption_type",
+        "country"
+      ],
+      "properties": {
+        "order_id": {
+          "type": "integer",
+          "required": true
+        },
+        "supply_id": {
+          "type": "integer",
+          "required": true
+        },
+        "quantity": {
+          "type": "integer",
+          "required": true
+        },
+        "clinic_id": {
+          "type": "integer",
+          "required": true
+        },
+        "consumption_type": {
+          "type": "string",
+          "enum": [
+            "clinical_use",
+            "expiry_waste"
+          ],
+          "required": true
+        },
+        "country": {
+          "type": "string",
+          "enum": [
+            "US",
+            "UK"
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "inventory_order_validation_failed",
+      "allowlist": [
+        "operation",
+        "field_names",
+        "error_codes",
+        "occurrence_count"
+      ],
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": [
+            "inbound",
+            "outbound"
+          ],
+          "required": true
+        },
+        "field_names": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "supply_id",
+              "quantity",
+              "clinic_id",
+              "vendor_name",
+              "consumption_type"
+            ]
+          },
+          "required": true
+        },
+        "error_codes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "missing",
+              "invalid_type",
+              "out_of_range",
+              "invalid_choice",
+              "extra_forbidden"
+            ]
+          },
+          "required": true
+        },
+        "occurrence_count": {
+          "type": "integer",
+          "minimum": 1,
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "inventory_direct_stock_edit_rejected",
+      "allowlist": [
+        "attempted_method",
+        "route_template",
+        "response_status",
+        "detection_source"
+      ],
+      "properties": {
+        "attempted_method": {
+          "type": "string",
+          "enum": [
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE"
+          ],
+          "required": true
+        },
+        "route_template": {
+          "type": "string",
+          "const": "/inventory/products/{supply_id}/stock",
+          "required": true
+        },
+        "response_status": {
+          "type": "integer",
+          "enum": [
+            403,
+            404,
+            405
+          ],
+          "required": true
+        },
+        "detection_source": {
+          "type": "string",
+          "const": "trusted_gateway",
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "inventory_stock_threshold_triggered",
+      "allowlist": [
+        "supply_id",
+        "current_stock",
+        "threshold",
+        "unit"
+      ],
+      "properties": {
+        "supply_id": {
+          "type": "integer",
+          "required": true
+        },
+        "current_stock": {
+          "type": "integer",
+          "minimum": 0,
+          "required": true
+        },
+        "threshold": {
+          "type": "integer",
+          "const": 10,
+          "required": true
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "box",
+            "unit",
+            "pack",
+            "vial"
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "inventory_outbound_insufficient_stock_rejected",
+      "allowlist": [
+        "supply_id",
+        "available_quantity",
+        "requested_quantity",
+        "clinic_id"
+      ],
+      "properties": {
+        "supply_id": {
+          "type": "integer",
+          "required": true
+        },
+        "available_quantity": {
+          "type": "integer",
+          "minimum": 0,
+          "required": true
+        },
+        "requested_quantity": {
+          "type": "integer",
+          "minimum": 1,
+          "required": true
+        },
+        "clinic_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12,
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "claim_denial_rate_calculated",
+      "allowlist": [
+        "group_by",
+        "payerId",
+        "locationId",
+        "periodStart",
+        "periodEnd",
+        "claimsTotal",
+        "claimsDenied",
+        "denialRatePercent",
+        "thresholdPercent"
+      ],
+      "properties": {
+        "group_by": {
+          "type": "string",
+          "enum": [
+            "payerId",
+            "locationId"
+          ],
+          "required": true
+        },
+        "payerId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
+        "locationId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
+        "periodStart": {
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        "periodEnd": {
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        "claimsTotal": {
+          "type": "integer",
+          "minimum": 1,
+          "required": true
+        },
+        "claimsDenied": {
+          "type": "integer",
+          "minimum": 0,
+          "required": true
+        },
+        "denialRatePercent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "required": true
+        },
+        "thresholdPercent": {
+          "type": "number",
+          "const": 8,
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "claim_high_denial_rate_flagged",
+      "allowlist": [
+        "payerId",
+        "periodStart",
+        "periodEnd",
+        "denialRatePercent",
+        "thresholdPercent",
+        "claimsTotal"
+      ],
+      "properties": {
+        "payerId": {
+          "type": "string",
+          "required": true
+        },
+        "periodStart": {
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        "periodEnd": {
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        "denialRatePercent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "required": true
+        },
+        "thresholdPercent": {
+          "type": "number",
+          "const": 8,
+          "required": true
+        },
+        "claimsTotal": {
+          "type": "integer",
+          "minimum": 10,
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "appointment_no_show_cost_calculated",
+      "allowlist": [
+        "locationId",
+        "periodStart",
+        "periodEnd",
+        "noShowCount",
+        "estimatedLossUsd"
+      ],
+      "properties": {
+        "locationId": {
+          "type": "string",
+          "required": true
+        },
+        "periodStart": {
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        "periodEnd": {
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        "noShowCount": {
+          "type": "integer",
+          "minimum": 0,
+          "required": true
+        },
+        "estimatedLossUsd": {
+          "type": "number",
+          "minimum": 0,
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "appointment_no_show_rate_calculated",
+      "allowlist": [
+        "locationId",
+        "periodStart",
+        "periodEnd",
+        "appointmentsTotal",
+        "noShowCount",
+        "noShowRatePercent",
+        "thresholdPercent"
+      ],
+      "properties": {
+        "locationId": {
+          "type": "string",
+          "required": true
+        },
+        "periodStart": {
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        "periodEnd": {
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        "appointmentsTotal": {
+          "type": "integer",
+          "minimum": 1,
+          "required": true
+        },
+        "noShowCount": {
+          "type": "integer",
+          "minimum": 0,
+          "required": true
+        },
+        "noShowRatePercent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "required": true
+        },
+        "thresholdPercent": {
+          "type": "number",
+          "const": 20,
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "appointment_high_no_show_rate_flagged",
+      "allowlist": [
+        "locationId",
+        "periodStart",
+        "periodEnd",
+        "noShowRatePercent",
+        "thresholdPercent",
+        "appointmentsTotal"
+      ],
+      "properties": {
+        "locationId": {
+          "type": "string",
+          "required": true
+        },
+        "periodStart": {
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        "periodEnd": {
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        "noShowRatePercent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "required": true
+        },
+        "thresholdPercent": {
+          "type": "number",
+          "const": 20,
+          "required": true
+        },
+        "appointmentsTotal": {
+          "type": "integer",
+          "minimum": 10,
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "clinician_cme_report_generated",
+      "allowlist": [
+        "cycleStart",
+        "asOfDate",
+        "clinicianCount",
+        "onTrackCount",
+        "atRiskCount",
+        "overdueCount",
+        "completeCount",
+        "hoursRequiredByRole",
+        "atRiskGapPercentagePoints"
+      ],
+      "properties": {
+        "cycleStart": {
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        "asOfDate": {
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        "clinicianCount": {
+          "type": "integer",
+          "minimum": 10,
+          "required": true
+        },
+        "onTrackCount": {
+          "type": "integer",
+          "minimum": 0,
+          "required": true
+        },
+        "atRiskCount": {
+          "type": "integer",
+          "minimum": 0,
+          "required": true
+        },
+        "overdueCount": {
+          "type": "integer",
+          "minimum": 0,
+          "required": true
+        },
+        "completeCount": {
+          "type": "integer",
+          "minimum": 0,
+          "required": true
+        },
+        "hoursRequiredByRole": {
+          "type": "object",
+          "required": true,
+          "additionalProperties": false,
+          "properties": {
+            "physician": {
+              "type": "integer",
+              "const": 40
+            },
+            "nurse_practitioner": {
+              "type": "integer",
+              "const": 30
+            }
+          }
+        },
+        "atRiskGapPercentagePoints": {
+          "type": "number",
+          "const": 15,
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "clinician_cme_at_risk_detected",
+      "allowlist": [
+        "asOfDate",
+        "atRiskCount",
+        "overdueCount",
+        "atRiskGapPercentagePoints"
+      ],
+      "properties": {
+        "asOfDate": {
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        "atRiskCount": {
+          "type": "integer",
+          "minimum": 0,
+          "required": true
+        },
+        "overdueCount": {
+          "type": "integer",
+          "minimum": 0,
+          "required": true
+        },
+        "atRiskGapPercentagePoints": {
+          "type": "number",
+          "const": 15,
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "clinician_license_alert_triggered",
+      "allowlist": [
+        "asOfDate",
+        "windowDays",
+        "alertLevel",
+        "clinicianCount"
+      ],
+      "properties": {
+        "asOfDate": {
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        "windowDays": {
+          "type": "integer",
+          "enum": [
+            90,
+            30
+          ],
+          "required": true
+        },
+        "alertLevel": {
+          "type": "string",
+          "enum": [
+            "warning",
+            "urgent"
+          ],
+          "required": true
+        },
+        "clinicianCount": {
+          "type": "integer",
+          "minimum": 10,
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "auth_login_succeeded",
+      "allowlist": [
+        "role"
+      ],
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": [
+            "admin",
+            "manager",
+            "user"
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "auth_login_failed",
+      "allowlist": [
+        "failure_reason"
+      ],
+      "properties": {
+        "failure_reason": {
+          "type": "string",
+          "enum": [
+            "invalid_credentials",
+            "rate_limited",
+            "service_unavailable"
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "auth_session_rejected",
+      "allowlist": [
+        "reason_code",
+        "route_template"
+      ],
+      "properties": {
+        "reason_code": {
+          "type": "string",
+          "enum": [
+            "expired",
+            "revoked",
+            "invalid",
+            "missing"
+          ],
+          "required": true
+        },
+        "route_template": {
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "auth_password_recovery_requested",
+      "allowlist": [
+        "outcome"
+      ],
+      "properties": {
+        "outcome": {
+          "type": "string",
+          "const": "accepted_neutral",
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "user_admin_action_completed",
+      "allowlist": [
+        "action",
+        "outcome",
+        "actor_role"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "list",
+            "create",
+            "read",
+            "update",
+            "delete"
+          ],
+          "required": true
+        },
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "success",
+            "denied",
+            "not_found",
+            "conflict",
+            "invalid"
+          ],
+          "required": true
+        },
+        "actor_role": {
+          "type": "string",
+          "enum": [
+            "admin",
+            "manager",
+            "user"
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "profile_access_denied",
+      "allowlist": [
+        "action",
+        "actor_role",
+        "reason_code"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "read",
+            "update",
+            "change_owner"
+          ],
+          "required": true
+        },
+        "actor_role": {
+          "type": "string",
+          "enum": [
+            "admin",
+            "manager",
+            "user"
+          ],
+          "required": true
+        },
+        "reason_code": {
+          "type": "string",
+          "enum": [
+            "not_owner",
+            "role_required",
+            "invalid_owner"
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "supplier_created",
+      "allowlist": [
+        "country",
+        "categories_count",
+        "status"
+      ],
+      "properties": {
+        "country": {
+          "type": "string",
+          "enum": [
+            "USA",
+            "UK"
+          ],
+          "required": true
+        },
+        "categories_count": {
+          "type": "integer",
+          "minimum": 1,
+          "required": true
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "suspended"
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "supplier_rate_updated",
+      "allowlist": [
+        "currency",
+        "change_band"
+      ],
+      "properties": {
+        "currency": {
+          "type": "string",
+          "enum": [
+            "USD",
+            "GBP"
+          ],
+          "required": true
+        },
+        "change_band": {
+          "type": "string",
+          "enum": [
+            "decreased",
+            "unchanged",
+            "increased"
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "supplier_status_changed",
+      "allowlist": [
+        "country",
+        "previous_status",
+        "new_status"
+      ],
+      "properties": {
+        "country": {
+          "type": "string",
+          "enum": [
+            "USA",
+            "UK"
+          ],
+          "required": true
+        },
+        "previous_status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "suspended"
+          ],
+          "required": true
+        },
+        "new_status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "suspended"
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "inventory_product_created",
+      "allowlist": [
+        "category",
+        "unit",
+        "country"
+      ],
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": [
+            "ppe",
+            "wound_care",
+            "diagnostics",
+            "medications",
+            "consumables"
+          ],
+          "required": true
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "box",
+            "unit",
+            "pack",
+            "vial"
+          ],
+          "required": true
+        },
+        "country": {
+          "type": "string",
+          "enum": [
+            "US",
+            "UK"
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "api_latency_aggregated",
+      "allowlist": [
+        "route_template",
+        "method",
+        "status_class",
+        "request_count",
+        "p50_ms",
+        "p95_ms"
+      ],
+      "properties": {
+        "route_template": {
+          "type": "string",
+          "required": true
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE"
+          ],
+          "required": true
+        },
+        "status_class": {
+          "type": "string",
+          "enum": [
+            "2xx",
+            "3xx",
+            "4xx",
+            "5xx"
+          ],
+          "required": true
+        },
+        "request_count": {
+          "type": "integer",
+          "minimum": 1,
+          "required": true
+        },
+        "p50_ms": {
+          "type": "number",
+          "minimum": 0,
+          "required": true
+        },
+        "p95_ms": {
+          "type": "number",
+          "minimum": 0,
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "api_error_aggregated",
+      "allowlist": [
+        "route_template",
+        "status_class",
+        "error_code",
+        "occurrence_count"
+      ],
+      "properties": {
+        "route_template": {
+          "type": "string",
+          "required": true
+        },
+        "status_class": {
+          "type": "string",
+          "enum": [
+            "4xx",
+            "5xx"
+          ],
+          "required": true
+        },
+        "error_code": {
+          "type": "string",
+          "enum": [
+            "validation",
+            "unauthorized",
+            "forbidden",
+            "not_found",
+            "conflict",
+            "insufficient_stock",
+            "service_unavailable",
+            "internal"
+          ],
+          "required": true
+        },
+        "occurrence_count": {
+          "type": "integer",
+          "minimum": 1,
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "frontend_route_viewed",
+      "allowlist": [
+        "route_template",
+        "section"
+      ],
+      "properties": {
+        "route_template": {
+          "type": "string",
+          "enum": [
+            "/login",
+            "/suppliers",
+            "/inventory/products",
+            "/inventory/orders",
+            "/inventory/orders/inbound",
+            "/inventory/orders/outbound",
+            "/account/change-password",
+            "/forgot-password",
+            "/reset-password"
+          ],
+          "required": true
+        },
+        "section": {
+          "type": "string",
+          "enum": [
+            "authentication",
+            "suppliers",
+            "inventory",
+            "account"
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "frontend_unhandled_error",
+      "allowlist": [
+        "route_template",
+        "error_code",
+        "release"
+      ],
+      "properties": {
+        "route_template": {
+          "type": "string",
+          "required": true
+        },
+        "error_code": {
+          "type": "string",
+          "enum": [
+            "render_failure",
+            "network_failure",
+            "chunk_load_failure",
+            "unknown"
+          ],
+          "required": true
+        },
+        "release": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9._-]{1,40}$",
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "form_flow_started",
+      "allowlist": [
+        "flow_id"
+      ],
+      "properties": {
+        "flow_id": {
+          "type": "string",
+          "enum": [
+            "supplier_create",
+            "inventory_inbound",
+            "inventory_outbound"
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "form_flow_abandoned",
+      "allowlist": [
+        "flow_id",
+        "step_id",
+        "elapsed_seconds_bucket"
+      ],
+      "properties": {
+        "flow_id": {
+          "type": "string",
+          "enum": [
+            "supplier_create",
+            "inventory_inbound",
+            "inventory_outbound"
+          ],
+          "required": true
+        },
+        "step_id": {
+          "type": "string",
+          "enum": [
+            "opened",
+            "product_selected",
+            "validation_error",
+            "ready_to_submit"
+          ],
+          "required": true
+        },
+        "elapsed_seconds_bucket": {
+          "type": "string",
+          "enum": [
+            "0_10",
+            "11_60",
+            "61_300",
+            "over_300"
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "supplier_filter_applied",
+      "allowlist": [
+        "country",
+        "category",
+        "result_count_bucket"
+      ],
+      "properties": {
+        "country": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "USA",
+            "UK",
+            null
+          ],
+          "required": true
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "medical_supplies",
+            "laboratory_services",
+            "pharmaceutical",
+            "clinical_software",
+            "it_infrastructure",
+            "hr_and_payroll_software",
+            "cleaning_and_facilities",
+            "patient_communication",
+            "billing_and_coding_software",
+            "training_platforms",
+            null
+          ],
+          "required": true
+        },
+        "result_count_bucket": {
+          "type": "string",
+          "enum": [
+            "0",
+            "1_5",
+            "6_20",
+            "over_20"
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "inventory_orders_viewed",
+      "allowlist": [
+        "view_mode"
+      ],
+      "properties": {
+        "view_mode": {
+          "type": "string",
+          "const": "read_only_history",
+          "required": true
+        }
+      }
+    }
+  ]
+}
