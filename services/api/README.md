@@ -37,3 +37,21 @@ removed or demoted.
 Tokens expire according to `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`. Password changes
 invalidate existing tokens; user deletion also invalidates them. Role checks use
 the current database value on every request.
+
+## Password recovery
+
+Configure `RESEND_API_KEY`, `RESEND_FROM_EMAIL` (a verified Resend sender) and
+`FRONTEND_BASE_URL` (the backoffice origin; HTTPS except for localhost).
+`PASSWORD_RESET_EXPIRE_MINUTES` is optional and defaults to 30. The
+administrator can assign a unique `email` when creating or updating users;
+existing users without one cannot recover their passwords until it is assigned.
+The bootstrap command also accepts an optional administrator email.
+
+`POST /auth/forgot-password` accepts `{"email":"..."}` and returns a neutral
+message whether or not the account exists. Delivery failures are logged without
+the address or token. `POST /auth/reset-password` accepts `token` and
+`new_password`; links expire and are single-use. `POST /auth/change-password`
+requires a bearer token, `current_password` and `new_password`. A password or
+email change invalidates existing access and reset tokens, so users must sign
+in again. Apply rate limits to login and password recovery at the deployment
+gateway, and avoid logging query strings containing reset tokens.

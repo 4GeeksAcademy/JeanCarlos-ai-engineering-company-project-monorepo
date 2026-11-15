@@ -27,13 +27,18 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Abrir <http://localhost:3001/suppliers>. Permite filtrar por país/categoría,
+Abrir <http://localhost:3001/login>. Permite filtrar por país/categoría,
 registrar proveedores, editar tarifas y activar/suspender cada fila sin recargar
 la página. Los estados de carga, éxito y error son visibles.
 
 `SUPPLIERS_API_URL` configura el destino del proxy Next.js (por defecto
 `http://127.0.0.1:8000`); no es una variable pública del navegador.
-Las peticiones usan `/api/suppliers` en el mismo origen, sin necesitar CORS.
+Las peticiones pasan por rutas servidoras del mismo origen, sin necesitar CORS.
+La sesión se almacena en una cookie HttpOnly; en producción se requiere HTTPS.
+El proxy de despliegue debe validar el host público y sobrescribir las cabeceras
+`Host` y `X-Forwarded-Proto` con los valores confiables de la petición.
+El enlace de recuperación usa Resend y requiere la configuración descrita en la
+[guía de autenticación](../services/api/README.md#password-recovery).
 Configurar la variable antes de `npm run build` y reconstruir si cambia el destino.
 
 Validación desde `uis/backoffice/`:

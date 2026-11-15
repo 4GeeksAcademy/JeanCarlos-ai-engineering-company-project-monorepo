@@ -33,7 +33,11 @@ def get_current_user(
         raise unauthorized from exc
     subject = claims.get("sub")
     version = claims.get("token_version")
-    if not isinstance(subject, str) or type(version) is not int:
+    if (
+        not isinstance(subject, str)
+        or type(version) is not int
+        or claims.get("purpose", "access") != "access"
+    ):
         raise unauthorized
     record = database.table("users").get(Query().id == subject)
     if record is None:

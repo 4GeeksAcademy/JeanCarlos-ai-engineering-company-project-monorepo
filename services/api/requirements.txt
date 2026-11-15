@@ -6,3 +6,4 @@ libpass[bcrypt]>=1,<2
 python-jose[cryptography]>=3.3,<4
 python-dotenv>=1,<2
 python-multipart>=0.0.9,<1
+resend>=2,<3

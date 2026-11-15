@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import SupplierForm from "@/components/SupplierForm";
 import SupplierRow from "@/components/SupplierRow";
 import { createSupplier, listSuppliers } from "@/lib/suppliers";
@@ -85,6 +86,7 @@ export default function SuppliersPage() {
         <p>HealthCore Digital</p>
         <h1>Directorio de proveedores</h1>
         <p>Gestion de servicios, tarifas mensuales y acuerdos de cumplimiento.</p>
+        <p><Link href="/account/change-password">Cambiar contraseña</Link></p>
       </header>
       <section className="panel" aria-labelledby="directory-title">
         <h2 id="directory-title">Proveedores</h2>

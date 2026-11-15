@@ -7,12 +7,14 @@ from fastapi.responses import JSONResponse
 
 from .database import open_database
 from .core.security import get_settings
-from .routes import auth, profiles, suppliers, users
+from .routes import auth, auth_password, profiles, suppliers, users
+from .services.email import reset_expiration_minutes
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     get_settings()
+    reset_expiration_minutes()
     database = open_database()
     app.state.database = database
     app.state.database_lock = Lock()
@@ -40,6 +42,7 @@ async def validation_error(_request: Request, error: RequestValidationError):
 
 
 app.include_router(auth.router)
+app.include_router(auth_password.router)
 app.include_router(users.router)
 app.include_router(profiles.router)
 app.include_router(suppliers.router)

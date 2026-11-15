@@ -59,6 +59,23 @@ def create_access_token(user: User) -> str:
             "iat": now,
             "exp": now + timedelta(minutes=settings.access_token_expire_minutes),
             "token_version": user.token_version,
+            "purpose": "access",
+        },
+        settings.secret,
+        algorithm=settings.algorithm,
+    )
+
+
+def create_password_reset_token(user: User, expiration_minutes: int) -> str:
+    settings = get_settings()
+    now = datetime.now(timezone.utc)
+    return jwt.encode(
+        {
+            "sub": user.id,
+            "iat": now,
+            "exp": now + timedelta(minutes=expiration_minutes),
+            "token_version": user.token_version,
+            "purpose": "password_reset",
         },
         settings.secret,
         algorithm=settings.algorithm,

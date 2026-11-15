@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 class Role(str, Enum):
@@ -25,6 +25,7 @@ def validate_password_bytes(value: str) -> str:
 
 class UserCreate(InputModel):
     username: str = Field(min_length=3, max_length=64, pattern=r"^[a-zA-Z0-9_.-]+$")
+    email: EmailStr | None = None
     password: str = Field(min_length=8)
     role: Role
 
@@ -39,6 +40,7 @@ class UserUpdate(InputModel):
         default=None, min_length=3, max_length=64, pattern=r"^[a-zA-Z0-9_.-]+$"
     )
     password: str | None = Field(default=None, min_length=8)
+    email: EmailStr | None = None
     role: Role | None = None
 
     @field_validator("password")
@@ -50,6 +52,7 @@ class UserUpdate(InputModel):
 class User(BaseModel):
     id: str
     username: str
+    email: EmailStr | None = None
     role: Role
     hashed_password: str
     token_version: int = 0
@@ -58,6 +61,7 @@ class User(BaseModel):
 class UserResponse(BaseModel):
     id: str
     username: str
+    email: EmailStr | None = None
     role: Role
 
 
@@ -77,3 +81,27 @@ class Profile(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class ForgotPassword(InputModel):
+    email: EmailStr
+
+
+class ResetPassword(InputModel):
+    token: str = Field(min_length=1, max_length=4096)
+    new_password: str = Field(min_length=8)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password(cls, value: str) -> str:
+        return validate_password_bytes(value)
+
+
+class ChangePassword(InputModel):
+    current_password: str
+    new_password: str = Field(min_length=8)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password(cls, value: str) -> str:
+        return validate_password_bytes(value)
