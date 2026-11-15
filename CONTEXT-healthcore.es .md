@@ -8,7 +8,7 @@
 ---
 
 ## Sobre HealthCore
-
+a
 HealthCore es una empresa de servicios de salud ambulatorios que opera 12 clínicas en Estados Unidos (Texas, Florida, Georgia) y Reino Unido (Londres, Mánchester). Formas parte de HealthCore Digital, la unidad interna de tecnología creada para modernizar los flujos clínicos y operativos. La empresa procesa alrededor de 600 visitas de pacientes por semana, gestiona facturación de seguros en sistemas de EE. UU. y Reino Unido, y emplea a más de 200 personas entre personal clínico y administrativo.
 
 ---
