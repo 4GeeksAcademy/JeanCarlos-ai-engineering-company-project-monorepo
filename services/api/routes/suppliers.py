@@ -6,7 +6,7 @@ from tinydb import TinyDB
 from tinydb.table import Document
 
 from ..database import get_database
-from ..core.dependencies import get_current_user
+from ..core.dependencies import CurrentUser, get_current_user
 from ..models import (
     Category,
     Country,
@@ -16,6 +16,7 @@ from ..models import (
     SupplierResponse,
     SupplierStatusUpdate,
 )
+from ..services.cache import response_cache
 
 router = APIRouter(
     prefix="/suppliers", tags=["suppliers"], dependencies=[Depends(get_current_user)]
@@ -38,15 +39,22 @@ def supplier_response(supplier: Document) -> SupplierResponse:
 @router.get("", response_model=list[SupplierListItem])
 def list_suppliers(
     database: Database,
+    user: CurrentUser,
     country: Country | None = None,
     category: Category | None = None,
 ):
-    return [
+    cache_key = (user.id, country.value if country else None, category.value if category else None)
+    hit, cached, version = response_cache.get("suppliers", cache_key)
+    if hit:
+        return cached
+    result = [
         SupplierListItem.model_validate({**supplier, "id": supplier.doc_id})
         for supplier in database.all()
         if (country is None or supplier["country"] == country.value)
         and (category is None or category.value in supplier["categories"])
     ]
+    response_cache.set("suppliers", cache_key, result, ttl_seconds=30, expected_version=version)
+    return result
 
 
 @router.post(
@@ -56,6 +64,7 @@ def create_supplier(payload: SupplierCreate, database: Database):
     data = payload.model_dump(mode="json")
     data["updated_at"] = datetime.now(timezone.utc).isoformat()
     supplier_id = database.insert(data)
+    response_cache.invalidate("suppliers")
     return supplier_response(find_supplier(database, supplier_id))
 
 
@@ -76,6 +85,7 @@ def replace_supplier(
         else existing["updated_at"]
     )
     database.update(data, doc_ids=[supplier_id])
+    response_cache.invalidate("suppliers")
     return supplier_response(find_supplier(database, supplier_id))
 
 
@@ -91,6 +101,7 @@ def update_rate(
         },
         doc_ids=[supplier_id],
     )
+    response_cache.invalidate("suppliers")
     return supplier_response(find_supplier(database, supplier_id))
 
 
@@ -100,4 +111,5 @@ def update_status(
 ):
     find_supplier(database, supplier_id)
     database.update(payload.model_dump(mode="json"), doc_ids=[supplier_id])
+    response_cache.invalidate("suppliers")
     return supplier_response(find_supplier(database, supplier_id))

@@ -1,16 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import dynamic from "next/dynamic";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CandidateForm } from "@/components/candidate-form";
 import {
-  addCandidateNote,
-  deleteCandidateNote,
   getCandidate,
-  getCandidateNotes,
   patchCandidate,
 } from "@/lib/api";
-import { candidateStages, candidateStatuses, type Candidate, type CandidateNote, type CandidateStage, type CandidateStatus } from "@/types/tracker";
+import { candidateStages, candidateStatuses, type Candidate, type CandidateStage, type CandidateStatus } from "@/types/tracker";
+
+const CandidateNotes = dynamic(
+  () => import("@/components/candidate-notes").then((module) => module.CandidateNotes),
+  { loading: () => <p role="status">Cargando seguimiento…</p> },
+);
 
 const statusLabels: Record<CandidateStatus, string> = {
   received: "Recibida",
@@ -48,18 +51,13 @@ interface CandidateDetailProps {
 
 export function CandidateDetail({ id }: CandidateDetailProps) {
   const [candidate, setCandidate] = useState<Candidate | null>(null);
-  const [notes, setNotes] = useState<CandidateNote[]>([]);
+  const [notesOpen, setNotesOpen] = useState(false);
   const [loadState, setLoadState] = useState<"loading" | "success" | "error">("loading");
-  const [notesState, setNotesState] = useState<"loading" | "success" | "error">("loading");
   const [error, setError] = useState("");
-  const [notesError, setNotesError] = useState("");
   const [mutationError, setMutationError] = useState("");
   const [feedback, setFeedback] = useState("");
   const [updating, setUpdating] = useState<"status" | "stage" | null>(null);
-  const [noteBusy, setNoteBusy] = useState(false);
-  const [deletingNote, setDeletingNote] = useState<string | null>(null);
   const candidateRequestId = useRef(0);
-  const notesRequestId = useRef(0);
 
   const loadCandidate = useCallback(async () => {
     const currentRequest = ++candidateRequestId.current;
@@ -77,33 +75,13 @@ export function CandidateDetail({ id }: CandidateDetailProps) {
     }
   }, [id]);
 
-  const loadNotes = useCallback(async () => {
-    const currentRequest = ++notesRequestId.current;
-    setNotesState("loading");
-    setNotesError("");
-    try {
-      const result = await getCandidateNotes(id);
-      if (currentRequest !== notesRequestId.current) return;
-      setNotes(result);
-      setNotesState("success");
-    } catch (loadError) {
-      if (currentRequest !== notesRequestId.current) return;
-      setNotesError(loadError instanceof Error ? loadError.message : "No se pudieron cargar las notas.");
-      setNotesState("error");
-    }
-  }, [id]);
-
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void loadCandidate();
-      void loadNotes();
-    }, 0);
+    const timer = window.setTimeout(() => void loadCandidate(), 0);
     return () => {
       window.clearTimeout(timer);
       candidateRequestId.current += 1;
-      notesRequestId.current += 1;
     };
-  }, [loadCandidate, loadNotes]);
+  }, [loadCandidate]);
 
   async function updatePipeline(field: "status" | "stage", value: CandidateStatus | CandidateStage) {
     if (!candidate) return;
@@ -118,46 +96,6 @@ export function CandidateDetail({ id }: CandidateDetailProps) {
       setMutationError(updateError instanceof Error ? updateError.message : "No se pudo actualizar el pipeline.");
     } finally {
       setUpdating(null);
-    }
-  }
-
-  async function submitNote(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!candidate) return;
-    const form = event.currentTarget;
-    const content = String(new FormData(form).get("content") ?? "").trim();
-    if (!content) return;
-    setNoteBusy(true);
-    setMutationError("");
-    setFeedback("");
-    try {
-      await addCandidateNote(candidate.id, content);
-      await loadNotes();
-      setCandidate((current) => current ? { ...current, notes_count: current.notes_count + 1 } : current);
-      form.reset();
-      setFeedback("Nota añadida.");
-    } catch (noteError) {
-      const message = noteError instanceof Error ? noteError.message : "No se pudo añadir la nota.";
-      setMutationError(`${message} Comprueba las notas antes de volver a enviarla.`);
-    } finally {
-      setNoteBusy(false);
-    }
-  }
-
-  async function removeNote(noteId: string) {
-    if (!candidate || !window.confirm("¿Eliminar esta nota interna? Esta acción no se puede deshacer.")) return;
-    setDeletingNote(noteId);
-    setMutationError("");
-    setFeedback("");
-    try {
-      await deleteCandidateNote(candidate.id, noteId);
-      setNotes((current) => current.filter((note) => note.id !== noteId));
-      setCandidate((current) => current ? { ...current, notes_count: Math.max(0, current.notes_count - 1) } : current);
-      setFeedback("Nota eliminada.");
-    } catch (deleteError) {
-      setMutationError(deleteError instanceof Error ? deleteError.message : "No se pudo eliminar la nota.");
-    } finally {
-      setDeletingNote(null);
     }
   }
 
@@ -215,14 +153,23 @@ export function CandidateDetail({ id }: CandidateDetailProps) {
                 {updating && <p className="field-feedback" role="status"><span className="spinner spinner-small" />Guardando {updating === "status" ? "estado" : "etapa"}…</p>}
               </section>
 
-              <section className="detail-card notes-card" aria-labelledby="notes-title">
-                <div className="card-title"><div><p className="eyebrow">SEGUIMIENTO INTERNO</p><h2 id="notes-title">Notas <span className="note-count">{candidate.notes_count}</span></h2></div><span className="section-index">03</span></div>
-                <form className="note-form" onSubmit={submitNote}><label className="sr-only" htmlFor="note-content">Añadir nota interna</label><textarea id="note-content" name="content" rows={3} maxLength={2000} placeholder="Añade contexto para el equipo…" required /><div className="note-form-footer"><small>Visible solo para el equipo</small><button className="button button-primary" type="submit" disabled={noteBusy}>{noteBusy ? "Añadiendo…" : "+ Añadir nota"}</button></div></form>
-                {notesState === "loading" && <p className="notes-feedback" role="status">Cargando notas…</p>}
-                {notesState === "error" && <div className="notes-error" role="alert"><span>{notesError}</span><button type="button" className="text-action" onClick={() => void loadNotes()}>Reintentar</button></div>}
-                {notesState === "success" && notes.length === 0 && <p className="notes-empty">Todavía no hay notas para esta candidatura.</p>}
-                {notesState === "success" && notes.length > 0 && <div className="notes-list">{notes.map((note) => <article className="note-item" key={note.id}><div className="note-meta"><time dateTime={note.created_at}>{displayDate(note.created_at)}</time><button type="button" className="text-action danger-action" onClick={() => void removeNote(note.id)} disabled={deletingNote !== null}>{deletingNote === note.id ? "Eliminando…" : "Eliminar"}</button></div><p>{note.content}</p></article>)}</div>}
-              </section>
+              {notesOpen ? (
+                <CandidateNotes
+                  candidateId={candidate.id}
+                  noteCount={candidate.notes_count}
+                  onCountChange={(difference) => setCandidate((current) =>
+                    current
+                      ? { ...current, notes_count: Math.max(0, current.notes_count + difference) }
+                      : current,
+                  )}
+                  onClose={() => setNotesOpen(false)}
+                />
+              ) : (
+                <section className="detail-card notes-card" aria-labelledby="notes-title">
+                  <div className="card-title"><div><p className="eyebrow">SEGUIMIENTO INTERNO</p><h2 id="notes-title">Notas <span className="note-count">{candidate.notes_count}</span></h2></div><span className="section-index">03</span></div>
+                  <button className="button button-secondary" type="button" onClick={() => setNotesOpen(true)}>Mostrar notas</button>
+                </section>
+              )}
             </div>
           </div>
         </>}

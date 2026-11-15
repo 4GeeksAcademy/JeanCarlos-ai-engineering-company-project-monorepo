@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { CandidateForm } from "@/components/candidate-form";
 import { getCandidates } from "@/lib/api";
 import type { Candidate } from "@/types/tracker";
@@ -63,6 +63,19 @@ export function CandidateList() {
     }
   }, [queryString]);
 
+  const summary = useMemo(() => {
+    if (loadState !== "success") return null;
+    return records.reduce(
+      (counts, record) => {
+        if (record.status === "in_progress") counts.inProgress += 1;
+        if (record.status === "selected") counts.selected += 1;
+        if (record.status === "received") counts.received += 1;
+        return counts;
+      },
+      { inProgress: 0, selected: 0, received: 0 },
+    );
+  }, [records, loadState]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => setSearch(searchFromUrl), 0);
     return () => window.clearTimeout(timer);
@@ -119,9 +132,9 @@ export function CandidateList() {
 
         <section className="summary-grid" aria-label="Resumen del pipeline">
           <div className="summary-item summary-total"><span>Candidaturas</span><strong>{loadState === "success" ? total : "—"}</strong><small>en el pipeline</small></div>
-          <div className="summary-item summary-active"><span>En proceso</span><strong>{loadState === "success" ? records.filter((record) => record.status === "in_progress").length : "—"}</strong><small>evaluación activa</small></div>
-          <div className="summary-item summary-selected"><span>Seleccionadas</span><strong>{loadState === "success" ? records.filter((record) => record.status === "selected").length : "—"}</strong><small>decisión positiva</small></div>
-          <div className="summary-item summary-received"><span>Recibidas</span><strong>{loadState === "success" ? records.filter((record) => record.status === "received").length : "—"}</strong><small>pendientes de revisión</small></div>
+          <div className="summary-item summary-active"><span>En proceso</span><strong>{summary?.inProgress ?? "—"}</strong><small>evaluación activa</small></div>
+          <div className="summary-item summary-selected"><span>Seleccionadas</span><strong>{summary?.selected ?? "—"}</strong><small>decisión positiva</small></div>
+          <div className="summary-item summary-received"><span>Recibidas</span><strong>{summary?.received ?? "—"}</strong><small>pendientes de revisión</small></div>
         </section>
 
         <section className="candidate-panel" aria-labelledby="candidate-list-heading">

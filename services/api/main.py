@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from json import JSONDecodeError
 import logging
 from threading import Lock
+from time import perf_counter
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -15,6 +16,7 @@ from .schemas.errors import ErrorResponse, ValidationErrorResponse, ValidationIs
 from .services.email import reset_expiration_minutes
 
 logger = logging.getLogger(__name__)
+timing_logger = logging.getLogger("api.timing")
 
 
 @asynccontextmanager
@@ -34,6 +36,27 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="HealthCore Supplier Directory", lifespan=lifespan)
+
+
+@app.middleware("http")
+async def timing_middleware(request: Request, call_next):
+    start = perf_counter()
+    status_code = 500
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+        return response
+    finally:
+        route = request.scope.get("route")
+        route_path = getattr(route, "path", "unmatched")
+        duration_ms = (perf_counter() - start) * 1000
+        timing_logger.info(
+            "%s %s -> %s | %.1fms",
+            request.method,
+            route_path,
+            status_code,
+            duration_ms,
+        )
 
 
 @app.exception_handler(RequestValidationError)

@@ -20,6 +20,7 @@ from ..schemas.inventory import (
     SupplySummary,
 )
 from ..services.inventory import stock_for_supply
+from ..services.cache import response_cache
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 Database = Annotated[Session, Depends(get_db)]
@@ -55,7 +56,10 @@ def consumption_response(
 
 
 @router.get("/products", response_model=list[ProductListItem])
-def list_products(_user: CurrentUser, session: Database):
+def list_products(user: CurrentUser, session: Database):
+    hit, cached, version = response_cache.get("inventory-products", user.id)
+    if hit:
+        return cached
     deliveries = (
         select(SupplyDelivery.supply_id, func.sum(SupplyDelivery.quantity).label("total"))
         .group_by(SupplyDelivery.supply_id)
@@ -73,10 +77,18 @@ def list_products(_user: CurrentUser, session: Database):
         .outerjoin(consumptions, consumptions.c.supply_id == MedicalSupply.id)
         .order_by(MedicalSupply.id)
     ).all()
-    return [
+    products = [
         ProductListItem.model_validate({**supply.model_dump(), "current_stock": int(quantity)})
         for supply, quantity in rows
     ]
+    response_cache.set(
+        "inventory-products",
+        user.id,
+        products,
+        ttl_seconds=10,
+        expected_version=version,
+    )
+    return products
 
 
 @router.post("/products", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
@@ -87,6 +99,7 @@ def create_product(payload: ProductCreate, _user: CurrentUser, session: Database
         session.flush()
         response = ProductResponse.model_validate({**supply.model_dump(), "current_stock": 0})
         session.commit()
+        response_cache.invalidate("inventory-products")
     except IntegrityError as exc:
         session.rollback()
         raise HTTPException(status_code=409, detail="SKU already exists") from exc
@@ -110,6 +123,7 @@ def create_delivery(payload: SupplyDeliveryCreate, user: CurrentUser, session: D
     session.flush()
     response = delivery_response(delivery, supply)
     session.commit()
+    response_cache.invalidate("inventory-products")
     return response
 
 
@@ -132,6 +146,7 @@ def create_consumption(payload: SupplyConsumptionCreate, user: CurrentUser, sess
     session.flush()
     response = consumption_response(consumption, supply)
     session.commit()
+    response_cache.invalidate("inventory-products")
     return response
 
 
