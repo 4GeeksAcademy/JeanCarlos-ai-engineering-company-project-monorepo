@@ -1,0 +1,47 @@
+:root {
+  color-scheme: light;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #172b3a;
+  background: #f3f6f9;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 1440px; margin: auto; padding: 2rem 1rem; }
+header { margin-bottom: 2rem; }
+h1 { color: #104c63; }
+.panel { background: white; border: 1px solid #ccd5de; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; }
+.filters, .rate-form { display: flex; gap: .75rem; align-items: end; flex-wrap: wrap; }
+.filters { margin-bottom: 1rem; }
+label { display: flex; flex-direction: column; gap: .4rem; overflow-wrap: anywhere; }
+input, select, textarea, button { font: inherit; border: 1px solid #687c8b; border-radius: 5px; padding: .6rem; }
+input, select, textarea { max-width: 100%; min-width: 0; background: white; color: inherit; }
+button { cursor: pointer; background: #105b76; color: white; }
+button:disabled { opacity: .65; cursor: wait; }
+:focus-visible { outline: 3px solid #a34a00; outline-offset: 3px; }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; text-align: left; }
+th, td { padding: .8rem; border-bottom: 1px solid #ccd5de; vertical-align: top; }
+tbody th { min-width: 180px; }
+td { overflow-wrap: anywhere; }
+td p { margin-top: 0; }
+small { display: block; font-size: .8rem; font-weight: normal; margin-top: .5rem; overflow-wrap: anywhere; }
+.rate-form input { width: 9rem; }
+.badge { display: block; width: fit-content; padding: .3rem .6rem; margin-bottom: .6rem; border-radius: 1rem; font-weight: bold; }
+.active { background: #d7f0e2; color: #14532d; }
+.suspended { background: #fce4c5; color: #713e08; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; border: 0; padding: 0; margin: 0; min-width: 0; }
+.categories { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: .75rem; min-width: 0; }
+.checkbox { flex-direction: row; align-items: center; }
+.checkbox input { flex-shrink: 0; }
+.wide { grid-column: 1 / -1; }
+.error { color: #9c2020; overflow-wrap: anywhere; }
+.success { color: #14532d; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+@media (max-width: 640px) {
+  main { padding: 1rem .5rem; }
+  .panel { padding: .8rem; }
+  .form-grid { grid-template-columns: minmax(0, 1fr); }
+  .filters { align-items: stretch; flex-direction: column; }
+}
