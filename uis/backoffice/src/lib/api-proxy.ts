@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { apiUrl, sameOrigin, SESSION_COOKIE } from "@/lib/server-api";
 
 export async function proxyApi(
-  resource: "suppliers" | "inventory",
+  resource: "suppliers" | "inventory" | "telemetry",
   request: Request,
   context: { params: Promise<{ path?: string[] }> },
 ) {
@@ -16,6 +16,8 @@ export async function proxyApi(
   const suffix = path.length ? `/${path.map(encodeURIComponent).join("/")}` : "";
   const query = new URL(request.url).search;
   const headers = new Headers({ Authorization: `Bearer ${token}` });
+  const requestId = request.headers.get("x-request-id");
+  if (requestId && /^[a-f0-9-]{36}$/i.test(requestId)) headers.set("X-Request-ID", requestId);
   const contentType = request.headers.get("content-type");
   if (contentType) headers.set("Content-Type", contentType);
   let upstream: Response;
@@ -48,6 +50,10 @@ export async function proxyApi(
   }
   return new NextResponse(body, {
     status: upstream.status,
-    headers: { "Content-Type": upstream.headers.get("content-type") ?? "application/json" },
+    headers: {
+      "Content-Type": upstream.headers.get("content-type") ?? "application/json",
+      ...(upstream.headers.get("x-request-id") ? { "X-Request-ID": upstream.headers.get("x-request-id")! } : {}),
+      ...(upstream.headers.get("x-available-stock") ? { "X-Available-Stock": upstream.headers.get("x-available-stock")! } : {}),
+    },
   });
 }

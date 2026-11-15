@@ -3,6 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import type { InboundInput, Orders, OutboundInput, Product, Supply } from "@/types/inventory";
+import { telemetryFetch, track, withResponseTelemetry } from "@/services/telemetry";
+
+const stockLevels = new Map<number, number>();
 
 export class InventoryError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -50,10 +53,14 @@ function isOrders(value: unknown): value is Orders {
       (item.consumption_type === "clinical_use" || item.consumption_type === "expiry_waste"));
 }
 
-async function request(path: string, options: RequestInit = {}): Promise<unknown> {
+async function request(
+  path: string,
+  options: RequestInit = {},
+  payload?: InboundInput | OutboundInput,
+): Promise<{ data: unknown; response: Response }> {
   let response: Response;
   try {
-    response = await fetch(`/api/inventory${path}`, {
+    response = await telemetryFetch(`/api/inventory${path}`, {
       ...options,
       cache: "no-store",
       headers: { "Content-Type": "application/json", ...options.headers },
@@ -71,37 +78,97 @@ async function request(path: string, options: RequestInit = {}): Promise<unknown
       try {
         const body: unknown = await response.json();
         if (isRecord(body) && typeof body.detail === "string") message = body.detail;
+        if (response.status === 422 && payload && isRecord(body) && Array.isArray(body.detail)) {
+          const fieldNames = new Set<string>();
+          const errorCodes = new Set<string>();
+          for (const issue of body.detail) {
+            if (!isRecord(issue)) continue;
+            if (Array.isArray(issue.loc)) {
+              const field = issue.loc[1];
+              if (typeof field === "string" && ["supply_id", "quantity", "clinic_id", "vendor_name", "consumption_type"].includes(field)) fieldNames.add(field);
+            }
+            const type = typeof issue.type === "string" ? issue.type : "";
+            errorCodes.add(type === "missing" ? "missing" : type === "extra_forbidden" ? "extra_forbidden" :
+              type.includes("greater_than") || type.includes("less_than") ? "out_of_range" :
+                type === "literal_error" ? "invalid_choice" : "invalid_type");
+          }
+          withResponseTelemetry(response, () => track("inventory_order_validation_failed", {
+            operation: path === "/orders/inbound" ? "inbound" : "outbound",
+            field_names: [...fieldNames], error_codes: [...errorCodes], occurrence_count: 1,
+          }));
+        }
       } catch {
         console.error("La API de inventario devolvió un error inválido.");
+      }
+      const available = response.headers.get("x-available-stock");
+      if (response.status === 400 && path === "/orders/outbound" && payload &&
+        available !== null && /^\d+$/.test(available)) {
+        withResponseTelemetry(response, () => track("inventory_outbound_insufficient_stock_rejected", {
+          supply_id: payload.supply_id, clinic_id: payload.clinic_id,
+          requested_quantity: payload.quantity, available_quantity: Number(available),
+        }));
       }
     }
     throw new InventoryError(message, response.status);
   }
   try {
-    return await response.json() as unknown;
+    const data: unknown = await response.json();
+    return { data, response };
   } catch {
     throw new Error("El servicio devolvió una respuesta inválida.");
   }
 }
 
 export async function listProducts(signal?: AbortSignal): Promise<Product[]> {
-  const result = await request("/products", { signal });
+  const { data: result, response } = await request("/products", { signal });
   if (!Array.isArray(result) || !result.every(isProduct)) {
     throw new Error("El servicio devolvió un catálogo inválido.");
   }
+  withResponseTelemetry(response, () => {
+    for (const product of result) {
+      const previous = stockLevels.get(product.id);
+      if (previous !== undefined && previous > 10 && product.current_stock <= 10) {
+        track("inventory_stock_threshold_triggered", {
+          supply_id: product.id, current_stock: product.current_stock, threshold: 10, unit: product.unit,
+        });
+      }
+      stockLevels.set(product.id, product.current_stock);
+    }
+    const ids = new Set(result.map((product) => product.id));
+    for (const id of stockLevels.keys()) if (!ids.has(id)) stockLevels.delete(id);
+  });
   return result;
 }
 
 export async function listOrders(signal?: AbortSignal): Promise<Orders> {
-  const result = await request("/orders", { signal });
+  const { data: result, response } = await request("/orders", { signal });
   if (!isOrders(result)) throw new Error("El servicio devolvió un historial inválido.");
+  withResponseTelemetry(response, () => track("inventory_orders_viewed", { view_mode: "read_only_history" }));
   return result;
 }
 
 export async function createInbound(payload: InboundInput): Promise<void> {
-  await request("/orders/inbound", { method: "POST", body: JSON.stringify(payload) });
+  const { data, response } = await request("/orders/inbound", { method: "POST", body: JSON.stringify(payload) }, payload);
+  if (isRecord(data) && Number.isInteger(data.id) && isSupply(data.supply)) {
+    const country = data.supply.country;
+    withResponseTelemetry(response, () => track("inventory_inbound_order_created", {
+      order_id: Number(data.id), supply_id: payload.supply_id, quantity: payload.quantity,
+      clinic_id: payload.clinic_id, country,
+    }));
+  } else {
+    console.warn("Inbound telemetry skipped: invalid movement response.");
+  }
 }
 
 export async function createOutbound(payload: OutboundInput): Promise<void> {
-  await request("/orders/outbound", { method: "POST", body: JSON.stringify(payload) });
+  const { data, response } = await request("/orders/outbound", { method: "POST", body: JSON.stringify(payload) }, payload);
+  if (isRecord(data) && Number.isInteger(data.id) && isSupply(data.supply)) {
+    const country = data.supply.country;
+    withResponseTelemetry(response, () => track("inventory_outbound_order_created", {
+      order_id: Number(data.id), supply_id: payload.supply_id, quantity: payload.quantity,
+      clinic_id: payload.clinic_id, consumption_type: payload.consumption_type, country,
+    }));
+  } else {
+    console.warn("Outbound telemetry skipped: invalid movement response.");
+  }
 }

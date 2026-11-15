@@ -1,6 +1,16 @@
 "use client";
 
+import { useEffect } from "react";
+import { canonicalRoute, track } from "@/services/telemetry";
+
 export default function ErrorPage({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  useEffect(() => {
+    track("frontend_unhandled_error", {
+      route_template: canonicalRoute(),
+      error_code: "render_failure",
+      release: "telemetry-v1",
+    });
+  }, []);
   return (
     <main className="auth-page">
       <section className="panel" role="alert">

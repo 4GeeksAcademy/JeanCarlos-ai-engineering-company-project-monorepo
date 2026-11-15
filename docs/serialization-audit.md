@@ -28,6 +28,8 @@ tratan por separado de las respuestas de éxito.
 | Insumo | `id`, `name`, `sku`, `category`, `unit`, `country` |
 | Entrada | `id`, `supply_id`, `quantity`, `clinic_id`, `created_at`, `user_uuid`, `supply` (Insumo), `vendor_name` |
 | Salida | `id`, `supply_id`, `quantity`, `clinic_id`, `created_at`, `user_uuid`, `supply` (Insumo), `consumption_type` |
+| Recibo de telemetría | `received` |
+| Sesión de telemetría | `userId` (HMAC SHA-256), `role` |
 
 | Método y ruta | Antes → después | Cuerpo de éxito |
 | --- | --- | --- |
@@ -59,6 +61,8 @@ tratan por separado de las respuestas de éxito.
 | POST `/inventory/orders/inbound` | ⚠️ → ✅ | Entrada |
 | POST `/inventory/orders/outbound` | ⚠️ → ✅ | Salida |
 | GET `/inventory/orders` | ⚠️ → ✅ | `inbound`: lista de Entrada; `outbound`: lista de Salida |
+| POST `/telemetry/events` | Nueva → ✅ | Recibo de telemetría; sin persistencia |
+| GET `/telemetry/session` | Nueva → ✅ | Sesión de telemetría; requiere autenticación |
 
 En inventario, las salidas ya se materializaban antes; se clasifican como ⚠️
 porque el resumen de insumo heredaba del modelo de entrada. Los modelos
