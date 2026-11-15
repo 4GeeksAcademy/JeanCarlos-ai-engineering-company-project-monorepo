@@ -6,7 +6,7 @@ from tinydb import Query
 
 from ..core.dependencies import CurrentUser, Database
 from ..core.security import create_access_token, hash_password, verify_password
-from ..models.auth import Token, User, UserResponse
+from ..models.auth import CurrentUserResponse, Token, User, UserResponse
 
 router = APIRouter(tags=["authentication"])
 
@@ -30,4 +30,9 @@ def login(form: Annotated[OAuth2PasswordRequestForm, Depends()], database: Datab
 
 @router.get("/me", response_model=UserResponse)
 def me(user: CurrentUser):
-    return user
+    return UserResponse.model_validate(user.model_dump())
+
+
+@router.get("/auth/me", response_model=CurrentUserResponse)
+def current_user(user: CurrentUser):
+    return CurrentUserResponse.model_validate(user.model_dump())

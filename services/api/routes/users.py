@@ -5,7 +5,7 @@ from tinydb import Query
 
 from ..core.dependencies import Database, require_admin
 from ..core.security import hash_password
-from ..models.auth import Role, User, UserCreate, UserResponse, UserUpdate
+from ..models.auth import Role, User, UserCreate, UserListItem, UserResponse, UserUpdate
 
 router = APIRouter(
     prefix="/users", tags=["users"], dependencies=[Depends(require_admin)]
@@ -40,9 +40,9 @@ def ensure_other_admin(database: Database, user: dict):
             raise HTTPException(status_code=409, detail="Cannot remove the last administrator")
 
 
-@router.get("", response_model=list[UserResponse])
+@router.get("", response_model=list[UserListItem])
 def list_users(database: Database):
-    return database.table("users").all()
+    return [UserListItem.model_validate(record) for record in database.table("users").all()]
 
 
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -57,12 +57,12 @@ def create_user(payload: UserCreate, database: Database):
     data["username_key"] = payload.username.lower()
     data["email_key"] = payload.email.lower() if payload.email else None
     database.table("users").insert(data)
-    return user
+    return UserResponse.model_validate(user.model_dump())
 
 
 @router.get("/{user_id}", response_model=UserResponse)
 def get_user(user_id: str, database: Database):
-    return find_user(database, user_id)
+    return UserResponse.model_validate(find_user(database, user_id))
 
 
 @router.patch("/{user_id}", response_model=UserResponse)
@@ -86,10 +86,10 @@ def update_user(user_id: str, payload: UserUpdate, database: Database):
     if credentials_changed:
         updates["token_version"] = record.get("token_version", 0) + 1
     database.table("users").update(updates, Query().id == user_id)
-    return find_user(database, user_id)
+    return UserResponse.model_validate(find_user(database, user_id))
 
 
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{user_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(user_id: str, database: Database):
     record = find_user(database, user_id)
     ensure_other_admin(database, record)

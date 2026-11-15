@@ -86,6 +86,20 @@ class SupplierCreate(SupplierRateUpdate):
         return self
 
 
-class SupplierResponse(SupplierCreate):
+class SupplierResponse(BaseModel):
     id: int
+    name: str
+    country: Country
+    categories: list[Category]
+    monthly_rate: float
+    currency: Currency
+    status: SupplierStatus
+    compliance_agreement: ComplianceAgreement | None = None
+    contract_renewal_date: str | None = None
+    contact_email: EmailStr | None = None
+    notes: str | None = None
     updated_at: AwareDatetime
+
+
+class SupplierListItem(SupplierResponse):
+    pass

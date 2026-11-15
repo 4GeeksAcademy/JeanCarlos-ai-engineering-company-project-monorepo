@@ -14,12 +14,12 @@ from ..core.security import (
     hash_password,
     verify_password,
 )
-from ..models.auth import ChangePassword, ForgotPassword, ResetPassword, User
+from ..models.auth import ChangePassword, ForgotPassword, MessageResponse, ResetPassword, User
 from ..services.email import reset_expiration_minutes, send_password_reset_email
 
 router = APIRouter(prefix="/auth", tags=["password"])
 logger = logging.getLogger(__name__)
-NEUTRAL_MESSAGE = {"message": "Si existe una cuenta con ese correo, recibirás instrucciones."}
+NEUTRAL_MESSAGE = MessageResponse(message="Si existe una cuenta con ese correo, recibirás instrucciones.")
 
 
 def reset_email_task(request: Request, email: str, tasks: BackgroundTasks) -> None:
@@ -31,7 +31,7 @@ def reset_email_task(request: Request, email: str, tasks: BackgroundTasks) -> No
             tasks.add_task(send_password_reset_email, user.email, token)
 
 
-@router.post("/forgot-password")
+@router.post("/forgot-password", response_model=MessageResponse)
 async def forgot_password(request: Request, tasks: BackgroundTasks):
     try:
         payload = ForgotPassword.model_validate(await request.json())
@@ -44,7 +44,7 @@ async def forgot_password(request: Request, tasks: BackgroundTasks):
     return NEUTRAL_MESSAGE
 
 
-@router.post("/reset-password")
+@router.post("/reset-password", response_model=MessageResponse)
 def reset_password(payload: ResetPassword, database: Database):
     invalid = HTTPException(status_code=400, detail="Invalid or expired reset token")
     settings = get_settings()
@@ -69,10 +69,10 @@ def reset_password(payload: ResetPassword, database: Database):
         "hashed_password": hash_password(payload.new_password),
         "token_version": version + 1,
     }, Query().id == subject)
-    return {"message": "Password changed"}
+    return MessageResponse(message="Password changed")
 
 
-@router.post("/change-password")
+@router.post("/change-password", response_model=MessageResponse)
 def change_password(payload: ChangePassword, database: Database, user: CurrentUser):
     if not verify_password(payload.current_password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect current password")
@@ -80,4 +80,4 @@ def change_password(payload: ChangePassword, database: Database, user: CurrentUs
         "hashed_password": hash_password(payload.new_password),
         "token_version": user.token_version + 1,
     }, Query().id == user.id)
-    return {"message": "Password changed"}
+    return MessageResponse(message="Password changed")

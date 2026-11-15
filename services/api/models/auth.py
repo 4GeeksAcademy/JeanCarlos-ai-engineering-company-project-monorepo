@@ -61,8 +61,15 @@ class User(BaseModel):
 class UserResponse(BaseModel):
     id: str
     username: str
-    email: EmailStr | None = None
     role: Role
+
+
+class UserListItem(UserResponse):
+    pass
+
+
+class CurrentUserResponse(UserResponse):
+    email: EmailStr | None = None
 
 
 class ProfileCreate(InputModel):
@@ -78,9 +85,22 @@ class Profile(BaseModel):
     user_id: str
 
 
+class ProfileResponse(BaseModel):
+    id: str
+    user_id: str
+
+
+class ProfileListItem(ProfileResponse):
+    pass
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class MessageResponse(BaseModel):
+    message: str
 
 
 class ForgotPassword(InputModel):

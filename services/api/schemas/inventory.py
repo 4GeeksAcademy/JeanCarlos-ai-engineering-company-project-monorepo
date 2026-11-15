@@ -8,7 +8,7 @@ class InputModel(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
 
-class SupplyFields(InputModel):
+class SupplyFields(BaseModel):
     name: str = Field(min_length=1)
     sku: str = Field(min_length=1)
     category: Literal["ppe", "wound_care", "diagnostics", "medications", "consumables"]
@@ -17,7 +17,7 @@ class SupplyFields(InputModel):
 
 
 class ProductCreate(SupplyFields):
-    pass
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
 
 class SupplySummary(SupplyFields):
@@ -26,6 +26,10 @@ class SupplySummary(SupplyFields):
 
 class ProductResponse(SupplySummary):
     current_stock: int
+
+
+class ProductListItem(ProductResponse):
+    pass
 
 
 class MovementCreate(InputModel):

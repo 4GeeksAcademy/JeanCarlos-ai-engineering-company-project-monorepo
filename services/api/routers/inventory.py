@@ -11,6 +11,7 @@ from ..models.inventory import MedicalSupply, SupplyConsumption, SupplyDelivery
 from ..schemas.inventory import (
     OrdersResponse,
     ProductCreate,
+    ProductListItem,
     ProductResponse,
     SupplyConsumptionCreate,
     SupplyConsumptionResponse,
@@ -53,7 +54,7 @@ def consumption_response(
     )
 
 
-@router.get("/products", response_model=list[ProductResponse])
+@router.get("/products", response_model=list[ProductListItem])
 def list_products(_user: CurrentUser, session: Database):
     deliveries = (
         select(SupplyDelivery.supply_id, func.sum(SupplyDelivery.quantity).label("total"))
@@ -73,7 +74,7 @@ def list_products(_user: CurrentUser, session: Database):
         .order_by(MedicalSupply.id)
     ).all()
     return [
-        ProductResponse.model_validate({**supply.model_dump(), "current_stock": int(quantity)})
+        ProductListItem.model_validate({**supply.model_dump(), "current_stock": int(quantity)})
         for supply, quantity in rows
     ]
 

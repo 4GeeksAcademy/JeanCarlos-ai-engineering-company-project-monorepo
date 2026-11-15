@@ -11,6 +11,7 @@ from ..models import (
     Category,
     Country,
     SupplierCreate,
+    SupplierListItem,
     SupplierRateUpdate,
     SupplierResponse,
     SupplierStatusUpdate,
@@ -34,14 +35,14 @@ def supplier_response(supplier: Document) -> SupplierResponse:
     return SupplierResponse.model_validate({**supplier, "id": supplier.doc_id})
 
 
-@router.get("", response_model=list[SupplierResponse])
+@router.get("", response_model=list[SupplierListItem])
 def list_suppliers(
     database: Database,
     country: Country | None = None,
     category: Category | None = None,
 ):
     return [
-        supplier_response(supplier)
+        SupplierListItem.model_validate({**supplier, "id": supplier.doc_id})
         for supplier in database.all()
         if (country is None or supplier["country"] == country.value)
         and (category is None or category.value in supplier["categories"])

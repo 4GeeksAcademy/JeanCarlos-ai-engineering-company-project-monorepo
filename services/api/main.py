@@ -11,6 +11,7 @@ from .database import get_inventory_engine, open_database
 from .core.security import get_settings
 from .routes import auth, auth_password, profiles, suppliers, users
 from .routers import inventory
+from .schemas.errors import ErrorResponse, ValidationErrorResponse, ValidationIssue
 from .services.email import reset_expiration_minutes
 
 logger = logging.getLogger(__name__)
@@ -37,15 +38,16 @@ app = FastAPI(title="HealthCore Supplier Directory", lifespan=lifespan)
 
 @app.exception_handler(RequestValidationError)
 async def validation_error(_request: Request, error: RequestValidationError):
-    # Invalid values such as NaN cannot themselves be serialized as JSON.
+    if _request.url.path in {"/login", "/auth/forgot-password", "/auth/reset-password"}:
+        issues = [ValidationIssue(loc=["body"], msg="Invalid request", type="value_error")]
+    else:
+        issues = [
+            ValidationIssue(loc=list(item["loc"]), msg=item["msg"], type=item["type"])
+            for item in error.errors()
+        ]
     return JSONResponse(
         status_code=422,
-        content={
-            "detail": [
-                {"loc": item["loc"], "msg": item["msg"], "type": item["type"]}
-                for item in error.errors()
-            ]
-        },
+        content=ValidationErrorResponse(detail=issues).model_dump(mode="json"),
     )
 
 
@@ -53,13 +55,19 @@ async def validation_error(_request: Request, error: RequestValidationError):
 @app.exception_handler(JSONDecodeError)
 async def storage_error(_request: Request, error: Exception):
     logger.error("Storage operation failed: %s", type(error).__name__)
-    return JSONResponse(status_code=503, content={"detail": "Database temporarily unavailable"})
+    return JSONResponse(
+        status_code=503,
+        content=ErrorResponse(detail="Database temporarily unavailable").model_dump(mode="json"),
+    )
 
 
 @app.exception_handler(Exception)
 async def unexpected_error(_request: Request, error: Exception):
     logger.error("Unexpected API error: %s", type(error).__name__)
-    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+    return JSONResponse(
+        status_code=500,
+        content=ErrorResponse(detail="Internal server error").model_dump(mode="json"),
+    )
 
 
 app.include_router(auth.router)

@@ -26,7 +26,10 @@ owner (mode `0600`) because it contains password hashes.
 
 `POST /login` accepts OAuth2 form fields `username` and `password`; send the
 returned access token as `Authorization: Bearer <token>` to protected routes.
-`GET /me` returns the current user without the password hash. All six supplier
+`GET /me` returns the current user's ID, username and role; authenticated
+`GET /auth/me` also returns their email. User-management responses do not
+include account emails or password hashes. This changes the previous `/me`
+and `/users` response contracts for clients that read email. All six supplier
 routes require authentication. Administrators manage users; administrators and
 managers manage profiles. Users can read and update only their own profile.
 A profile contains only its ID and owner ID; a user cannot change its owner.
