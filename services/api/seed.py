@@ -196,7 +196,7 @@ def seed() -> int:
     return inserted
 
 
-if __name__ == "__main__":
+def main() -> None:
     import sys
     from json import JSONDecodeError
 
@@ -208,3 +208,7 @@ if __name__ == "__main__":
     except (OSError, JSONDecodeError, ValidationError) as exc:
         logger.error("No se pudo completar el seed: %s", type(exc).__name__)
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

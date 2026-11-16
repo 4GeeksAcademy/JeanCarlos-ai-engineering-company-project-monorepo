@@ -14,6 +14,7 @@ from ..models import (
     SupplierListItem,
     SupplierRateUpdate,
     SupplierResponse,
+    SupplierStatus,
     SupplierStatusUpdate,
 )
 from ..services.cache import response_cache
@@ -113,3 +114,10 @@ def update_status(
     database.update(payload.model_dump(mode="json"), doc_ids=[supplier_id])
     response_cache.invalidate("suppliers")
     return supplier_response(find_supplier(database, supplier_id))
+
+
+@router.delete("/{supplier_id}", response_model=SupplierResponse)
+def delete_supplier(supplier_id: SupplierId, database: Database):
+    return update_status(
+        supplier_id, SupplierStatusUpdate(status=SupplierStatus.suspended), database
+    )
