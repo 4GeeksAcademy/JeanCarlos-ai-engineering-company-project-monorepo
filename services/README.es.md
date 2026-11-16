@@ -22,7 +22,7 @@ services/api/.venv/bin/python -m uvicorn services.api.main:app --host 127.0.0.1 
 ```
 
 Documentación interactiva: <http://127.0.0.1:8000/docs>.
-Las rutas de proveedores requieren un token obtenido en `/login`.
+Las rutas de proveedores, inventario, usuarios y perfiles requieren un token JWT obtenido en `POST /auth/login` (ver `services/api/README.md`).
 `SUPPLIERS_DB_PATH` permite cambiar el archivo persistente; por defecto se usa
 `services/api/data/suppliers.json`. El seed inserta los 15 proveedores del briefing,
 identificados por nombre y país; repetirlo no duplica ni sobrescribe registros.

@@ -74,8 +74,8 @@ def test_reset_password_changes_the_hash_and_revokes_sessions(client, database, 
     assert response.status_code == 200
     record = database.table("users").get(Query().id == user["id"])
     assert verify_password(NEW_PASSWORD, record["hashed_password"])
-    assert client.get("/me", headers=old_headers).status_code == 401
-    assert client.post("/login", data={"username": user["username"], "password": NEW_PASSWORD}).status_code == 200
+    assert client.get("/auth/me", headers=old_headers).status_code == 401
+    assert client.post("/auth/login", json={"email": user["email"], "password": NEW_PASSWORD}).status_code == 200
 
 
 def test_reset_password_accepts_bcrypt_byte_limit(client, database, user_factory):
@@ -122,8 +122,8 @@ def test_change_password_validates_current_password_and_revokes_sessions(client,
     })
     assert response.status_code == 200
     assert verify_password(NEW_PASSWORD, database.table("users").get(Query().id == user["id"])["hashed_password"])
-    assert client.get("/me", headers=headers).status_code == 401
-    assert client.post("/login", data={"username": user["username"], "password": NEW_PASSWORD}).status_code == 200
+    assert client.get("/auth/me", headers=headers).status_code == 401
+    assert client.post("/auth/login", json={"email": user["email"], "password": NEW_PASSWORD}).status_code == 200
 
 
 def test_change_password_invalidates_previously_issued_reset_tokens(client, user_factory, auth_headers):

@@ -1,61 +1,84 @@
-# Authentication
+# Authentication (AUTH-01)
 
-Install `requirements.txt` and configure these environment variables, either
-directly or in a `.env` file in this directory:
+Stateless JWT authentication (no sessions or cookies). Users and profiles are
+stored **only in TinyDB** (tables `users` and `profiles` in the file selected by
+`SUPPLIERS_DB_PATH`); PostgreSQL/Supabase tables store the TinyDB user id as
+`user_uuid` and no SQL user table exists.
 
-- `JWT_SECRET_KEY`: a random secret of at least 32 UTF-8 bytes. Generate one
-  with `python -c "import secrets; print(secrets.token_urlsafe(32))"`.
-- `JWT_ALGORITHM`: `HS256`, `HS384`, or `HS512`.
-- `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`: a positive integer.
+## Setup
 
-Existing environment variables take precedence over `.env`; restart the API
-after changing the configuration. Never commit the secret.
-
-With the API stopped, create the initial administrator from the repository root:
+Dependencies are managed with `uv` (`pyproject.toml` / `uv.lock`;
+`requirements.txt` is kept for the Docker image):
 
 ```bash
-python -m services.api.bootstrap_admin
+cd services/api && uv sync && cp .env.example .env   # then fill in .env
+cd ../.. && uv run --project services/api uvicorn services.api.main:app --reload
 ```
 
-The command prompts for credentials without displaying the password and refuses
-to run if any users already exist. Users and profiles are stored in named TinyDB
-tables in the same file selected by `SUPPLIERS_DB_PATH`. As with the supplier
-seed, run this command with the API stopped and use only one API worker: TinyDB
-does not provide cross-process locking. The database file is restricted to its
-owner (mode `0600`) because it contains password hashes.
+Environment variables (environment takes precedence over `.env`):
 
-`POST /login` accepts OAuth2 form fields `username` and `password`; send the
-returned access token as `Authorization: Bearer <token>` to protected routes.
-`GET /me` returns the current user's ID, username and role; authenticated
-`GET /auth/me` also returns their email. User-management responses do not
-include account emails or password hashes. This changes the previous `/me`
-and `/users` response contracts for clients that read email. All six supplier
-routes require authentication. Administrators manage users; administrators and
-managers manage profiles. Users can read and update only their own profile.
-A profile contains only its ID and owner ID; a user cannot change its owner.
-Administrators and managers may reassign profiles to users without a profile.
-Deleting a user also deletes their profile. The last administrator cannot be
-removed or demoted.
+- `JWT_SECRET_KEY` (**required**): random secret of at least 32 UTF-8 bytes,
+  e.g. `python -c "import secrets; print(secrets.token_urlsafe(32))"`. Never
+  commit it; there is no default.
+- `JWT_ALGORITHM`: `HS256` (default), `HS384` or `HS512`.
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: token lifetime, default 30.
+  (`JWT_ACCESS_TOKEN_EXPIRE_MINUTES` is still accepted as a fallback.)
 
-Tokens expire according to `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`. Password changes
-invalidate existing tokens; user deletion also invalidates them. Role checks use
-the current database value on every request.
+Create the first administrator with the API stopped:
+`uv run --project services/api python -m services.api.bootstrap_admin`.
 
-Database read/write failures return a generic `503` response; unexpected API
-failures return a generic `500`. The application error handlers log the error
-type without including passwords, tokens, database contents, or exception
-messages. Configure server and proxy logging separately to protect sensitive
-data. The password recovery request remains neutral even when its lookup or
-email delivery fails; check server logs for those failures.
+## Data model
+
+- **User** (credentials only): `id`, `email`, `hashed_password` (bcrypt via
+  `libpass`), `is_active`, `role` (`admin` | `manager` | `user`), `created_at`,
+  plus internal `email_key` and `token_version`.
+- **Profile** (one per user, via `user_id`): `id`, `user_id`, `name`, `phone`,
+  `address`.
+
+## Routes
+
+| Method | Route | Access |
+| --- | --- | --- |
+| POST | `/auth/login` | Public. JSON `{"email","password"}` or OAuth2 form (`username` = email) → `{"access_token","token_type":"bearer"}` |
+| GET | `/auth/me` | Token. Email, role and linked profile |
+| POST | `/auth/forgot-password`, `/auth/reset-password` | Public |
+| POST | `/auth/change-password` | Token |
+| POST | `/users` | Public registration (role `user` by default; only an admin token may assign `admin`/`manager`). Optional `name`, `phone`, `address` create the linked profile |
+| GET | `/users` | Token, admin or manager (403 otherwise) |
+| GET | `/users/{id}` | Token, the user themselves, admin or manager (403 otherwise) |
+| PUT | `/users/{id}` | Token, the user themselves or admin (403 otherwise); `role`/`is_active` admin only |
+| DELETE | `/users/{id}` | Token, the user themselves or admin (403 otherwise); also deletes the profile |
+| GET/PUT | `/profiles/me` | Token, the authenticated user's profile |
+| GET | `/profiles`, `/profiles/{id}` | Token; list is admin/manager, detail is owner/admin/manager |
+| PUT | `/profiles/{id}` | Token, profile owner only (403 otherwise) |
+| * | `/suppliers/**`, `/inventory/**`, `GET /telemetry/session` | Token |
+
+`POST /telemetry/events` stays public (anonymous product analytics).
+
+Missing, malformed, expired or revoked tokens return `401` with
+`WWW-Authenticate: Bearer`. Accessing another user's account or profile returns
+`403`. Changing email or password, deactivating or deleting a user invalidates
+their existing tokens; roles are read from the database on every request. The
+last active administrator cannot be demoted, deactivated or deleted.
+
+### Manual check in `/docs`
+
+1. `POST /users` with `{"email": "...", "password": "..."}`.
+2. `POST /auth/login` (or the **Authorize** button, using the email as
+   username) and copy `access_token`.
+3. Call `GET /auth/me` or `GET /suppliers` with the token → 200; without it → 401.
+
+Database read/write failures return a generic `503`; unexpected failures return
+a generic `500`. Error logs include only the exception type. Run a single API
+worker: TinyDB has no cross-process locking. The database file is created with
+mode `0600` because it contains password hashes.
 
 ## Password recovery
 
 Configure `RESEND_API_KEY`, `RESEND_FROM_EMAIL` (a verified Resend sender) and
 `FRONTEND_BASE_URL` (the backoffice origin; HTTPS except for localhost).
 `PASSWORD_RESET_EXPIRE_MINUTES` is optional and defaults to 30. The
-administrator can assign a unique `email` when creating or updating users;
-existing users without one cannot recover their passwords until it is assigned.
-The bootstrap command also accepts an optional administrator email.
+email is required for every account.
 
 `POST /auth/forgot-password` accepts `{"email":"..."}` and returns a neutral
 message whether or not the account exists. Delivery failures are logged without
