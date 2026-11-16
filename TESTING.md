@@ -1,4 +1,4 @@
-# Pruebas de autenticación y usuarios
+# Pruebas de autenticación, usuarios y utilidades
 
 ## Plan
 
@@ -17,7 +17,33 @@ reseteo se comprueba con un solo proceso, tal como requiere TinyDB.
 
 ## Ejecución
 
-Desde la raíz, en un entorno virtual Python:
+Desde la raíz, con uv:
+
+```bash
+uv sync --group dev
+uv run pytest
+```
+
+El proyecto está definido en `pyproject.toml`, que incluye las dependencias de
+desarrollo y configura `testpaths = ["services/api/tests"]` y `pythonpath = ["."]`.
+Esto permite resolver `services` también al ejecutar el comando `pytest` mediante
+uv, sin exportar `PYTHONPATH` manualmente. La suite completa incluye cuatro pruebas
+de caché además de las 37 de autenticación y usuarios.
+
+Para medir únicamente los cinco módulos de autenticación y usuarios:
+
+```bash
+uv run pytest services/api/tests/test_auth.py \
+  services/api/tests/test_users.py services/api/tests/test_password.py \
+  --cov=services.api.routes.auth \
+  --cov=services.api.routes.users \
+  --cov=services.api.routes.auth_password \
+  --cov=services.api.core.dependencies \
+  --cov=services.api.core.security \
+  --cov-report=term-missing --cov-fail-under=70
+```
+
+Como alternativa, en un entorno virtual Python sin uv:
 
 ```bash
 python -m pip install -r services/api/requirements-dev.txt
@@ -73,3 +99,88 @@ PY
 
 El envío real de Resend, los proveedores, los perfiles como recurso independiente
 y las interfaces no forman parte del alcance de esta suite.
+
+## Utilidades TypeScript con Jest
+
+Desde la raíz, independientemente de las aplicaciones Next.js:
+
+```bash
+npm install
+npm run typecheck
+npm test -- --runInBand
+npm run test:coverage -- --runInBand
+```
+
+`jest.config.cjs` usa `ts-jest` y el entorno Node, busca las pruebas en
+`tests/utils` e incluye las cuatro utilidades de `src/utils` en la medición de cobertura.
+`tsconfig.json` comprueba utilidades, modelos y tests en modo estricto.
+No se modifican las dependencias ni los comandos de las aplicaciones Next.js.
+Esta entrega no incluye las actualizaciones locales de `package-lock.json`
+ni `uv.lock`, restringidas por la política de acceso de la organización.
+Usa `npm install` para sincronizar las dependencias de Jest declaradas en
+`package.json`; `npm ci` requiere un archivo de bloqueo actualizado.
+El informe navegable para herramientas compatibles con LCOV queda en
+`coverage/lcov.info`; los resultados generados no se versionan.
+
+Las pruebas usan datos sintéticos, sin peticiones externas ni información real
+de pacientes:
+
+| Suite | Comportamientos verificados |
+| --- | --- |
+| `search.test.ts` | Búsqueda lineal y binaria, primero/centro/último, ausentes y listas vacías |
+| `collections.test.ts` | Filtros combinados, selección vacía, orden ascendente/descendente sin mutación y agrupación |
+| `validations.test.ts` | Importes, fechas, clínicas, motivo de denegación, ID de paciente, horas CME y umbrales estrictos |
+| `transformations.test.ts` | Tasas y redondeo, costes semanales, alertas, progreso CME y vencimientos de licencias |
+
+Las validaciones dependientes de la fecha fijan el reloj al 15 de junio de 2026
+y restauran los temporizadores tras cada caso.
+
+## Caso límite identificado con ayuda de IA
+
+Al revisar `calculateNoShowCost` con IA se identificó un caso que faltaba probar:
+una semana inclusiva de siete días puede acabar contando ocho si el inicio se
+calcula restando siete días en lugar de seis.
+
+Se añadió el test
+`counts only no-shows in the inclusive seven-day window at the requested clinic`
+en `tests/utils/transformations.test.ts`:
+
+- Semana con cierre el `2026-06-15`: incluye el `2026-06-09` y el `2026-06-15`.
+- Excluye el `2026-06-08` y el `2026-06-16`, otra clínica, citas canceladas y
+  citas completadas.
+- Las dos ausencias válidas cuestan `100.25 + 200 = 300.25`.
+
+El test pasa con la implementación existente; es un riesgo de regresión
+identificado con IA, no un bug de producción confirmado ni una corrección
+inventada. Restar siete días incluiría el día 8 y haría fallar esta prueba.
+
+## Resultados verificados
+
+Comprobación local del **16 de noviembre de 2026**:
+
+| Comprobación | Resultado |
+| --- | --- |
+| `uv run pytest` desde la raíz | 41/41 pruebas correctas |
+| Suite específica de autenticación y usuarios con cobertura | 37/37 pruebas correctas |
+| Cobertura total de los cinco módulos Python indicados | **92.66%** (240 de 259 sentencias) |
+| `npm run typecheck` | Sin errores |
+| Jest de utilidades | 4 suites y 40/40 pruebas correctas |
+| Cobertura Jest | 99.49% sentencias, 96.77% ramas, 100% funciones y 99.48% líneas |
+
+| Módulo Python | Cobertura mostrada por pytest-cov |
+| --- | --- |
+| `core/dependencies.py` | 92% |
+| `core/security.py` | 85% |
+| `routes/auth.py` | 87% |
+| `routes/auth_password.py` | 100% |
+| `routes/users.py` | 94% |
+
+El resultado previo comunicado para autenticación era **37/37 y 96%**.
+Se conserva como referencia histórica, no como medición de esta versión:
+tras los cambios de AUTH-02, la ejecución actual mide **92.66%** con el alcance
+explícito anterior. Hay líneas nuevas de login por email, consulta de perfil y
+registro público que esta suite todavía no ejercita. Todos los módulos medidos
+superan el mínimo del 70%.
+
+Pytest emite una advertencia de deprecación de Starlette sobre el uso de
+`httpx` en `TestClient`; no provoca fallos en las pruebas.
