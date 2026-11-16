@@ -32,8 +32,8 @@ def test_supplier_cache_is_user_scoped_and_invalidated_on_write(
     client, user_factory, auth_headers
 ):
     response_cache.invalidate("suppliers")
-    first_user = user_factory(username="first")
-    second_user = user_factory(username="second")
+    first_user = user_factory(email="first@example.org")
+    second_user = user_factory(email="second@example.org")
 
     first_headers = auth_headers(first_user)
     second_headers = auth_headers(second_user)
@@ -84,7 +84,7 @@ def test_inventory_product_cache_is_invalidated_by_movements(
 
     app.dependency_overrides[get_db] = get_test_db
     try:
-        user = user_factory(username="inventory-user")
+        user = user_factory(email="inventory@example.org")
         headers = auth_headers(user)
         response_cache.invalidate("inventory-products")
         created = client.post("/inventory/products", headers=headers, json={

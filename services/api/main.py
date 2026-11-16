@@ -69,7 +69,7 @@ async def timing_middleware(request: Request, call_next):
 
 @app.exception_handler(RequestValidationError)
 async def validation_error(_request: Request, error: RequestValidationError):
-    if _request.url.path in {"/login", "/auth/forgot-password", "/auth/reset-password", "/telemetry/events"}:
+    if _request.url.path in {"/auth/login", "/auth/forgot-password", "/auth/reset-password", "/telemetry/events"}:
         issues = [ValidationIssue(loc=["body"], msg="Invalid request", type="value_error")]
     else:
         issues = [

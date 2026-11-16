@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from uuid import uuid4
 
 import pytest
@@ -55,19 +56,23 @@ def database(client):
 
 @pytest.fixture
 def user_factory(database, password_hash):
-    def create_user(username="alice", role="user", email=None, password=PASSWORD):
+    def create_user(email="alice@example.org", role="user", password=PASSWORD, is_active=True, **profile):
         record = {
             "id": str(uuid4()),
-            "username": username,
-            "username_key": username.lower(),
             "email": email,
-            "email_key": email.lower() if email else None,
+            "email_key": email.lower(),
             "role": role,
+            "is_active": is_active,
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "hashed_password": (
                 password_hash if password == PASSWORD else security.hash_password(password)
             ),
             "token_version": 0,
         }
+        database.table("profiles").insert({
+            "id": str(uuid4()), "user_id": record["id"],
+            "name": profile.get("name"), "phone": profile.get("phone"), "address": profile.get("address"),
+        })
         database.table("users").insert(record)
         return record
 
@@ -85,4 +90,4 @@ def auth_headers():
 
 @pytest.fixture
 def admin(user_factory):
-    return user_factory(username="admin", role="admin", email="admin@example.org")
+    return user_factory(email="admin@example.org", role="admin")

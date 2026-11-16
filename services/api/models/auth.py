@@ -1,3 +1,10 @@
+"""User and Profile models stored in TinyDB (never in PostgreSQL/Supabase).
+
+User holds only credentials and account state; display name and contact data
+live in Profile, linked one-to-one through ``Profile.user_id``. Other modules
+reference ``User.id`` as ``user_uuid``.
+"""
+from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
@@ -23,11 +30,38 @@ def validate_password_bytes(value: str) -> str:
     return value
 
 
+ProfileText = Field(default=None, max_length=200)
+
+
+# --- Stored records -------------------------------------------------------
+
+class User(BaseModel):
+    id: str
+    email: EmailStr
+    hashed_password: str
+    is_active: bool = True
+    role: Role = Role.user
+    created_at: datetime
+    token_version: int = 0
+
+
+class Profile(BaseModel):
+    id: str
+    user_id: str
+    name: str | None = None
+    phone: str | None = None
+    address: str | None = None
+
+
+# --- Users ----------------------------------------------------------------
+
 class UserCreate(InputModel):
-    username: str = Field(min_length=3, max_length=64, pattern=r"^[a-zA-Z0-9_.-]+$")
-    email: EmailStr | None = None
+    email: EmailStr
     password: str = Field(min_length=8)
-    role: Role
+    role: Role = Role.user
+    name: str | None = ProfileText
+    phone: str | None = Field(default=None, max_length=40)
+    address: str | None = ProfileText
 
     @field_validator("password")
     @classmethod
@@ -36,12 +70,10 @@ class UserCreate(InputModel):
 
 
 class UserUpdate(InputModel):
-    username: str | None = Field(
-        default=None, min_length=3, max_length=64, pattern=r"^[a-zA-Z0-9_.-]+$"
-    )
-    password: str | None = Field(default=None, min_length=8)
     email: EmailStr | None = None
+    password: str | None = Field(default=None, min_length=8)
     role: Role | None = None
+    is_active: bool | None = None
 
     @field_validator("password")
     @classmethod
@@ -49,54 +81,47 @@ class UserUpdate(InputModel):
         return validate_password_bytes(value) if value is not None else None
 
 
-class User(BaseModel):
-    id: str
-    username: str
-    email: EmailStr | None = None
-    role: Role
-    hashed_password: str
-    token_version: int = 0
-
-
 class UserResponse(BaseModel):
     id: str
-    username: str
+    email: EmailStr
     role: Role
+    is_active: bool
+    created_at: datetime
 
 
-class UserListItem(UserResponse):
-    pass
-
-
-class CurrentUserResponse(UserResponse):
-    email: EmailStr | None = None
-
-
-class ProfileCreate(InputModel):
-    user_id: str
-
+# --- Profiles -------------------------------------------------------------
 
 class ProfileUpdate(InputModel):
-    user_id: str
-
-
-class Profile(BaseModel):
-    id: str
-    user_id: str
+    name: str | None = ProfileText
+    phone: str | None = Field(default=None, max_length=40)
+    address: str | None = ProfileText
 
 
 class ProfileResponse(BaseModel):
     id: str
     user_id: str
+    name: str | None = None
+    phone: str | None = None
+    address: str | None = None
 
 
-class ProfileListItem(ProfileResponse):
-    pass
+# --- Auth -----------------------------------------------------------------
+
+class LoginRequest(InputModel):
+    email: EmailStr
+    password: str = Field(min_length=1, max_length=1024)
 
 
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class CurrentUserResponse(BaseModel):
+    id: str
+    email: EmailStr
+    role: Role
+    profile: ProfileResponse | None = None
 
 
 class MessageResponse(BaseModel):

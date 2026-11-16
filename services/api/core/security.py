@@ -21,18 +21,23 @@ class Settings:
 @lru_cache
 def get_settings() -> Settings:
     load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+    # The signing key has no default: it must come from the environment / .env.
     secret = os.environ.get("JWT_SECRET_KEY", "")
-    algorithm = os.environ.get("JWT_ALGORITHM", "")
+    algorithm = os.environ.get("JWT_ALGORITHM", "HS256")
+    raw_expiration = os.environ.get(
+        "ACCESS_TOKEN_EXPIRE_MINUTES",
+        os.environ.get("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "30"),
+    )
     try:
-        expiration = int(os.environ.get("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", ""))
+        expiration = int(raw_expiration)
     except ValueError as exc:
-        raise RuntimeError("JWT_ACCESS_TOKEN_EXPIRE_MINUTES must be a positive integer") from exc
+        raise RuntimeError("ACCESS_TOKEN_EXPIRE_MINUTES must be a positive integer") from exc
     if len(secret.encode("utf-8")) < 32:
         raise RuntimeError("JWT_SECRET_KEY must contain at least 32 UTF-8 bytes")
     if algorithm not in {"HS256", "HS384", "HS512"}:
         raise RuntimeError("JWT_ALGORITHM must be HS256, HS384, or HS512")
     if expiration <= 0:
-        raise RuntimeError("JWT_ACCESS_TOKEN_EXPIRE_MINUTES must be a positive integer")
+        raise RuntimeError("ACCESS_TOKEN_EXPIRE_MINUTES must be a positive integer")
     return Settings(secret, algorithm, expiration)
 
 

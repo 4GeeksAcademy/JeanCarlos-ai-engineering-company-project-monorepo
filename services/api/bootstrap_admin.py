@@ -1,21 +1,20 @@
 import getpass
-from uuid import uuid4
 
 from pydantic import ValidationError
 
-from .core.security import hash_password
 from .database import open_database
-from .models.auth import Role, User, UserCreate
+from .models.auth import Role, UserCreate
+from .services.users import create_user
 
 
 def main():
-    username = input("Administrator username: ")
-    email = input("Administrator email (optional): ").strip() or None
+    email = input("Administrator email: ").strip()
+    name = input("Administrator display name (optional): ").strip() or None
     password = getpass.getpass("Administrator password: ")
     if password != getpass.getpass("Confirm password: "):
         raise SystemExit("Passwords do not match")
     try:
-        payload = UserCreate(username=username, email=email, password=password, role=Role.admin)
+        payload = UserCreate(email=email, password=password, role=Role.admin, name=name)
     except ValidationError as exc:
         details = "; ".join(
             f"{'.'.join(str(part) for part in error['loc'])}: {error['msg']}"
@@ -26,14 +25,7 @@ def main():
     try:
         if database.table("users").all():
             raise SystemExit("Bootstrap is only available when no users exist")
-        user = User(
-            id=str(uuid4()), username=payload.username, email=payload.email, role=payload.role,
-            hashed_password=hash_password(payload.password),
-        )
-        data = user.model_dump(mode="json")
-        data["username_key"] = payload.username.lower()
-        data["email_key"] = payload.email.lower() if payload.email else None
-        database.table("users").insert(data)
+        create_user(database, payload)
     finally:
         database.close()
     print("Administrator created")
