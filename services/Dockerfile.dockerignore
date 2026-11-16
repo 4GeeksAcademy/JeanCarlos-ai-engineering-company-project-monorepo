@@ -1,0 +1,11 @@
+# Root build context: send only what the API image needs.
+*
+!services/api/
+!packages/shared/incidents/
+!scripts/seed_incidents.py
+!data/raw/incidents-healthcore.csv
+**/.venv
+**/__pycache__
+**/.pytest_cache
+services/api/.env
+services/api/data

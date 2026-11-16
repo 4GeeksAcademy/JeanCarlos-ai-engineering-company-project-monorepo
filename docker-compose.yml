@@ -25,7 +25,8 @@ services:
 
   api:
     build:
-      context: ./services
+      context: .
+      dockerfile: services/Dockerfile
     init: true
     env_file:
       - ${COMPOSE_ENV_FILE:-.env}
@@ -36,6 +37,9 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - ./services/api:/app/services/api
+      - ./packages/shared/incidents:/app/packages/shared/incidents
+      - ./scripts:/app/scripts:ro
+      - ./data/raw:/app/data/raw:ro
       - api_data:/data
     networks:
       - healthcore
