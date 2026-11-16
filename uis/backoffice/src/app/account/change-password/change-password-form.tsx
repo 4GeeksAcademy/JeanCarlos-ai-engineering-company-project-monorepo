@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { authRequest, passwordError } from "@/lib/auth";
+import { clearSession } from "@healthcore/auth/client";
 
 export default function ChangePasswordForm() {
   const router = useRouter();
@@ -34,6 +35,7 @@ export default function ChangePasswordForm() {
         setError(response.status === 400 ? "La contraseña actual es incorrecta." : "No se pudo cambiar la contraseña.");
         return;
       }
+      clearSession();
       router.replace("/login?password_changed=1");
     } catch {
       setError("No se pudo conectar con el servicio.");

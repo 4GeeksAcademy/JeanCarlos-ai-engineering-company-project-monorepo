@@ -1,0 +1,14 @@
+.hc-auth-page { width: 100%; max-width: 34rem; margin: 0 auto; padding: 2rem 1rem; }
+.hc-auth-panel { padding: 1.5rem; border: 1px solid #ccd5de; border-radius: .75rem; background: #fff; color: #172b3a; overflow-wrap: anywhere; }
+.hc-auth-panel h1 { margin: 0 0 1.25rem; font-size: 1.6rem; font-weight: 700; }
+.hc-auth-panel p { margin: .75rem 0; }
+.hc-auth-panel fieldset { display: grid; gap: 1rem; margin: 1rem 0; padding: 0; border: 0; min-width: 0; }
+.hc-auth-panel label { display: block; margin-bottom: .35rem; }
+.hc-auth-panel input { display: block; width: 100%; min-width: 0; padding: .65rem; border: 1px solid #687c8b; border-radius: .3rem; background: #fff; color: #172b3a; font: inherit; }
+.hc-auth-panel button, .hc-session-bar button { padding: .65rem 1rem; border: 1px solid #105b76; border-radius: .3rem; background: #105b76; color: #fff; font: inherit; cursor: pointer; }
+.hc-auth-panel button:disabled { opacity: .65; cursor: wait; }
+.hc-auth-panel a, .hc-session-bar a { color: #105b76; text-decoration: underline; }
+.hc-auth-panel .hc-auth-error { color: #9c2020; }
+.hc-auth-panel :focus-visible, .hc-session-bar :focus-visible { outline: 3px solid #a34a00; outline-offset: 3px; }
+.hc-session-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 1rem; padding: .75rem 1rem; border-bottom: 1px solid #ccd5de; background: #fff; }
+@media (max-width: 480px) { .hc-auth-page { padding: 1rem .5rem; } .hc-auth-panel { padding: 1rem; } }

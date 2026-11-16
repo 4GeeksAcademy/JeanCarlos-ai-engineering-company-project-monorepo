@@ -1,5 +1,6 @@
 "use client";
 
+import { authenticatedFetch, getToken } from "@healthcore/auth/client";
 import catalog from "./telemetry-contract.json";
 
 type Value = string | number | boolean | null | Value[] | { [key: string]: Value };
@@ -84,7 +85,13 @@ async function refreshSession() {
   if (sessionLookup) return await sessionLookup;
   sessionLookup = (async () => {
     try {
-      const response = await fetch("/api/telemetry/session", { cache: "no-store", signal: AbortSignal.timeout(5000) });
+      // The session lives in the browser (Bearer token); without one, events stay anonymous.
+      if (!getToken()) {
+        userId = null;
+        role = null;
+        return;
+      }
+      const response = await authenticatedFetch("/api/telemetry/session", { signal: AbortSignal.timeout(5000) });
       if (response.status === 401) {
         userId = null;
         role = null;
@@ -334,12 +341,13 @@ export function withResponseTelemetry(response: Response, capture: () => void): 
 export async function telemetryFetch(
   input: string,
   init?: RequestInit,
+  transport: (input: string, init?: RequestInit) => Promise<Response> = fetch,
 ): Promise<Response> {
   const requestId = crypto.randomUUID();
   const headers = new Headers(init?.headers);
   headers.set("X-Request-ID", requestId);
   const started = performance.now();
-  const response = await fetch(input, { ...init, headers });
+  const response = await transport(input, { ...init, headers });
   const route = apiRoute(input);
   const method = init?.method ?? "GET";
   const status = `${Math.floor(response.status / 100)}xx`;

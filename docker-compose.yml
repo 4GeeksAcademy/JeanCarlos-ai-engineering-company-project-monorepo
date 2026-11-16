@@ -1,7 +1,8 @@
 services:
   ui:
     build:
-      context: ./uis
+      context: .
+      dockerfile: uis/Dockerfile
     init: true
     environment:
       SUPPLIERS_API_URL: http://api:8000
@@ -12,6 +13,7 @@ services:
       - "127.0.0.1:3000:3000"
       - "127.0.0.1:3001:3001"
     volumes:
+      - ./packages/auth:/packages/auth:ro
       - ./uis/talent-pipeline-tracker:/app/talent-pipeline-tracker
       - tracker_node_modules:/app/talent-pipeline-tracker/node_modules
       - tracker_next:/app/talent-pipeline-tracker/.next

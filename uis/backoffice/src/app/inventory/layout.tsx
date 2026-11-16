@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { requireSession } from "@/lib/server-api";
 
-export default async function InventoryLayout({ children }: { children: React.ReactNode }) {
-  await requireSession();
+export default function InventoryLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <nav className="inventory-nav" aria-label="Navegación de inventario">

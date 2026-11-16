@@ -1,0 +1,17 @@
+{
+  "name": "@healthcore/auth",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    "./client": "./lib/client.ts",
+    "./server": "./lib/server.ts",
+    "./components": "./components/auth.tsx",
+    "./types": "./types/index.ts",
+    "./styles.css": "./components/auth.css"
+  },
+  "peerDependencies": {
+    "next": "^16.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

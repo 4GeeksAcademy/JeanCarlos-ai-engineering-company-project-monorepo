@@ -1,14 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["@healthcore/auth"],
   cacheComponents: true,
   partialPrefetching: true,
-  async rewrites() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    return apiUrl
-      ? [{ source: "/api/tracker/:path*", destination: `${apiUrl}/:path*` }]
-      : [];
-  },
   turbopack: {
     rules: {
       "*.css": {

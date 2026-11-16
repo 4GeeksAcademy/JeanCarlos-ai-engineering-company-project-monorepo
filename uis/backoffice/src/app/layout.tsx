@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
-import "./globals.css";
+import { Suspense } from "react";
+import { SessionBoundary } from "@healthcore/auth/components";
 import TelemetryProvider from "@/components/TelemetryProvider";
+import "./globals.css";
+import "@healthcore/auth/styles.css";
 
 export const metadata: Metadata = {
   title: "HealthCore | Directorio de proveedores",
@@ -12,7 +15,12 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es">
-      <body><TelemetryProvider />{children}</body>
+      <body>
+        <TelemetryProvider />
+        <Suspense fallback={<p role="status">Comprobando sesión...</p>}>
+          <SessionBoundary homePath="/suppliers">{children}</SessionBoundary>
+        </Suspense>
+      </body>
     </html>
   );
 }

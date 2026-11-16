@@ -1,17 +1,12 @@
+import { authenticatedFetch } from "@healthcore/auth/client";
 import { captureAuthentication, track } from "@/services/telemetry";
 
-export function passwordError(password: string, confirmation: string): string {
-  if (Array.from(password).length < 8) return "La contraseña debe tener al menos 8 caracteres.";
-  if (new TextEncoder().encode(password).length > 72) {
-    return "La contraseña no puede superar 72 bytes UTF-8.";
-  }
-  if (password !== confirmation) return "Las contraseñas no coinciden.";
-  return "";
-}
+export { passwordError } from "@healthcore/auth/client";
 
 export async function authRequest(action: string, data: object): Promise<Response> {
+  const request = action === "change-password" ? authenticatedFetch : fetch;
   try {
-    const response = await fetch(`/api/auth/${action}`, {
+    const response = await request(`/api/auth/${action}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Request-ID": crypto.randomUUID() },
       body: JSON.stringify(data),

@@ -1,7 +1,7 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { apiUrl, sameOrigin, SESSION_COOKIE } from "@/lib/server-api";
+import { apiUrl, sameOrigin } from "@/lib/server-api";
 
+// POST /telemetry/events is public in the API; events never carry the session token.
 export async function POST(request: Request) {
   if (!sameOrigin(request)) {
     return NextResponse.json({ detail: "Origen no permitido." }, { status: 403 });
@@ -10,9 +10,7 @@ export async function POST(request: Request) {
   if (new TextEncoder().encode(body).length > 60000) {
     return NextResponse.json({ detail: "Lote demasiado grande." }, { status: 413 });
   }
-  const token = (await cookies()).get(SESSION_COOKIE)?.value;
   const headers = new Headers({ "Content-Type": "application/json" });
-  if (token) headers.set("Authorization", `Bearer ${token}`);
   try {
     const response = await fetch(process.env.TELEMETRY_ENDPOINT ?? apiUrl("/telemetry/events"), {
       method: "POST", headers, body, cache: "no-store", redirect: "manual",
