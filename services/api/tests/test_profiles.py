@@ -1,64 +1,84 @@
-from tinydb import Query
+"""/profiles — GET/PUT /profiles/me and the by-id routes (ownership rules)."""
+import pytest
+from fastapi import HTTPException
+from pydantic import ValidationError
+
+from services.api.core.dependencies import require_staff
+from services.api.models.auth import ProfileUpdate
+from services.api.routes.profiles import (
+    get_my_profile, get_profile, list_profiles, update_my_profile, update_profile,
+)
+from services.api.services import users as user_service
 
 
-def profile_of(database, user):
-    return database.table("profiles").get(Query().user_id == user["id"])
+def profile_of(db, user):
+    return user_service.get_profile_by_user(db, user.id)
 
 
-def test_profile_me_requires_a_token(client):
-    assert client.get("/profiles/me").status_code == 401
-    assert client.put("/profiles/me", json={"name": "x"}).status_code == 401
+def assert_status(code, call, *args):
+    with pytest.raises(HTTPException) as error:
+        call(*args)
+    assert error.value.status_code == code
 
 
-def test_get_profile_me_returns_the_authenticated_users_profile(client, user_factory, auth_headers):
-    user = user_factory(name="Alice", phone="555", address="1 Main St")
-    user_factory(email="other@example.org", name="Other")
-    response = client.get("/profiles/me", headers=auth_headers(user))
-    assert response.status_code == 200
-    assert response.json()["user_id"] == user["id"]
-    assert response.json()["name"] == "Alice"
+# --- GET/PUT /profiles/me -------------------------------------------------------------------
+
+def test_get_me_returns_only_the_callers_profile(db, user_account, admin_account):
+    assert get_my_profile(db, user_account).user_id == user_account.id
+    assert get_my_profile(db, admin_account).user_id == admin_account.id
 
 
-def test_put_profile_me_updates_contact_fields_only(client, database, user_factory, auth_headers):
-    user = user_factory(name="Alice", phone="555")
-    response = client.put("/profiles/me", headers=auth_headers(user), json={
-        "name": "Alice B", "address": "2 Side St",
-    })
-    assert response.status_code == 200
-    stored = profile_of(database, user)
-    assert stored["name"] == "Alice B"
-    assert stored["address"] == "2 Side St"
-    assert stored["phone"] == "555"
-    assert client.put("/profiles/me", headers=auth_headers(user), json={"user_id": "x"}).status_code == 422
-    assert client.put("/profiles/me", headers=auth_headers(user), json={"email": "x@example.org"}).status_code == 422
+def test_put_me_updates_only_the_fields_sent(db, user_account):
+    update_my_profile(ProfileUpdate(address="2 Side St"), db, user_account)
+    stored = profile_of(db, user_account)
+    # name/phone were not sent, so they keep their previous values.
+    assert (stored.name, stored.phone, stored.address) == ("Alice", "555-0100", "2 Side St")
 
 
-def test_put_profile_me_creates_a_profile_for_legacy_users(client, database, user_factory, auth_headers):
-    user = user_factory()
-    database.table("profiles").remove(Query().user_id == user["id"])
-    assert client.get("/profiles/me", headers=auth_headers(user)).status_code == 404
-    assert client.put("/profiles/me", headers=auth_headers(user), json={"name": "New"}).status_code == 200
-    assert profile_of(database, user)["name"] == "New"
+def test_put_me_can_clear_a_field_explicitly(db, user_account):
+    update_my_profile(ProfileUpdate(phone=None), db, user_account)
+    assert profile_of(db, user_account).phone is None
 
 
-def test_users_cannot_read_or_modify_another_users_profile(client, database, admin, user_factory, auth_headers):
-    user = user_factory(name="Alice")
-    other = user_factory(email="other@example.org", name="Other")
-    other_profile = profile_of(database, other)
-
-    headers = auth_headers(user)
-    assert client.get(f"/profiles/{other_profile['id']}", headers=headers).status_code == 403
-    assert client.put(f"/profiles/{other_profile['id']}", headers=headers, json={"name": "Hacked"}).status_code == 403
-    assert client.put(f"/profiles/{other_profile['id']}", headers=auth_headers(admin), json={"name": "Hacked"}).status_code == 403
-    assert profile_of(database, other)["name"] == "Other"
-    assert client.get("/profiles", headers=headers).status_code == 403
+def test_legacy_user_without_profile_gets_404_then_put_creates_it(db, user_account):
+    db.table("profiles").truncate()
+    assert_status(404, get_my_profile, db, user_account)
+    update_my_profile(ProfileUpdate(name="New"), db, user_account)
+    assert profile_of(db, user_account).name == "New"
+    assert len(db.table("profiles")) == 1
 
 
-def test_owner_and_staff_access_by_profile_id(client, database, admin, user_factory, auth_headers):
-    user = user_factory(name="Alice")
-    profile_id = profile_of(database, user)["id"]
-    assert client.get(f"/profiles/{profile_id}", headers=auth_headers(user)).status_code == 200
-    assert client.get(f"/profiles/{profile_id}", headers=auth_headers(admin)).status_code == 200
-    assert client.put(f"/profiles/{profile_id}", headers=auth_headers(user), json={"phone": "1"}).status_code == 200
-    assert client.get("/profiles/missing", headers=auth_headers(user)).status_code == 404
-    assert len(client.get("/profiles", headers=auth_headers(admin)).json()) == 2
+@pytest.mark.parametrize("fields", [{"user_id": "someone-else"}, {"email": "x@example.org"}, {"name": "x" * 201}])
+def test_profile_payload_cannot_change_owner_or_credentials(fields):
+    with pytest.raises(ValidationError):
+        ProfileUpdate(**fields)
+
+
+# --- GET /profiles, GET/PUT /profiles/{id} ----------------------------------------------------
+
+def test_staff_list_all_profiles_but_users_cannot(db, admin_account, user_account):
+    assert len(list_profiles(db, require_staff(admin_account))) == 2
+    assert_status(403, require_staff, user_account)
+
+
+def test_owner_and_staff_can_read_a_profile_by_id(db, admin_account, user_account):
+    profile_id = profile_of(db, user_account).id
+    assert get_profile(profile_id, db, user_account).name == "Alice"
+    assert get_profile(profile_id, db, admin_account).name == "Alice"
+
+
+def test_reading_another_users_profile_is_403(db, user_account, create_account):
+    other = create_account(email="bob@example.org", name="Bob")
+    assert_status(403, get_profile, profile_of(db, other).id, db, user_account)
+
+
+def test_only_the_owner_modifies_a_profile_even_admins_get_403(db, admin_account, user_account):
+    profile_id = profile_of(db, user_account).id
+    assert_status(403, update_profile, profile_id, ProfileUpdate(name="Hacked"), db, admin_account)
+    update_profile(profile_id, ProfileUpdate(name="Alice B"), db, user_account)
+    assert profile_of(db, user_account).name == "Alice B"
+
+
+def test_unknown_profile_id_is_404(db, user_account):
+    assert_status(404, get_profile, "does-not-exist", db, user_account)
+    assert_status(404, update_profile, "does-not-exist", ProfileUpdate(name="x"), db, user_account)

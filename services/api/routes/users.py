@@ -8,6 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..core.dependencies import CurrentUser, Database, OptionalUser, forbidden, require_staff
+from ..core.security import verify_password
 from ..models.auth import Role, User, UserCreate, UserResponse, UserUpdate
 from ..services import users as user_service
 
@@ -66,7 +67,14 @@ def update_user(user_id: str, payload: UserUpdate, database: Database, caller: C
         raise forbidden()
     if not is_admin and (payload.role is not None or payload.is_active is not None):
         raise forbidden("Only administrators can change role or account status")
-    get_or_404(database, user_id)
+    target = get_or_404(database, user_id)
+    email_changes = payload.email is not None and payload.email.lower() != target.email.lower()
+    if caller.id == user_id and (payload.password is not None or email_changes):
+        # A stolen token alone must not be enough to take over the account.
+        if payload.current_password is None or not verify_password(
+            payload.current_password, target.hashed_password
+        ):
+            raise forbidden("Confirm your current password to change your email or password")
     try:
         user = user_service.update_user(database, user_id, payload)
     except user_service.EmailAlreadyExists:

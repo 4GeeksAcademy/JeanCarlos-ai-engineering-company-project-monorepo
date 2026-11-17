@@ -18,15 +18,21 @@ class Settings:
     access_token_expire_minutes: int
 
 
+def _setting(name: str) -> str:
+    return os.environ.get(name, "").strip()
+
+
 @lru_cache
 def get_settings() -> Settings:
     load_dotenv(Path(__file__).resolve().parents[1] / ".env")
     # The signing key has no default: it must come from the environment / .env.
     secret = os.environ.get("JWT_SECRET_KEY", "")
-    algorithm = os.environ.get("JWT_ALGORITHM", "HS256")
-    raw_expiration = os.environ.get(
-        "ACCESS_TOKEN_EXPIRE_MINUTES",
-        os.environ.get("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "30"),
+    # Blank values (e.g. a copied .env.example) mean "use the default", not "crash".
+    algorithm = _setting("JWT_ALGORITHM") or "HS256"
+    raw_expiration = (
+        _setting("ACCESS_TOKEN_EXPIRE_MINUTES")
+        or _setting("JWT_ACCESS_TOKEN_EXPIRE_MINUTES")
+        or "30"
     )
     try:
         expiration = int(raw_expiration)
