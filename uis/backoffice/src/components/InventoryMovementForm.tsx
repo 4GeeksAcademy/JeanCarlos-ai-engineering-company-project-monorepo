@@ -1,95 +1,165 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
-import { createInbound, createOutbound, InventoryError, listProducts, useInventoryError } from "@/lib/inventory";
-import type { Product } from "@/types/inventory";
+import {
+  createInbound, createOutbound, getProduct, InventoryError, listProducts, stockLevel, useInventoryError,
+} from "@/lib/inventory";
+import {
+  CLINIC_IDS, CONSUMPTION_LABELS, UNIT_LABELS, clinicLabel, quantityLabel,
+} from "@/lib/inventory-labels";
+import type { OutboundOrder, Product } from "@/types/inventory";
 import { useTelemetryFlow } from "@/lib/useTelemetryFlow";
+
+type Direction = "inbound" | "outbound";
+type FieldErrors = Partial<Record<"supply" | "quantity" | "clinic" | "vendor", string>>;
+type SelectedStock =
+  | { state: "idle" }
+  | { state: "loading" }
+  | { state: "ready"; product: Product }
+  | { state: "error"; message: string };
+
+const COPY = {
+  inbound: {
+    title: "Registrar entrega de proveedor",
+    intro: "Suministros recibidos de un proveedor en una clínica HealthCore.",
+    submit: "Registrar entrega",
+    done: "Entrega registrada",
+  },
+  outbound: {
+    title: "Registrar consumo clínico",
+    intro: "Suministros usados en la atención al paciente o desechados por caducidad.",
+    submit: "Registrar consumo",
+    done: "Consumo registrado",
+  },
+} as const;
 
 export default function InventoryMovementForm({
   direction,
   initialSupplyId,
 }: {
-  direction: "inbound" | "outbound";
+  direction: Direction;
   initialSupplyId: string;
 }) {
+  const copy = COPY[direction];
   const [products, setProducts] = useState<Product[]>([]);
+  const [listState, setListState] = useState<"loading" | "ready" | "error">("loading");
+  const [listError, setListError] = useState("");
+  const [reloadList, setReloadList] = useState(0);
   const [supplyId, setSupplyId] = useState(initialSupplyId);
+  const [selected, setSelected] = useState<SelectedStock>(
+    initialSupplyId ? { state: "loading" } : { state: "idle" },
+  );
+  const [reloadStock, setReloadStock] = useState(0);
   const [quantity, setQuantity] = useState("");
   const [clinicId, setClinicId] = useState("");
   const [vendor, setVendor] = useState("");
-  const [consumptionType, setConsumptionType] = useState<"clinical_use" | "expiry_waste">("clinical_use");
-  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
-  const [error, setError] = useState("");
+  const [consumptionType, setConsumptionType] = useState<OutboundOrder["consumption_type"]>("clinical_use");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [reload, setReload] = useState(0);
   const errorMessage = useInventoryError();
   const telemetryFlow = useTelemetryFlow(direction === "inbound" ? "inventory_inbound" : "inventory_outbound");
 
+  // Supplies for the selector (by name, never a raw id).
   useEffect(() => {
     const controller = new AbortController();
-    async function load() {
-      try {
-        const result = await listProducts(controller.signal);
-        if (!controller.signal.aborted) {
-          setProducts(result);
-          setState("ready");
-        }
-      } catch (error) {
-        if (!controller.signal.aborted) {
-          setError(errorMessage(error, "No se pudieron cargar los productos."));
-          setState("error");
-        }
-      }
-    }
-    void load();
+    listProducts(controller.signal)
+      .then((result) => { setProducts(result); setListState("ready"); })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        setListError(errorMessage(error, "No se pudieron cargar los suministros médicos."));
+        setListState("error");
+      });
     return () => controller.abort();
-  }, [reload, errorMessage]);
+  }, [reloadList, errorMessage]);
 
-  const selectedProduct = products.find((product) => String(product.id) === supplyId);
+  // Current stock of the selected supply, fetched again whenever the selection changes.
+  useEffect(() => {
+    if (!supplyId) return;
+    const controller = new AbortController();
+    getProduct(Number(supplyId), controller.signal)
+      .then((product) => setSelected({ state: "ready", product }))
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) {
+          setSelected({ state: "error", message: errorMessage(error, "No se pudo consultar el stock.") });
+        }
+      });
+    return () => controller.abort();
+  }, [supplyId, reloadStock, errorMessage]);
+
+  function selectSupply(value: string) {
+    setSupplyId(value);
+    setSelected(value ? { state: "loading" } : { state: "idle" });
+    setFieldErrors((current) => ({ ...current, supply: undefined, quantity: undefined }));
+    telemetryFlow.productSelected();
+  }
+
+  function refreshStock() {
+    if (supplyId) {
+      setSelected({ state: "loading" });
+      setReloadStock((n) => n + 1);
+    }
+  }
+
+  const stock = selected.state === "ready" ? selected.product : null;
+  const amount = Number(quantity);
+  // UX guard only: the API enforces the real rule (HTTP 400 on insufficient stock).
+  const exceedsStock = direction === "outbound" && stock !== null && quantity !== ""
+    && Number.isInteger(amount) && amount > stock.current_stock;
+
+  function validate(): FieldErrors {
+    const errors: FieldErrors = {};
+    if (!supplyId) errors.supply = "Selecciona un suministro médico.";
+    if (!Number.isInteger(amount) || amount < 1 || amount > 2147483647) {
+      errors.quantity = "Indica una cantidad entera mayor que 0.";
+    }
+    if (!clinicId) errors.clinic = "Selecciona la clínica.";
+    if (direction === "inbound" && !vendor.trim()) errors.vendor = "Indica el proveedor que hizo la entrega.";
+    return errors;
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const amount = Number(quantity);
-    const clinic = Number(clinicId);
-    if (!selectedProduct || !Number.isInteger(amount) || amount < 1 || amount > 2147483647 ||
-      !Number.isInteger(clinic) || clinic < 1 || clinic > 12 || (direction === "inbound" && !vendor.trim())) {
-      setError("Comprueba el producto, la cantidad, la clínica y los demás campos obligatorios.");
+    setFormError("");
+    setMessage("");
+    const errors = validate();
+    setFieldErrors(errors);
+    if (Object.keys(errors).length) {
       telemetryFlow.invalid();
       return;
     }
     setBusy(true);
     telemetryFlow.submitting();
-    setError("");
-    setMessage("");
+    const supplyName = stock?.name ?? products.find((p) => String(p.id) === supplyId)?.name ?? "el suministro";
+    const unit = stock?.unit ?? products.find((p) => String(p.id) === supplyId)?.unit ?? "unit";
     try {
-      const movement = { supply_id: selectedProduct.id, quantity: amount, clinic_id: clinic };
+      const movement = { supply_id: Number(supplyId), quantity: amount, clinic_id: Number(clinicId) };
       if (direction === "inbound") {
         await createInbound({ ...movement, vendor_name: vendor.trim() });
       } else {
         await createOutbound({ ...movement, consumption_type: consumptionType });
       }
       telemetryFlow.completed();
+      setMessage(`${copy.done}: ${quantityLabel(amount, unit)} de ${supplyName} en ${clinicLabel(Number(clinicId))}`);
+      // Clear the whole form for the next entry.
+      setSupplyId("");
+      setSelected({ state: "idle" });
       setQuantity("");
-      setMessage(direction === "inbound" ? "Entrada registrada." : "Salida registrada.");
-      try {
-        setProducts(await listProducts());
-      } catch (error) {
-        setError(`Movimiento registrado, pero no se pudo actualizar el stock: ${errorMessage(error, "error desconocido")}`);
-        setState("error");
-      }
+      setClinicId("");
+      setVendor("");
+      setConsumptionType("clinical_use");
+      setFieldErrors({});
+      setReloadList((n) => n + 1);
     } catch (error) {
       const detail = errorMessage(error, "No se pudo registrar el movimiento.");
       if (error instanceof InventoryError && error.status === 400 && direction === "outbound") {
-        setError(`Stock insuficiente: ${detail}`);
-        try {
-          setProducts(await listProducts());
-        } catch (refreshError) {
-          setError(`${detail} No se pudo actualizar el stock: ${errorMessage(refreshError, "error desconocido")}`);
-          setState("error");
-        }
+        // Insufficient stock: show the API message next to the quantity field.
+        setFieldErrors({ quantity: `Stock insuficiente. ${detail}` });
+        refreshStock();
       } else {
-        setError(`${detail} Comprueba el historial antes de volver a enviar.`);
+        setFormError(`${detail} No se registró el movimiento; revisa los datos y vuelve a intentarlo.`);
       }
     } finally {
       telemetryFlow.settled();
@@ -97,50 +167,116 @@ export default function InventoryMovementForm({
     }
   }
 
+  const describedBy = (field: keyof FieldErrors, extra?: string) =>
+    [extra, fieldErrors[field] ? `${field}-error` : undefined].filter(Boolean).join(" ") || undefined;
+
   return (
     <main>
-      <h1>{direction === "inbound" ? "Registrar entrada" : "Registrar salida"}</h1>
+      <h1>{copy.title}</h1>
+      <p>{copy.intro}</p>
       <section className="panel">
-        {state === "loading" && <p role="status">Cargando productos...</p>}
-        {message && <p className="success" role="status">{message}</p>}
-        {error && <p className="error" role="alert">{error}</p>}
-        {state === "error" && (
-          <button type="button" onClick={() => { setError(""); setState("loading"); setReload((n) => n + 1); }}>Reintentar carga</button>
+        {message && <p className="success notice-box" role="status">✅ {message} <Link href="/inventory/orders">Ver historial</Link></p>}
+        {formError && <p className="error notice-box" role="alert">{formError}</p>}
+        {listState === "loading" && <p role="status">Cargando suministros médicos...</p>}
+        {listState === "error" && (
+          <div className="error" role="alert">
+            <p>{listError}</p>
+            <button type="button" onClick={() => { setListState("loading"); setReloadList((n) => n + 1); }}>Reintentar</button>
+          </div>
         )}
-        {state === "ready" && (
-          <form className="auth-form" onSubmit={submit} onChangeCapture={telemetryFlow.changed} onInvalid={telemetryFlow.invalid}>
+        {listState === "ready" && (
+          <form className="auth-form" onSubmit={submit} noValidate onChangeCapture={telemetryFlow.changed} onInvalid={telemetryFlow.invalid}>
             <label>
-              Producto
-              <select required value={selectedProduct ? supplyId : ""} onChange={(event) => {
-                setSupplyId(event.target.value);
-                telemetryFlow.productSelected();
-              }}>
-                <option value="">Selecciona un producto</option>
-                {products.map((product) => <option key={product.id} value={product.id}>{product.name} ({product.sku})</option>)}
+              Suministro médico
+              <select
+                name="supply_id" value={supplyId} aria-invalid={Boolean(fieldErrors.supply)}
+                aria-describedby={describedBy("supply", "stock-status")}
+                onChange={(event) => selectSupply(event.target.value)}
+              >
+                <option value="">Selecciona un suministro</option>
+                {products.map((product) => (
+                  <option key={product.id} value={product.id}>{product.name} ({product.sku})</option>
+                ))}
               </select>
+              {fieldErrors.supply && <span className="field-error" id="supply-error">{fieldErrors.supply}</span>}
             </label>
-            {direction === "outbound" && selectedProduct && (
-              <p role="status">Stock global disponible: {selectedProduct.current_stock} {selectedProduct.unit}</p>
-            )}
-            <label>Cantidad<input type="number" min="1" max="2147483647" step="1" required value={quantity} onChange={(event) => setQuantity(event.target.value)} /></label>
-            <label>ID de clínica<input type="number" min="1" max="12" step="1" required value={clinicId} onChange={(event) => setClinicId(event.target.value)} /></label>
+
+            <div id="stock-status" className="stock-status" aria-live="polite">
+              {selected.state === "loading" && <span>Consultando stock actual…</span>}
+              {selected.state === "ready" && (
+                <span className={`stock-level stock-${stockLevel(selected.product.current_stock)}`}>
+                  Stock actual disponible: {quantityLabel(selected.product.current_stock, selected.product.unit)}
+                </span>
+              )}
+              {selected.state === "error" && (
+                <span className="error">
+                  {selected.message} <button type="button" className="link-button" onClick={refreshStock}>Reintentar</button>
+                </span>
+              )}
+            </div>
+
+            <label>
+              Cantidad{stock ? ` (${UNIT_LABELS[stock.unit]})` : ""}
+              <input
+                name="quantity" type="number" min="1" step="1" inputMode="numeric" value={quantity}
+                aria-invalid={Boolean(fieldErrors.quantity) || exceedsStock}
+                aria-describedby={describedBy("quantity", exceedsStock ? "quantity-warning" : undefined)}
+                onChange={(event) => {
+                  setQuantity(event.target.value);
+                  setFieldErrors((current) => ({ ...current, quantity: undefined }));
+                }}
+              />
+              {exceedsStock && stock && (
+                <span className="field-warning" id="quantity-warning" role="alert">
+                  ⚠️ La cantidad supera el stock disponible ({quantityLabel(stock.current_stock, stock.unit)}).
+                  La API rechazará este consumo.
+                </span>
+              )}
+              {fieldErrors.quantity && <span className="field-error" id="quantity-error" role="alert">{fieldErrors.quantity}</span>}
+            </label>
+
+            <label>
+              Clínica
+              <select
+                name="clinic_id" value={clinicId} aria-invalid={Boolean(fieldErrors.clinic)}
+                aria-describedby={describedBy("clinic")} onChange={(event) => setClinicId(event.target.value)}
+              >
+                <option value="">Selecciona la clínica</option>
+                {CLINIC_IDS.map((id) => <option key={id} value={id}>{clinicLabel(id)}</option>)}
+              </select>
+              {fieldErrors.clinic && <span className="field-error" id="clinic-error">{fieldErrors.clinic}</span>}
+            </label>
+
             {direction === "inbound" ? (
-              <label>Proveedor<input required value={vendor} onChange={(event) => setVendor(event.target.value)} /></label>
+              <label>
+                Proveedor
+                <input
+                  name="vendor_name" value={vendor} placeholder="Ej.: MedLine Industries"
+                  aria-invalid={Boolean(fieldErrors.vendor)} aria-describedby={describedBy("vendor")}
+                  onChange={(event) => setVendor(event.target.value)}
+                />
+                {fieldErrors.vendor && <span className="field-error" id="vendor-error">{fieldErrors.vendor}</span>}
+              </label>
             ) : (
               <label>
                 Tipo de consumo
-                <select value={consumptionType} onChange={(event) => {
-                  if (event.target.value === "clinical_use" || event.target.value === "expiry_waste") {
-                    setConsumptionType(event.target.value);
-                  }
-                }}>
-                  <option value="clinical_use">Uso clínico</option>
-                  <option value="expiry_waste">Caducidad o desperdicio</option>
+                <select
+                  name="consumption_type" value={consumptionType}
+                  onChange={(event) => {
+                    if (event.target.value === "clinical_use" || event.target.value === "expiry_waste") {
+                      setConsumptionType(event.target.value);
+                    }
+                  }}
+                >
+                  {(Object.keys(CONSUMPTION_LABELS) as OutboundOrder["consumption_type"][]).map((type) => (
+                    <option key={type} value={type}>{CONSUMPTION_LABELS[type]}</option>
+                  ))}
                 </select>
               </label>
             )}
-            <button disabled={busy || products.length === 0}>{busy ? "Guardando..." : "Registrar movimiento"}</button>
-            {products.length === 0 && <p>No hay productos disponibles.</p>}
+
+            <button disabled={busy || products.length === 0}>{busy ? "Guardando…" : copy.submit}</button>
+            {products.length === 0 && <p>No hay suministros médicos registrados.</p>}
           </form>
         )}
       </section>
