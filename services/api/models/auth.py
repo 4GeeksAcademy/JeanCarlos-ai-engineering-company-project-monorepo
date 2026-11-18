@@ -74,6 +74,8 @@ class UserUpdate(InputModel):
     password: str | None = Field(default=None, min_length=8)
     role: Role | None = None
     is_active: bool | None = None
+    # Required when users change their own email or password (never stored).
+    current_password: str | None = Field(default=None, max_length=1024)
 
     @field_validator("password")
     @classmethod

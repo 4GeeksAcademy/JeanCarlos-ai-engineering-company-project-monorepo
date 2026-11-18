@@ -46,7 +46,7 @@ Create the first administrator with the API stopped:
 | POST | `/users` | Public registration (role `user` by default; only an admin token may assign `admin`/`manager`). Optional `name`, `phone`, `address` create the linked profile |
 | GET | `/users` | Token, admin or manager (403 otherwise) |
 | GET | `/users/{id}` | Token, the user themselves, admin or manager (403 otherwise) |
-| PUT | `/users/{id}` | Token, the user themselves or admin (403 otherwise); `role`/`is_active` admin only |
+| PUT | `/users/{id}` | Token, the user themselves or admin (403 otherwise); `role`/`is_active` admin only. Users changing their own `email` or `password` must also send `current_password` |
 | DELETE | `/users/{id}` | Token, the user themselves or admin (403 otherwise); also deletes the profile |
 | GET/PUT | `/profiles/me` | Token, the authenticated user's profile |
 | GET | `/profiles`, `/profiles/{id}` | Token; list is admin/manager, detail is owner/admin/manager |

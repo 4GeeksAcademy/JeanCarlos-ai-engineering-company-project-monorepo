@@ -30,7 +30,7 @@ export async function requireSession(): Promise<void> {
   if (!token) redirect("/login");
   let response: Response;
   try {
-    response = await fetch(apiUrl("/me"), {
+    response = await fetch(apiUrl("/auth/me"), {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
       redirect: "manual",

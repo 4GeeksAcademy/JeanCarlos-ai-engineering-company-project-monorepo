@@ -22,3 +22,18 @@ dev = [
     "pytest>=8,<10",
     "pytest-cov>=5,<8",
 ]
+
+[tool.pytest.ini_options]
+# Run from services/api: `uv run pytest`. The repository root goes on sys.path
+# so the tests can import the API package as `services.api`.
+pythonpath = ["../.."]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["."]
+omit = ["tests/*", ".venv/*", "seed*.py", "bootstrap_admin.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true

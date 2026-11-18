@@ -100,7 +100,9 @@ def update_user(database: TinyDB, user_id: str, payload: UserUpdate) -> User:
     user = get_user_by_id(database, user_id)
     if user is None:
         raise UserNotFound
-    updates = payload.model_dump(exclude_unset=True, exclude_none=True, mode="json")
+    updates = payload.model_dump(
+        exclude_unset=True, exclude_none=True, exclude={"current_password"}, mode="json"
+    )
     credentials_changed = False
     if "email" in updates:
         _ensure_unique_email(database, updates["email"], user_id)
