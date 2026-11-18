@@ -1,0 +1,283 @@
+{
+  "label": "after",
+  "date": "2026-11-18T10:51:05.231Z",
+  "runs": 5,
+  "summary": [
+    {
+      "route": "tracker-home",
+      "url": "http://localhost:3000/",
+      "formFactor": "mobile",
+      "runs": 5,
+      "score": 97,
+      "fcp": 753.9447,
+      "lcp": 2311.2895,
+      "cls": 0,
+      "tbt": 134,
+      "si": 753.9447,
+      "ttfb": 1.933,
+      "lcpElement": "<h1>",
+      "all": [
+        {
+          "score": 92,
+          "lcp": 2344,
+          "cls": 0,
+          "tbt": 292
+        },
+        {
+          "score": 97,
+          "lcp": 2311,
+          "cls": 0,
+          "tbt": 120
+        },
+        {
+          "score": 97,
+          "lcp": 2310,
+          "cls": 0,
+          "tbt": 134
+        },
+        {
+          "score": 97,
+          "lcp": 2312,
+          "cls": 0,
+          "tbt": 111
+        },
+        {
+          "score": 96,
+          "lcp": 2309,
+          "cls": 0,
+          "tbt": 181
+        }
+      ]
+    },
+    {
+      "route": "tracker-home",
+      "url": "http://localhost:3000/",
+      "formFactor": "desktop",
+      "runs": 5,
+      "score": 100,
+      "fcp": 205.082,
+      "lcp": 501.04999999999995,
+      "cls": 0,
+      "tbt": 0,
+      "si": 205.082,
+      "ttfb": 1.4580000000000002,
+      "lcpElement": null,
+      "all": [
+        {
+          "score": 100,
+          "lcp": 499,
+          "cls": 0,
+          "tbt": 0
+        },
+        {
+          "score": 100,
+          "lcp": 499,
+          "cls": 0,
+          "tbt": 0
+        },
+        {
+          "score": 100,
+          "lcp": 502,
+          "cls": 0,
+          "tbt": 0
+        },
+        {
+          "score": 100,
+          "lcp": 502,
+          "cls": 0,
+          "tbt": 0
+        },
+        {
+          "score": 100,
+          "lcp": 501,
+          "cls": 0,
+          "tbt": 0
+        }
+      ]
+    },
+    {
+      "route": "backoffice-login",
+      "url": "http://localhost:3001/login",
+      "formFactor": "mobile",
+      "runs": 5,
+      "score": 99,
+      "fcp": 752.684,
+      "lcp": 2005.6839999999997,
+      "cls": 0,
+      "tbt": 3,
+      "si": 752.684,
+      "ttfb": 3.4570000000000003,
+      "lcpElement": "<h1 id=\"login-title\">",
+      "all": [
+        {
+          "score": 99,
+          "lcp": 2009,
+          "cls": 0,
+          "tbt": 5
+        },
+        {
+          "score": 99,
+          "lcp": 2006,
+          "cls": 0,
+          "tbt": 3
+        },
+        {
+          "score": 99,
+          "lcp": 2005,
+          "cls": 0,
+          "tbt": 3
+        },
+        {
+          "score": 99,
+          "lcp": 2004,
+          "cls": 0,
+          "tbt": 1
+        },
+        {
+          "score": 99,
+          "lcp": 2006,
+          "cls": 0,
+          "tbt": 4
+        }
+      ]
+    },
+    {
+      "route": "backoffice-login",
+      "url": "http://localhost:3001/login",
+      "formFactor": "desktop",
+      "runs": 5,
+      "score": 100,
+      "fcp": 203.07600000000002,
+      "lcp": 457.89739999999995,
+      "cls": 0,
+      "tbt": 0,
+      "si": 203.07600000000002,
+      "ttfb": 2.742,
+      "lcpElement": "<h1 id=\"login-title\">",
+      "all": [
+        {
+          "score": 100,
+          "lcp": 458,
+          "cls": 0,
+          "tbt": 0
+        },
+        {
+          "score": 100,
+          "lcp": 455,
+          "cls": 0,
+          "tbt": 0
+        },
+        {
+          "score": 100,
+          "lcp": 457,
+          "cls": 0,
+          "tbt": 0
+        },
+        {
+          "score": 100,
+          "lcp": 459,
+          "cls": 0,
+          "tbt": 0
+        },
+        {
+          "score": 100,
+          "lcp": 458,
+          "cls": 0,
+          "tbt": 0
+        }
+      ]
+    },
+    {
+      "route": "backoffice-inventory",
+      "url": "http://localhost:3001/inventory/products",
+      "formFactor": "mobile",
+      "runs": 5,
+      "score": 99,
+      "fcp": 753.9839,
+      "lcp": 2008.1542999999997,
+      "cls": 0,
+      "tbt": 4,
+      "si": 753.9839,
+      "ttfb": 5.797000000000001,
+      "lcpElement": "<h1>",
+      "all": [
+        {
+          "score": 99,
+          "lcp": 2008,
+          "cls": 0,
+          "tbt": 4
+        },
+        {
+          "score": 99,
+          "lcp": 2008,
+          "cls": 0,
+          "tbt": 4
+        },
+        {
+          "score": 99,
+          "lcp": 2009,
+          "cls": 0,
+          "tbt": 5
+        },
+        {
+          "score": 99,
+          "lcp": 2008,
+          "cls": 0,
+          "tbt": 4
+        },
+        {
+          "score": 99,
+          "lcp": 2010,
+          "cls": 0,
+          "tbt": 6
+        }
+      ]
+    },
+    {
+      "route": "backoffice-inventory",
+      "url": "http://localhost:3001/inventory/products",
+      "formFactor": "desktop",
+      "runs": 5,
+      "score": 100,
+      "fcp": 203.97129999999999,
+      "lcp": 458.05679999999995,
+      "cls": 0,
+      "tbt": 0,
+      "si": 203.97129999999999,
+      "ttfb": 4.832000000000001,
+      "lcpElement": "<h1>",
+      "all": [
+        {
+          "score": 100,
+          "lcp": 460,
+          "cls": 0,
+          "tbt": 0
+        },
+        {
+          "score": 100,
+          "lcp": 458,
+          "cls": 0,
+          "tbt": 0
+        },
+        {
+          "score": 100,
+          "lcp": 458,
+          "cls": 0,
+          "tbt": 0
+        },
+        {
+          "score": 100,
+          "lcp": 457,
+          "cls": 0,
+          "tbt": 0
+        },
+        {
+          "score": 100,
+          "lcp": 460,
+          "cls": 0,
+          "tbt": 0
+        }
+      ]
+    }
+  ]
+}

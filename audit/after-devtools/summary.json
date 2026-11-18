@@ -1,0 +1,55 @@
+{
+  "label": "after-devtools",
+  "date": "2026-11-18T11:13:22.325Z",
+  "runs": 5,
+  "throttling": "devtools",
+  "summary": [
+    {
+      "route": "tracker-home",
+      "url": "http://localhost:3000/",
+      "formFactor": "mobile",
+      "runs": 5,
+      "score": 92,
+      "fcp": 1459.451,
+      "lcp": 1459.451,
+      "cls": 0,
+      "tbt": 354.38599999999906,
+      "si": 1674,
+      "ttfb": 2.316,
+      "observedLcp": 1459,
+      "lcpElement": "<h1>",
+      "all": [
+        {
+          "score": 91,
+          "lcp": 1474,
+          "cls": 0,
+          "tbt": 364
+        },
+        {
+          "score": 92,
+          "lcp": 1476,
+          "cls": 0,
+          "tbt": 347
+        },
+        {
+          "score": 92,
+          "lcp": 1453,
+          "cls": 0,
+          "tbt": 347
+        },
+        {
+          "score": 91,
+          "lcp": 1456,
+          "cls": 0,
+          "tbt": 361
+        },
+        {
+          "score": 92,
+          "lcp": 1459,
+          "cls": 0,
+          "tbt": 354
+        }
+      ]
+    }
+  ]
+}
