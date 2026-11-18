@@ -78,7 +78,8 @@ export async function responseJson(response: Response): Promise<unknown> {
     let message = response.status === 401
       ? "Correo o contraseña incorrectos."
       : `No se pudo completar la solicitud (${response.status}).`;
-    if (isRecord(data) && typeof data.detail === "string") {
+    // 401 keeps the Spanish message: the API detail is English ("Incorrect email or password").
+    if (isRecord(data) && typeof data.detail === "string" && response.status !== 401) {
       message = data.detail;
       if (response.status === 409 && message === "Email already exists") {
         message = fields.email = "Este correo ya está registrado.";
@@ -135,14 +136,13 @@ export async function login(
 
 export async function getAccount(signal?: AbortSignal): Promise<Account> {
   const data = await responseJson(await authenticatedFetch("/api/account/me", { signal }));
-  if (!isRecord(data) || typeof data.id !== "string" || typeof data.username !== "string"
-    || !(data.email === null || typeof data.email === "string")
+  if (!isRecord(data) || typeof data.id !== "string" || typeof data.email !== "string"
     || !["admin", "manager", "user"].includes(String(data.role))
     || !(data.profile === null || isProfile(data.profile))) {
     throw new Error("El servicio devolvió una cuenta inválida.");
   }
   return {
-    id: data.id, username: data.username, email: data.email,
+    id: data.id, email: data.email,
     role: data.role === "admin" ? "admin" : data.role === "manager" ? "manager" : "user",
     profile: data.profile,
   };

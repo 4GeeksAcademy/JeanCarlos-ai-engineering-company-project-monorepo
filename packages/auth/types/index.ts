@@ -6,10 +6,10 @@ export interface Profile {
   address: string | null;
 }
 
+/** GET /auth/me (AUTH-01): identity is the email; there is no username. */
 export interface Account {
   id: string;
-  username: string;
-  email: string | null;
+  email: string;
   role: "admin" | "manager" | "user";
   profile: Profile | null;
 }

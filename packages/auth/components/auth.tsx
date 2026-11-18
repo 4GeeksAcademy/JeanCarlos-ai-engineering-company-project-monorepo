@@ -12,6 +12,9 @@ import {
 } from "../lib/client";
 import type { Account } from "../types";
 
+// Same limits as ProfileUpdate / UserCreate in the API (AUTH-01).
+const PROFILE_LIMITS = { name: 200, phone: 40, address: 200 } as const;
+
 const AccountContext = createContext<{
   account: Account;
   updateAccount: (account: Account) => void;
@@ -188,9 +191,9 @@ export function AuthenticationForm({
             <Field label="Contraseña" name="password" type="password" autoComplete={registering ? "new-password" : "current-password"} minLength={registering ? 8 : undefined} required error={fields.password} />
             {registering && <>
               <Field label="Confirmar contraseña" name="confirmation" type="password" autoComplete="new-password" minLength={8} required />
-              <Field label="Nombre (opcional)" name="name" autoComplete="name" maxLength={200} error={fields.name} />
-              <Field label="Teléfono (opcional)" name="phone" type="tel" autoComplete="tel" maxLength={50} error={fields.phone} />
-              <Field label="Dirección (opcional)" name="address" autoComplete="street-address" maxLength={500} error={fields.address} />
+              <Field label="Nombre (opcional)" name="name" autoComplete="name" maxLength={PROFILE_LIMITS.name} error={fields.name} />
+              <Field label="Teléfono (opcional)" name="phone" type="tel" autoComplete="tel" maxLength={PROFILE_LIMITS.phone} error={fields.phone} />
+              <Field label="Dirección (opcional)" name="address" autoComplete="street-address" maxLength={PROFILE_LIMITS.address} error={fields.address} />
               <p>Las nuevas cuentas se registran con el rol de usuario.</p>
             </>}
             <button disabled={busy}>{busy ? "Procesando..." : registering ? "Registrarme" : "Entrar"}</button>
@@ -239,13 +242,12 @@ export function ProfilePage() {
     <main className="hc-auth-page">
       <section className="hc-auth-panel" aria-labelledby="hc-profile-title">
         <h1 id="hc-profile-title">Mi perfil</h1>
-        <Field label="Correo electrónico" name="account-email" type="email" readOnly value={account.email ?? ""} />
-        {!account.email && <p>Esta cuenta no tiene un correo asignado. Contacta con un administrador.</p>}
+        <Field label="Correo electrónico" name="account-email" type="email" readOnly value={account.email} />
         <form onSubmit={submit}>
           <fieldset disabled={busy}>
-            <Field label="Nombre" name="name" autoComplete="name" maxLength={200} defaultValue={account.profile?.name ?? ""} error={fields.name} />
-            <Field label="Teléfono" name="phone" type="tel" autoComplete="tel" maxLength={50} defaultValue={account.profile?.phone ?? ""} error={fields.phone} />
-            <Field label="Dirección" name="address" autoComplete="street-address" maxLength={500} defaultValue={account.profile?.address ?? ""} error={fields.address} />
+            <Field label="Nombre" name="name" autoComplete="name" maxLength={PROFILE_LIMITS.name} defaultValue={account.profile?.name ?? ""} error={fields.name} />
+            <Field label="Teléfono" name="phone" type="tel" autoComplete="tel" maxLength={PROFILE_LIMITS.phone} defaultValue={account.profile?.phone ?? ""} error={fields.phone} />
+            <Field label="Dirección" name="address" autoComplete="street-address" maxLength={PROFILE_LIMITS.address} defaultValue={account.profile?.address ?? ""} error={fields.address} />
             <button disabled={busy}>{busy ? "Guardando..." : "Guardar perfil"}</button>
           </fieldset>
         </form>
