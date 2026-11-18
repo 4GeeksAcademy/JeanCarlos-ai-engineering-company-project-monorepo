@@ -101,5 +101,21 @@ class SupplierResponse(BaseModel):
     updated_at: AwareDatetime
 
 
-class SupplierListItem(SupplierResponse):
-    pass
+class SupplierListItem(BaseModel):
+    """Supplier row for GET /suppliers: only the fields the backoffice table uses.
+
+    `notes` and `contract_renewal_date` are detail-only (GET /suppliers/{id} and
+    the create/update responses keep them): no list consumer reads them, so they
+    are not serialized for every row (serialization audit, no over-fetching).
+    """
+
+    id: int
+    name: str
+    country: Country
+    categories: list[Category]
+    monthly_rate: float
+    currency: Currency
+    status: SupplierStatus
+    compliance_agreement: ComplianceAgreement | None = None
+    contact_email: EmailStr | None = None
+    updated_at: AwareDatetime

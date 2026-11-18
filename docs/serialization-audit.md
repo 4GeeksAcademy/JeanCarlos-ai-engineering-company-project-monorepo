@@ -23,7 +23,8 @@ tratan por separado de las respuestas de éxito.
 | Usuario actual | Usuario + `email` |
 | Perfil | `id`, `user_id` |
 | Mensaje | `message` |
-| Proveedor | `id`, `name`, `country`, `categories`, `monthly_rate`, `currency`, `status`, `compliance_agreement`, `contract_renewal_date`, `contact_email`, `notes`, `updated_at` |
+| Proveedor (detalle) | `id`, `name`, `country`, `categories`, `monthly_rate`, `currency`, `status`, `compliance_agreement`, `contract_renewal_date`, `contact_email`, `notes`, `updated_at` |
+| Proveedor (listado) | `id`, `name`, `country`, `categories`, `monthly_rate`, `currency`, `status`, `compliance_agreement`, `contact_email`, `updated_at` |
 | Producto | `id`, `name`, `sku`, `category`, `unit`, `country`, `current_stock` |
 | Insumo | `id`, `name`, `sku`, `category`, `unit`, `country` |
 | Entrada | `id`, `supply_id`, `quantity`, `clinic_id`, `created_at`, `user_uuid`, `supply` (Insumo), `vendor_name` |
@@ -49,7 +50,7 @@ tratan por separado de las respuestas de éxito.
 | GET `/profiles/{profile_id}` | ⚠️ → ✅ | Perfil |
 | PATCH `/profiles/{profile_id}` | ⚠️ → ✅ | Perfil |
 | DELETE `/profiles/{profile_id}` | ✅ → ✅ | Sin cuerpo, 204 |
-| GET `/suppliers` | ⚠️ → ✅ | Lista de Proveedor |
+| GET `/suppliers` | ⚠️ → ✅ | Lista de Proveedor (listado) |
 | POST `/suppliers` | ⚠️ → ✅ | Proveedor |
 | GET `/suppliers/{supplier_id}` | ⚠️ → ✅ | Proveedor |
 | PUT `/suppliers/{supplier_id}` | ⚠️ → ✅ | Proveedor |
@@ -66,10 +67,32 @@ tratan por separado de las respuestas de éxito.
 
 En inventario, las salidas ya se materializaban antes; se clasifican como ⚠️
 porque el resumen de insumo heredaba del modelo de entrada. Los modelos
-`ListItem` son independientes de los modelos de escritura. Los de proveedor y
-producto conservan deliberadamente todos los campos anteriores para no romper
-los clientes existentes; no se afirma una reducción cuantificada de payload
-para esas listas.
+`ListItem` son independientes de los modelos de escritura.
+
+## Listados sin over-fetching
+
+Criterio: un listado solo serializa los campos que consume algún cliente real;
+el resto queda en el detalle.
+
+- **Proveedores.** `SupplierListItem` ya no hereda de `SupplierResponse`: es un
+  modelo explícito sin `notes` ni `contract_renewal_date`. El único consumidor
+  del listado es la tabla del backoffice (`SupplierRow`), que muestra nombre,
+  `contact_email`, país, categorías, tarifa, moneda, estado y acuerdo de
+  cumplimiento; ninguna vista lee esos dos campos desde el listado (solo el
+  formulario de alta los **envía**). Se mantienen en `GET /suppliers/{id}` y en
+  las respuestas de alta y edición (`POST`, `PUT`, `PATCH …/rate`, `PATCH
+  …/status`), que el backoffice usa para actualizar la fila. El cliente valida
+  por separado el listado (`isSupplierListItem`) y el proveedor completo
+  (`isSupplier`).
+- **Medición** con los 15 proveedores del seed: `GET /suppliers` pasa de
+  **5165 a 3908 bytes (−24,3 %)** y de **1259 a 841 bytes con gzip (−33,2 %)**.
+- **Productos.** `ProductListItem` mantiene todos sus campos porque la tabla del
+  catálogo los consume todos (`name`, `sku`, `category`, `country`,
+  `current_stock` con su `unit`, e `id` para los enlaces de entrada y salida).
+- **Contrato fijado por tests:** `services/api/tests/test_supplier_serialization.py`
+  comprueba los campos del listado (incluido el filtrado y la respuesta en
+  caché), que el detalle y las escrituras conservan los campos y que los dos
+  esquemas OpenAPI son independientes.
 
 ## Seguridad y compatibilidad
 

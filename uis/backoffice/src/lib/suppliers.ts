@@ -1,13 +1,14 @@
 import type {
   Supplier,
   SupplierCreate,
+  SupplierListItem,
   SupplierFilters,
   SupplierStatus,
 } from "@/types/supplier";
 import { CATEGORIES } from "@/types/supplier";
 import { telemetryFetch, track, withResponseTelemetry } from "@/services/telemetry";
 
-function isSupplier(value: unknown): value is Supplier {
+function isSupplierListItem(value: unknown): value is SupplierListItem {
   if (typeof value !== "object" || value === null) return false;
   const supplier = value as Record<string, unknown>;
   return typeof supplier.id === "number" && Number.isInteger(supplier.id) && supplier.id > 0
@@ -20,10 +21,17 @@ function isSupplier(value: unknown): value is Supplier {
     && (supplier.status === "active" || supplier.status === "suspended")
     && (supplier.compliance_agreement === null || supplier.compliance_agreement === "BAA" ||
       supplier.compliance_agreement === "DPA" || supplier.compliance_agreement === "both")
-    && ["contract_renewal_date", "contact_email", "notes"].every(
-      (field) => supplier[field] === null || typeof supplier[field] === "string",
-    )
+    && (supplier.contact_email === null || typeof supplier.contact_email === "string")
     && typeof supplier.updated_at === "string";
+}
+
+/** Full supplier (detail and create/update responses): list fields + detail-only fields. */
+function isSupplier(value: unknown): value is Supplier {
+  if (!isSupplierListItem(value)) return false;
+  const supplier = value as Record<string, unknown>;
+  return ["contract_renewal_date", "notes"].every(
+    (field) => supplier[field] === null || typeof supplier[field] === "string",
+  );
 }
 
 async function request<T>(
@@ -90,18 +98,18 @@ async function supplierRequest(
 export async function listSuppliers(
   filters: SupplierFilters,
   signal: AbortSignal,
-): Promise<Supplier[]> {
+): Promise<SupplierListItem[]> {
   const query = new URLSearchParams();
   if (filters.country) query.set("country", filters.country);
   if (filters.category) query.set("category", filters.category);
   const result = await request<unknown>(`?${query}`, { signal }, (data, response) => {
-    if (Array.isArray(data) && data.every(isSupplier)) withResponseTelemetry(response, () => track("supplier_filter_applied", {
+    if (Array.isArray(data) && data.every(isSupplierListItem)) withResponseTelemetry(response, () => track("supplier_filter_applied", {
       country: filters.country || null,
       category: filters.category || null,
       result_count_bucket: data.length === 0 ? "0" : data.length <= 5 ? "1_5" : data.length <= 20 ? "6_20" : "over_20",
     }));
   });
-  if (!Array.isArray(result) || !result.every(isSupplier)) {
+  if (!Array.isArray(result) || !result.every(isSupplierListItem)) {
     throw new Error("El servicio devolvió un listado inválido.");
   }
   return result;

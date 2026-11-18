@@ -33,6 +33,9 @@ export interface Supplier extends SupplierCreate {
   updated_at: string;
 }
 
+/** Row of GET /suppliers. Detail-only fields (notes, contract_renewal_date) are not sent. */
+export type SupplierListItem = Omit<Supplier, "notes" | "contract_renewal_date">;
+
 export interface SupplierFilters {
   country: Country | "";
   category: Category | "";
