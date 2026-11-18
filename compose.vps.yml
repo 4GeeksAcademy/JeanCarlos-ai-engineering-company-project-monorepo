@@ -1,0 +1,26 @@
+# Overrides for the small VPS (1 vCPU, ~1 GB RAM + 2 GB swap) that also runs
+# other services. Usage on the server:
+#   docker compose -f docker-compose.yml -f compose.vps.yml up -d
+# - Memory limits so an out-of-memory event restarts one container instead of
+#   letting the kernel kill other processes on the host.
+# - restart: unless-stopped keeps the stack up after crashes and reboots.
+# - Ports stay bound to 127.0.0.1 (see docker-compose.yml): access through an
+#   SSH tunnel, nothing is published to the Internet.
+services:
+  db:
+    # Postgres defaults (shared_buffers=128MB) do not fit the limit.
+    command: ["postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=20"]
+    mem_limit: 160m
+    restart: unless-stopped
+
+  api:
+    # No --reload on the server: one worker, less memory.
+    command: ["uvicorn", "services.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    mem_limit: 256m
+    restart: unless-stopped
+
+  ui:
+    environment:
+      NODE_OPTIONS: --max-old-space-size=320
+    mem_limit: 900m
+    restart: unless-stopped
