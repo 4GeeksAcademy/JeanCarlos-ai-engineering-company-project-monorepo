@@ -51,14 +51,26 @@ npm run build
 ## Desarrollo con Docker Compose
 
 El Compose de la raíz ejecuta Talent Pipeline Tracker en el puerto 3000, el
-backoffice en el 3001 y la API en el 8000. `uis/website` aún no existe. Es una
+backoffice en el 3001, la API en el 8000 y un PostgreSQL 16 (`db`) solo en la
+red interna para el inventario. `uis/website` aún no existe. Es una
 configuración de desarrollo con recarga automática, no una imagen de producción.
 
-1. Instala Docker y Docker Compose. En la raíz, crea `.env` con
-   `JWT_SECRET_KEY` (mínimo 32 bytes aleatorios), `JWT_ALGORITHM=HS256` y
-   `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` (entero positivo). Consulta las variables
-   adicionales de recuperación de contraseña y PostgreSQL en la
-   [guía de la API](../services/api/README.md). No compartas ni subas `.env`.
+**Arranca desde un clon limpio sin pasos manuales**: no hace falta crear `.env`.
+
+- `compose.dev.env` (versionado, sin secretos) aporta los valores de desarrollo:
+  `JWT_ALGORITHM`, `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` y un `DATABASE_URL` que
+  apunta al servicio `db`.
+- Si no defines `JWT_SECRET_KEY`, el *entrypoint* de la API genera una clave
+  aleatoria en el primer arranque y la guarda en el volumen `api_data`
+  (`/data/jwt_secret`, permisos 600). Las sesiones sobreviven a los reinicios y
+  ninguna clave se guarda en Git.
+- Al arrancar, la API crea las tablas de inventario si no existen. La API espera
+  a que `db` esté *healthy*.
+
+1. Instala Docker y Docker Compose (v2.24 o superior, por `env_file` opcional).
+   Si necesitas sobrescribir algo (clave JWT propia, Supabase en `DATABASE_URL`,
+   Resend para recuperar contraseñas), copia `.env.example` a `.env` en la raíz.
+   `.env` nunca se sube a Git. `COMPOSE_ENV_FILE` permite usar otra ruta.
    Opcionalmente, `NEXT_PUBLIC_API_URL` cambia el destino del tracker; por
    defecto usa la API pública del tracker, no esta API de proveedores.
 2. Desde la raíz:
@@ -90,13 +102,14 @@ docker compose up -d
 
 `docker compose down` detiene los servicios sin borrar datos. El volumen
 `api_data` conserva TinyDB; no uses `down -v` sin respaldarlo. TinyDB requiere
-un único proceso de API y copias de seguridad; el inventario requiere una
-instancia PostgreSQL externa configurada con `DATABASE_URL`.
+un único proceso de API y copias de seguridad. El inventario usa el volumen
+`db_data` del servicio `db`; para una base externa, define `DATABASE_URL` en `.env`.
 
 ### VPS por SSH
 
-Instala Docker y el plugin Compose en el VPS, clona el repositorio y crea su
-`.env` directamente en el servidor. Desde la carpeta del repositorio ejecuta
+Instala Docker y el plugin Compose en el VPS y clona el repositorio. El `.env`
+es opcional también aquí: créalo en el servidor solo si necesitas una clave JWT
+propia, una base externa o Resend. Desde la carpeta del repositorio ejecuta
 `docker compose up --build -d`. Los puertos solo escuchan en loopback; desde tu
 equipo crea túneles para acceder sin publicarlos:
 
