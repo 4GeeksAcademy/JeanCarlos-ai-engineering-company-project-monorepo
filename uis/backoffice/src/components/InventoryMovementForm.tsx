@@ -103,11 +103,13 @@ export default function InventoryMovementForm({
     }
   }
 
-  const stock = selected.state === "ready" ? selected.product : null;
+  // Selected supply with the stock just fetched from GET /inventory/products/{id}.
+  const selectedProduct = selected.state === "ready" ? selected.product : null;
   const amount = Number(quantity);
-  // UX guard only: the API enforces the real rule (HTTP 400 on insufficient stock).
-  const exceedsStock = direction === "outbound" && stock !== null && quantity !== ""
-    && Number.isInteger(amount) && amount > stock.current_stock;
+  // Client-side guard: an outbound quantity above the available stock cannot be
+  // submitted. The API still enforces the rule (HTTP 400) if stock changes meanwhile.
+  const exceedsStock = direction === "outbound" && selectedProduct !== null && quantity !== ""
+    && Number.isInteger(amount) && amount > selectedProduct.current_stock;
 
   function validate(): FieldErrors {
     const errors: FieldErrors = {};
@@ -125,6 +127,9 @@ export default function InventoryMovementForm({
     setFormError("");
     setMessage("");
     const errors = validate();
+    if (exceedsStock && selectedProduct) {
+      errors.quantity = `La cantidad supera el stock disponible (${quantityLabel(selectedProduct.current_stock, selectedProduct.unit)}).`;
+    }
     setFieldErrors(errors);
     if (Object.keys(errors).length) {
       telemetryFlow.invalid();
@@ -132,8 +137,8 @@ export default function InventoryMovementForm({
     }
     setBusy(true);
     telemetryFlow.submitting();
-    const supplyName = stock?.name ?? products.find((p) => String(p.id) === supplyId)?.name ?? "el suministro";
-    const unit = stock?.unit ?? products.find((p) => String(p.id) === supplyId)?.unit ?? "unit";
+    const supplyName = selectedProduct?.name ?? products.find((p) => String(p.id) === supplyId)?.name ?? "el suministro";
+    const unit = selectedProduct?.unit ?? products.find((p) => String(p.id) === supplyId)?.unit ?? "unit";
     try {
       const movement = { supply_id: Number(supplyId), quantity: amount, clinic_id: Number(clinicId) };
       if (direction === "inbound") {
@@ -216,7 +221,7 @@ export default function InventoryMovementForm({
             </div>
 
             <label>
-              Cantidad{stock ? ` (${UNIT_LABELS[stock.unit]})` : ""}
+              Cantidad{selectedProduct ? ` (${UNIT_LABELS[selectedProduct.unit]})` : ""}
               <input
                 name="quantity" type="number" min="1" step="1" inputMode="numeric" value={quantity}
                 aria-invalid={Boolean(fieldErrors.quantity) || exceedsStock}
@@ -226,10 +231,11 @@ export default function InventoryMovementForm({
                   setFieldErrors((current) => ({ ...current, quantity: undefined }));
                 }}
               />
-              {exceedsStock && stock && (
+              {exceedsStock && selectedProduct && (
                 <span className="field-warning" id="quantity-warning" role="alert">
-                  ⚠️ La cantidad supera el stock disponible ({quantityLabel(stock.current_stock, stock.unit)}).
-                  La API rechazará este consumo.
+                  ⚠️ La cantidad supera el stock disponible
+                  ({quantityLabel(selectedProduct.current_stock, selectedProduct.unit)}).
+                  Reduce la cantidad para poder registrar el consumo.
                 </span>
               )}
               {fieldErrors.quantity && <span className="field-error" id="quantity-error" role="alert">{fieldErrors.quantity}</span>}
@@ -275,7 +281,12 @@ export default function InventoryMovementForm({
               </label>
             )}
 
-            <button disabled={busy || products.length === 0}>{busy ? "Guardando…" : copy.submit}</button>
+            <button
+              disabled={busy || products.length === 0 || exceedsStock}
+              aria-describedby={exceedsStock ? "quantity-warning" : undefined}
+            >
+              {busy ? "Guardando…" : copy.submit}
+            </button>
             {products.length === 0 && <p>No hay suministros médicos registrados.</p>}
           </form>
         )}
