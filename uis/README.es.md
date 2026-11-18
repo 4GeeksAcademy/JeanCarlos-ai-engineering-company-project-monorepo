@@ -109,15 +109,39 @@ un único proceso de API y copias de seguridad. El inventario usa el volumen
 
 Instala Docker y el plugin Compose en el VPS y clona el repositorio. El `.env`
 es opcional también aquí: créalo en el servidor solo si necesitas una clave JWT
-propia, una base externa o Resend. Desde la carpeta del repositorio ejecuta
-`docker compose up --build -d`. Los puertos solo escuchan en loopback; desde tu
+propia, una base externa o Resend. En un VPS pequeño, arranca con los límites
+de memoria y reinicio automático de `compose.vps.yml`:
+
+```bash
+docker compose -f docker-compose.yml -f compose.vps.yml up -d
+```
+
+Si el servidor tiene poca memoria para construir la imagen de la UI, constrúyela
+en tu equipo para la arquitectura del VPS y transfiérela por SSH (Compose usa las
+imágenes `healthcore-api` y `healthcore-ui` del proyecto `healthcore`, es decir,
+el repositorio clonado en `/opt/healthcore`):
+
+```bash
+docker buildx build --platform linux/amd64 --load -t healthcore-api services
+docker buildx build --platform linux/amd64 --load -t healthcore-ui uis
+docker save healthcore-api healthcore-ui | gzip | ssh usuario@vps 'gunzip | docker load'
+ssh usuario@vps 'cd /opt/healthcore && docker compose -f docker-compose.yml -f compose.vps.yml up -d --no-build'
+``` Los puertos solo escuchan en loopback; desde tu
 equipo crea túneles para acceder sin publicarlos:
 
 ```bash
 ssh -N -L 3000:127.0.0.1:3000 -L 3001:127.0.0.1:3001 -L 8000:127.0.0.1:8000 usuario@vps
 ```
 
-Abre las mismas URL locales indicadas arriba. Para actualizar, entra por SSH,
+Abre las mismas URL locales indicadas arriba, usando `localhost` (no
+`127.0.0.1`): `next dev` bloquea sus recursos de desarrollo desde otros orígenes
+y la página no se hidrataría.
+
+**Despliegue actual:** el stack corre en el VPS `bc-vps-278` (Ubuntu 22.04) en
+`/opt/healthcore`, con `compose.vps.yml`. Evidencia en [`docs/docker/`](../docs/docker/):
+`vps-compose-ps.png` (`docker compose ps`, consumo y comprobaciones HTTP por
+SSH) y capturas de la API, el backoffice y el tracker servidos desde el VPS a
+través del túnel. `compose-local.png` muestra el arranque desde un clon limpio. Para actualizar, entra por SSH,
 actualiza el repositorio y vuelve a ejecutar `docker compose up --build -d`;
 si cambiaron dependencias de Node, ejecuta también el comando de actualización
 de `node_modules` indicado arriba. No expongas estos servidores de desarrollo
