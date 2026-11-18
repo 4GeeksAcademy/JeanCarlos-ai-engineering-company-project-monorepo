@@ -5,11 +5,11 @@ import {
   updateSupplierRate,
   updateSupplierStatus,
 } from "@/lib/suppliers";
-import type { Supplier } from "@/types/supplier";
+import type { Supplier, SupplierListItem } from "@/types/supplier";
 
 interface Props {
-  supplier: Supplier;
-  onUpdated: (supplier: Supplier) => void;
+  supplier: SupplierListItem;
+  onUpdated: (supplier: SupplierListItem) => void;
 }
 
 export default function SupplierRow({ supplier, onUpdated }: Props) {

@@ -7,7 +7,7 @@ import SupplierRow from "@/components/SupplierRow";
 import { createSupplier, listSuppliers } from "@/lib/suppliers";
 import {
   CATEGORIES,
-  type Supplier,
+  type SupplierListItem,
   type SupplierCreate,
   type SupplierFilters,
 } from "@/types/supplier";
@@ -17,7 +17,7 @@ export default function SuppliersPage() {
     country: "",
     category: "",
   });
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [suppliers, setSuppliers] = useState<SupplierListItem[]>([]);
   const [loadState, setLoadState] = useState<"loading" | "fulfilled" | "rejected">("loading");
   const [loadError, setLoadError] = useState("");
   const [createError, setCreateError] = useState("");
@@ -76,7 +76,7 @@ export default function SuppliersPage() {
     }
   }
 
-  function updated(supplier: Supplier) {
+  function updated(supplier: SupplierListItem) {
     setSuppliers((current) =>
       current.map((item) => (item.id === supplier.id ? supplier : item)),
     );
