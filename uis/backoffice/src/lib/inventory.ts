@@ -7,6 +7,22 @@ import { telemetryFetch, track, withResponseTelemetry } from "@/services/telemet
 
 const stockLevels = new Map<number, number>();
 
+/*
+ * Stock level thresholds, in the supply's own unit (box, unit, pack, vial):
+ * - "out": 0 — nothing left; no consumption can be registered until a delivery arrives.
+ * - "low": 1..LOW_STOCK_THRESHOLD (10) — reorder now; roughly one or two days of a
+ *   clinic's typical use of PPE or diagnostic tests.
+ * - "ok": more than LOW_STOCK_THRESHOLD.
+ * The same threshold drives the inventory_stock_threshold_triggered telemetry event.
+ */
+export const LOW_STOCK_THRESHOLD = 10;
+export type StockLevel = "out" | "low" | "ok";
+
+export function stockLevel(stock: number): StockLevel {
+  if (stock <= 0) return "out";
+  return stock <= LOW_STOCK_THRESHOLD ? "low" : "ok";
+}
+
 export class InventoryError extends Error {
   constructor(message: string, public readonly status: number) {
     super(message);
@@ -127,9 +143,9 @@ export async function listProducts(signal?: AbortSignal): Promise<Product[]> {
   withResponseTelemetry(response, () => {
     for (const product of result) {
       const previous = stockLevels.get(product.id);
-      if (previous !== undefined && previous > 10 && product.current_stock <= 10) {
+      if (previous !== undefined && previous > LOW_STOCK_THRESHOLD && product.current_stock <= LOW_STOCK_THRESHOLD) {
         track("inventory_stock_threshold_triggered", {
-          supply_id: product.id, current_stock: product.current_stock, threshold: 10, unit: product.unit,
+          supply_id: product.id, current_stock: product.current_stock, threshold: LOW_STOCK_THRESHOLD, unit: product.unit,
         });
       }
       stockLevels.set(product.id, product.current_stock);
@@ -138,6 +154,13 @@ export async function listProducts(signal?: AbortSignal): Promise<Product[]> {
     for (const id of stockLevels.keys()) if (!ids.has(id)) stockLevels.delete(id);
   });
   return result;
+}
+
+/** Fresh stock of one medical supply (GET /inventory/products/{id}). */
+export async function getProduct(id: number, signal?: AbortSignal): Promise<Product> {
+  const { data } = await request(`/products/${id}`, { signal });
+  if (!isProduct(data)) throw new Error("El servicio devolvió un suministro inválido.");
+  return data;
 }
 
 export async function listOrders(signal?: AbortSignal): Promise<Orders> {

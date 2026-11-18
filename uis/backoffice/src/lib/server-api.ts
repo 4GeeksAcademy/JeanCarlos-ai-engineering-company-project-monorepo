@@ -6,7 +6,12 @@ import { redirect } from "next/navigation";
 export const SESSION_COOKIE = "healthcore_session";
 
 export function apiUrl(path: string): string {
-  const base = process.env.SUPPLIERS_API_URL ?? "http://127.0.0.1:8000";
+  // /inventory may live on its own service (NEXT_PUBLIC_INVENTORY_API_URL in .env.local).
+  // It is only read here, on the server: the browser never calls the API directly.
+  const inventoryBase = path.startsWith("/inventory")
+    ? process.env.NEXT_PUBLIC_INVENTORY_API_URL || process.env.INVENTORY_API_URL
+    : undefined;
+  const base = inventoryBase || process.env.SUPPLIERS_API_URL || "http://127.0.0.1:8000";
   return `${base.replace(/\/$/, "")}${path}`;
 }
 
