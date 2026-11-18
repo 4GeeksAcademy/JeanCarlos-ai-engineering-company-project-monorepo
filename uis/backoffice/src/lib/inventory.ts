@@ -1,5 +1,6 @@
 "use client";
 
+import { authenticatedFetch } from "@healthcore/auth/client";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import type { InboundInput, Orders, OutboundInput, Product, Supply } from "@/types/inventory";
@@ -64,7 +65,7 @@ async function request(
       ...options,
       cache: "no-store",
       headers: { "Content-Type": "application/json", ...options.headers },
-    });
+    }, authenticatedFetch);
   } catch (error) {
     if (options.signal?.aborted) throw error;
     throw new Error("No se pudo conectar con el servicio.");

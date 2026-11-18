@@ -73,3 +73,65 @@ PY
 
 El envío real de Resend, los proveedores, los perfiles como recurso independiente
 y las interfaces no forman parte del alcance de esta suite.
+
+## Utilidades TypeScript con Jest (raíz del monorepo)
+
+Desde la raíz, independientemente de las aplicaciones Next.js:
+
+```bash
+npm install
+npm run typecheck
+npm test -- --runInBand
+npm run test:coverage -- --runInBand
+```
+
+`jest.config.cjs` usa `ts-jest` y el entorno Node, busca las pruebas en
+`tests/utils` e incluye las cuatro utilidades de `src/utils` en la medición de cobertura.
+`tsconfig.json` comprueba utilidades, modelos y tests en modo estricto.
+No se modifican las dependencias ni los comandos de las aplicaciones Next.js.
+Esta entrega no incluye las actualizaciones locales de `package-lock.json`
+ni `uv.lock`, restringidas por la política de acceso de la organización.
+Usa `npm install` para sincronizar las dependencias de Jest declaradas en
+`package.json`; `npm ci` requiere un archivo de bloqueo actualizado.
+El informe navegable para herramientas compatibles con LCOV queda en
+`coverage/lcov.info`; los resultados generados no se versionan.
+
+Las pruebas usan datos sintéticos, sin peticiones externas ni información real
+de pacientes:
+
+| Suite | Comportamientos verificados |
+| --- | --- |
+| `search.test.ts` | Búsqueda lineal y binaria, primero/centro/último, ausentes y listas vacías |
+| `collections.test.ts` | Filtros combinados, selección vacía, orden ascendente/descendente sin mutación y agrupación |
+| `validations.test.ts` | Importes, fechas, clínicas, motivo de denegación, ID de paciente, horas CME y umbrales estrictos |
+| `transformations.test.ts` | Tasas y redondeo, costes semanales, alertas, progreso CME y vencimientos de licencias |
+
+Las validaciones dependientes de la fecha fijan el reloj al 15 de junio de 2026
+y restauran los temporizadores tras cada caso.
+
+## Caso límite identificado con ayuda de IA
+
+Al revisar `calculateNoShowCost` con IA se identificó un caso que faltaba probar:
+una semana inclusiva de siete días puede acabar contando ocho si el inicio se
+calcula restando siete días en lugar de seis.
+
+Se añadió el test
+`counts only no-shows in the inclusive seven-day window at the requested clinic`
+en `tests/utils/transformations.test.ts`:
+
+- Semana con cierre el `2026-06-15`: incluye el `2026-06-09` y el `2026-06-15`.
+- Excluye el `2026-06-08` y el `2026-06-16`, otra clínica, citas canceladas y
+  citas completadas.
+- Las dos ausencias válidas cuestan `100.25 + 200 = 300.25`.
+
+El test pasa con la implementación existente; es un riesgo de regresión
+identificado con IA, no un bug de producción confirmado ni una corrección
+inventada. Restar siete días incluiría el día 8 y haría fallar esta prueba.
+
+## Resultados de Jest
+
+| Comprobación | Resultado |
+| --- | --- |
+| `npm run typecheck` | Sin errores |
+| Jest de utilidades | 4 suites y 40/40 pruebas correctas |
+| Cobertura Jest | 99.49% sentencias, 96.77% ramas, 100% funciones y 99.48% líneas |

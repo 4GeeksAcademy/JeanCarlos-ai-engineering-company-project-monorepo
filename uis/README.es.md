@@ -34,12 +34,49 @@ la página. Los estados de carga, éxito y error son visibles.
 `SUPPLIERS_API_URL` configura el destino del proxy Next.js (por defecto
 `http://127.0.0.1:8000`); no es una variable pública del navegador.
 Las peticiones pasan por rutas servidoras del mismo origen, sin necesitar CORS.
-La sesión se almacena en una cookie HttpOnly; en producción se requiere HTTPS.
+El token se almacena en `localStorage` con la clave `healthcore_access_token`.
+Cada petición protegida lo lee y lo envía en `Authorization: Bearer <token>`;
+el proxy lo reenvía únicamente a la API de HealthCore. En producción se requiere
+HTTPS y deben evitarse scripts no confiables: un XSS puede acceder a localStorage.
 El proxy de despliegue debe validar el host público y sobrescribir las cabeceras
 `Host` y `X-Forwarded-Proto` con los valores confiables de la petición.
 El enlace de recuperación usa Resend y requiere la configuración descrita en la
 [guía de autenticación](../services/api/README.md#password-recovery).
 Configurar la variable antes de `npm run build` y reconstruir si cambia el destino.
+
+### Autenticación frontend (AUTH-02)
+
+Backoffice y Talent Pipeline Tracker comparten formularios y gestión de sesión
+mediante el paquete local `packages/auth`; no es una aplicación independiente.
+Ejecuta `npm install` en cada aplicación tras actualizar esta rama. Sus archivos
+`.npmrc` hacen que npm copie el paquete local; vuelve a instalarlo después de
+editar el código compartido y reinicia el servidor de desarrollo.
+
+Ambas aplicaciones ofrecen `/login`, `/register` y `/account/profile`. El login
+usa email y contraseña. El registro crea una cuenta de rol `user` y su perfil,
+inicia sesión y guarda el token. Los errores de validación se muestran junto a
+los campos. Los administradores existentes necesitan tener email asignado para
+usar el login frontend; el login por usuario sigue disponible en Swagger.
+
+Un guard cliente valida la sesión con `/auth/me` antes de mostrar las vistas
+internas. En backoffice protege proveedores, inventario y cuenta; en el tracker,
+el listado, los detalles de candidaturas y cuenta. Login y registro son públicos;
+recuperar y restablecer contraseña siguen siendo públicos en backoffice.
+Logout y cualquier respuesta `401` de una llamada protegida borran el token y
+redirigen al login. Cada origen/puerto mantiene su propio localStorage, por lo
+que hay que iniciar sesión en cada aplicación.
+
+`AUTH_API_URL` permite definir la API de autenticación en el servidor de ambas
+aplicaciones. Si no está definida, se usa `SUPPLIERS_API_URL` o
+`http://127.0.0.1:8000`. El tracker valida el token en HealthCore antes de consultar
+la API externa de candidaturas y nunca reenvía el JWT a ese proveedor.
+El website público no tiene guards ni cambios de autenticación.
+
+Comprobación manual: abre una ruta interna sin token, registra una cuenta,
+comprueba el token en las herramientas del navegador, edita y recarga el perfil,
+cierra sesión y prueba de nuevo una ruta interna. Para comprobar un `401`,
+sustituye el token por un valor inválido y navega a una vista protegida.
+No compartas capturas que incluyan el token.
 
 Validación desde `uis/backoffice/`:
 

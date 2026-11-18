@@ -1,0 +1,17 @@
+**
+!packages/
+!packages/auth/
+!packages/auth/**
+!uis/
+!uis/talent-pipeline-tracker/
+!uis/talent-pipeline-tracker/**
+!uis/backoffice/
+!uis/backoffice/**
+!uis/start.sh
+**/node_modules
+**/.next
+**/.env
+**/.env.*
+**/.git
+**/coverage
+**/*.tsbuildinfo

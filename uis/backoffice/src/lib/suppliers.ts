@@ -1,3 +1,4 @@
+import { authenticatedFetch } from "@healthcore/auth/client";
 import type {
   Supplier,
   SupplierCreate,
@@ -37,7 +38,7 @@ async function request<T>(
       ...options,
       cache: "no-store",
       headers: { "Content-Type": "application/json", ...options?.headers },
-    });
+    }, authenticatedFetch);
   } catch (error) {
     if (options?.signal?.aborted) throw error;
     throw new Error("No se pudo conectar con el servicio. Comprueba tu conexión.");

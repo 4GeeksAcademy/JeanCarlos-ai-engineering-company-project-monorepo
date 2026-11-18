@@ -37,7 +37,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   let response: Response;
   try {
-    response = await fetch(`${API_URL}${path}`, {
+    response = await authenticatedFetch(`${API_URL}${path}`, {
       ...init,
       headers: {
         ...(init?.body ? { "Content-Type": "application/json" } : {}),
@@ -141,3 +141,4 @@ export function deleteCandidateNote(id: string, noteId: string): Promise<void> {
     method: "DELETE",
   });
 }
+import { authenticatedFetch } from "@healthcore/auth/client";
