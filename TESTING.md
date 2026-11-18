@@ -15,33 +15,45 @@ del frontend).
 
 ### Backend (FastAPI) — pytest
 
-El proyecto FastAPI es `services/api` (tiene su `pyproject.toml`). Desde ahí:
+Desde la **raíz del repositorio**:
 
 ```bash
-cd services/api
-uv sync                 # instala dependencias + grupo dev (pytest, pytest-cov, httpx)
 uv run pytest           # 194 tests
-uv run pytest --cov     # con informe de cobertura por archivo
+uv run pytest --cov     # con informe de cobertura por archivo de services/api
 ```
 
-`pyproject.toml` añade la raíz del repo al `sys.path` (los tests importan
-`services.api...`) y configura qué entra en la cobertura. Las pruebas no leen
-`.env`, no usan red ni disco: TinyDB en memoria, SQLite en memoria para
-inventario y una clave JWT de prueba.
+`uv run` crea el entorno e instala lo necesario la primera vez (equivale a
+`uv sync`): las dependencias de la API desde `services/api/requirements.txt`
+(una sola fuente) y el grupo `dev` (pytest, pytest-cov, httpx). El
+`pyproject.toml` de la raíz configura pytest (`testpaths = ["services/api/tests"]`,
+`pythonpath = ["."]` para que los tests importen `services.api...`) y la
+cobertura (`source = ["services/api"]`, sin tests ni scripts de seed).
 
-Cobertura de cada suite por separado:
+También funciona desde el propio proyecto FastAPI, que tiene su
+`pyproject.toml` equivalente:
 
 ```bash
-# AUTH-088: solo las pruebas de lógica de auth sobre los módulos de auth
-uv run pytest tests --ignore=tests/test_route_protection.py --ignore=tests/test_cache.py \
-  --ignore=tests/test_suppliers.py --ignore=tests/test_inventory.py \
+cd services/api && uv run pytest
+```
+
+Las pruebas no leen `.env`, no usan red ni disco: TinyDB en memoria, SQLite en
+memoria para inventario y una clave JWT de prueba.
+
+Cobertura de cada suite por separado (desde la raíz; el comando falla si no se
+alcanza el mínimo):
+
+```bash
+# AUTH-088: solo las pruebas de lógica de auth sobre los módulos de auth (mínimo 70 %)
+uv run pytest services/api/tests \
+  --ignore=services/api/tests/test_route_protection.py --ignore=services/api/tests/test_cache.py \
+  --ignore=services/api/tests/test_suppliers.py --ignore=services/api/tests/test_inventory.py \
   --cov=services.api.core.security --cov=services.api.core.dependencies \
   --cov=services.api.routes.auth --cov=services.api.routes.users \
   --cov=services.api.routes.profiles --cov=services.api.routes.auth_password \
   --cov=services.api.services.users --cov=services.api.models.auth --cov-fail-under=70
 
-# API-042: suppliers + inventario
-uv run pytest tests/test_suppliers.py tests/test_inventory.py \
+# API-042: suppliers + inventario (mínimo 60 %)
+uv run pytest services/api/tests/test_suppliers.py services/api/tests/test_inventory.py \
   --cov=services.api.routes.suppliers --cov=services.api.routers.inventory \
   --cov=services.api.services.inventory --cov-fail-under=60
 ```
@@ -117,7 +129,7 @@ tiene camino feliz (✅), caso límite (◐) y modo de fallo (✖).
 
 ## Resultados de cobertura
 
-`uv run pytest --cov` (194 tests):
+`uv run pytest --cov` desde la raíz (194 tests):
 
 | Módulo | Cobertura | | Módulo | Cobertura |
 | --- | --- | --- | --- | --- |
