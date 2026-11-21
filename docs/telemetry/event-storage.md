@@ -100,3 +100,10 @@ node scripts/generate-telemetry-contract.mjs --check
 - **Permisos de `telemetry_writer`:** `INSERT … ON CONFLICT` permitido; leer
   `tags`, `UPDATE` y `DELETE` denegados.
 - **Supabase:** sin avisos de seguridad.
+
+### Filas en `telemetry_events`
+
+Resultado de una consulta SQL en el proyecto `healthcore`: 10 de las 34 filas,
+generadas desde el backoffice, con 5 eventos de negocio y 5 técnicos.
+
+![Filas de telemetry_events en Supabase](./evidence/05-supabase-telemetry-events.png)
