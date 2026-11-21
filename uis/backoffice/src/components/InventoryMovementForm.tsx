@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { createInbound, createOutbound, InventoryError, listProducts, useInventoryError } from "@/lib/inventory";
-import type { Product } from "@/types/inventory";
+import { departments, type Department, type Product } from "@/types/inventory";
 import { useTelemetryFlow } from "@/lib/useTelemetryFlow";
 
 export default function InventoryMovementForm({
@@ -18,6 +18,7 @@ export default function InventoryMovementForm({
   const [clinicId, setClinicId] = useState("");
   const [vendor, setVendor] = useState("");
   const [consumptionType, setConsumptionType] = useState<"clinical_use" | "expiry_waste">("clinical_use");
+  const [department, setDepartment] = useState<Department | "">("");
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -53,8 +54,9 @@ export default function InventoryMovementForm({
     const amount = Number(quantity);
     const clinic = Number(clinicId);
     if (!selectedProduct || !Number.isInteger(amount) || amount < 1 || amount > 2147483647 ||
-      !Number.isInteger(clinic) || clinic < 1 || clinic > 12 || (direction === "inbound" && !vendor.trim())) {
-      setError("Comprueba el producto, la cantidad, la clínica y los demás campos obligatorios.");
+      !Number.isInteger(clinic) || clinic < 1 || clinic > 12 || (direction === "inbound" && !vendor.trim()) ||
+      (direction === "outbound" && !department)) {
+      setError("Comprueba el producto, la cantidad, la clínica, el departamento y los demás campos obligatorios.");
       telemetryFlow.invalid();
       return;
     }
@@ -64,14 +66,18 @@ export default function InventoryMovementForm({
     setMessage("");
     try {
       const movement = { supply_id: selectedProduct.id, quantity: amount, clinic_id: clinic };
+      let success = "Entrada registrada.";
       if (direction === "inbound") {
         await createInbound({ ...movement, vendor_name: vendor.trim() });
-      } else {
-        await createOutbound({ ...movement, consumption_type: consumptionType });
+      } else if (department) {
+        const { thresholdCrossed } = await createOutbound({ ...movement, consumption_type: consumptionType, department });
+        success = thresholdCrossed
+          ? `Salida registrada. La clínica ${clinic} queda con ${thresholdCrossed.clinicStock} ${selectedProduct.unit}, por debajo de su mínimo de ${thresholdCrossed.minimum}: requiere reabastecimiento.`
+          : "Salida registrada.";
       }
       telemetryFlow.completed();
       setQuantity("");
-      setMessage(direction === "inbound" ? "Entrada registrada." : "Salida registrada.");
+      setMessage(success);
       try {
         setProducts(await listProducts());
       } catch (error) {
@@ -120,7 +126,7 @@ export default function InventoryMovementForm({
               </select>
             </label>
             {direction === "outbound" && selectedProduct && (
-              <p role="status">Stock global disponible: {selectedProduct.current_stock} {selectedProduct.unit}</p>
+              <p role="status">Stock global: {selectedProduct.current_stock} {selectedProduct.unit}. La salida se descuenta del stock de la clínica indicada.</p>
             )}
             <label>Cantidad<input type="number" min="1" max="2147483647" step="1" required value={quantity} onChange={(event) => setQuantity(event.target.value)} /></label>
             <label>ID de clínica<input type="number" min="1" max="12" step="1" required value={clinicId} onChange={(event) => setClinicId(event.target.value)} /></label>
@@ -136,6 +142,18 @@ export default function InventoryMovementForm({
                 }}>
                   <option value="clinical_use">Uso clínico</option>
                   <option value="expiry_waste">Caducidad o desperdicio</option>
+                </select>
+              </label>
+            )}
+            {direction === "outbound" && (
+              <label>
+                Departamento
+                <select required value={department} onChange={(event) => {
+                  const match = departments.find((item) => item.value === event.target.value);
+                  setDepartment(match ? match.value : "");
+                }}>
+                  <option value="">Selecciona un departamento</option>
+                  {departments.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </select>
               </label>
             )}
