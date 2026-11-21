@@ -203,10 +203,18 @@ entrada → historial → error no controlado → espera de 60 s.
   introducidos.
 - API: 47 pruebas correctas, 6 de ellas nuevas (`test_inventory_telemetry_sources.py`) para stock por clínica, cruce de mínimo, rechazo de edición directa y vencimientos.
 
-La captura de pantalla de la pestaña Network de DevTools se hace a mano: el
-navegador automatizado no muestra DevTools.
+### Captura de DevTools
 
-### Comprobación manual pendiente
+Capturas del panel Network de Chrome DevTools conectado a la pestaña del
+backoffice, tras registrar una salida que deja la clínica 1 bajo su mínimo. La
+cabecera `Cookie` (sesión) se excluyó recortando la vista de Headers a General.
+
+![Salida registrada bajo el mínimo](./evidence/01-app-outbound-threshold.png)
+![General: POST /api/telemetry/events 200](./evidence/02-devtools-general.png)
+![Payload del lote](./evidence/03-devtools-payload.png)
+![Respuesta del stub](./evidence/04-devtools-response.png)
+
+### Cómo repetir la comprobación manual
 
 1. Iniciar UI/API con las variables anteriores.
 2. Abrir Network en DevTools y filtrar `telemetry/events`.
@@ -217,4 +225,4 @@ navegador automatizado no muestra DevTools.
 4. Verificar `events: []`, metadatos automáticos, allowlists y respuesta
    `200 { "received": N }`; ocultar la pestaña para comprobar beacon.
 5. Capturar únicamente el lote sintético y su respuesta, sin cookies, tokens
-   ni datos reales. Adjuntar la captura al PR `feat: telemetry event capture`.
+   ni datos reales.
