@@ -5,7 +5,27 @@ import { useCallback } from "react";
 import type { InboundInput, Orders, OutboundInput, Product, Supply } from "@/types/inventory";
 import { telemetryFetch, track, withResponseTelemetry } from "@/services/telemetry";
 
-const stockLevels = new Map<number, number>();
+// Last validated catalog, used to enrich events whose API response omits the supply.
+const knownSupplies = new Map<number, Supply>();
+
+type ProductCategory = "medication" | "ppe" | "consumable" | "equipment";
+
+// Transitional API → BRIEFING mapping (telemetry-plan.md, dry-gap 3). `diagnostics`
+// has no safe default: it is decided per product, so those events are not emitted.
+const briefingCategory: Record<Supply["category"], ProductCategory | null> = {
+  medications: "medication",
+  ppe: "ppe",
+  consumables: "consumable",
+  wound_care: "consumable",
+  diagnostics: null,
+};
+
+function inventoryFields(supply: Supply, clinicId: number) {
+  const productCategory = briefingCategory[supply.category];
+  if (productCategory === null) return null;
+  // Transitional: the API has no clinic table yet, so country comes from the product.
+  return { clinic_id: clinicId, country: supply.country, product_id: supply.id, product_category: productCategory };
+}
 
 export class InventoryError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -103,10 +123,13 @@ async function request(
       const available = response.headers.get("x-available-stock");
       if (response.status === 400 && path === "/orders/outbound" && payload &&
         available !== null && /^\d+$/.test(available)) {
-        withResponseTelemetry(response, () => track("inventory_outbound_insufficient_stock_rejected", {
-          supply_id: payload.supply_id, clinic_id: payload.clinic_id,
-          requested_quantity: payload.quantity, available_quantity: Number(available),
-        }));
+        const supply = knownSupplies.get(payload.supply_id);
+        const fields = supply ? inventoryFields(supply, payload.clinic_id) : null;
+        if (fields) {
+          withResponseTelemetry(response, () => track("inventory_outbound_insufficient_stock_rejected", {
+            ...fields, requested_quantity: payload.quantity, available_quantity: Number(available), department: null,
+          }));
+        }
       }
     }
     throw new InventoryError(message, response.status);
@@ -120,23 +143,14 @@ async function request(
 }
 
 export async function listProducts(signal?: AbortSignal): Promise<Product[]> {
-  const { data: result, response } = await request("/products", { signal });
+  const { data: result } = await request("/products", { signal });
   if (!Array.isArray(result) || !result.every(isProduct)) {
     throw new Error("El servicio devolvió un catálogo inválido.");
   }
-  withResponseTelemetry(response, () => {
-    for (const product of result) {
-      const previous = stockLevels.get(product.id);
-      if (previous !== undefined && previous > 10 && product.current_stock <= 10) {
-        track("inventory_stock_threshold_triggered", {
-          supply_id: product.id, current_stock: product.current_stock, threshold: 10, unit: product.unit,
-        });
-      }
-      stockLevels.set(product.id, product.current_stock);
-    }
-    const ids = new Set(result.map((product) => product.id));
-    for (const id of stockLevels.keys()) if (!ids.has(id)) stockLevels.delete(id);
-  });
+  // stock_threshold_triggered is emitted by the backend against the per-clinic
+  // minimum; the informative <=10 badge is not that threshold and emits nothing.
+  knownSupplies.clear();
+  for (const product of result) knownSupplies.set(product.id, product);
   return result;
 }
 
@@ -150,25 +164,23 @@ export async function listOrders(signal?: AbortSignal): Promise<Orders> {
 export async function createInbound(payload: InboundInput): Promise<void> {
   const { data, response } = await request("/orders/inbound", { method: "POST", body: JSON.stringify(payload) }, payload);
   if (isRecord(data) && Number.isInteger(data.id) && isSupply(data.supply)) {
-    const country = data.supply.country;
-    withResponseTelemetry(response, () => track("inventory_inbound_order_created", {
-      order_id: Number(data.id), supply_id: payload.supply_id, quantity: payload.quantity,
-      clinic_id: payload.clinic_id, country,
-    }));
+    const fields = inventoryFields(data.supply, payload.clinic_id);
+    if (fields) {
+      // supplier_id stays null until inbound orders reference the supplier directory.
+      withResponseTelemetry(response, () => track("inbound_order_created", {
+        ...fields, quantity: payload.quantity, supplier_id: null,
+      }));
+    } else {
+      console.warn("Inbound telemetry skipped: product category has no BRIEFING mapping.");
+    }
   } else {
     console.warn("Inbound telemetry skipped: invalid movement response.");
   }
 }
 
 export async function createOutbound(payload: OutboundInput): Promise<void> {
-  const { data, response } = await request("/orders/outbound", { method: "POST", body: JSON.stringify(payload) }, payload);
-  if (isRecord(data) && Number.isInteger(data.id) && isSupply(data.supply)) {
-    const country = data.supply.country;
-    withResponseTelemetry(response, () => track("inventory_outbound_order_created", {
-      order_id: Number(data.id), supply_id: payload.supply_id, quantity: payload.quantity,
-      clinic_id: payload.clinic_id, consumption_type: payload.consumption_type, country,
-    }));
-  } else {
-    console.warn("Outbound telemetry skipped: invalid movement response.");
-  }
+  // outbound_order_created requires `department`, which outbound orders do not
+  // record yet (telemetry-plan.md, dry-gap 4). Emitting it without that field would
+  // break the contract, so it is not emitted until the API captures it.
+  await request("/orders/outbound", { method: "POST", body: JSON.stringify(payload) }, payload);
 }
