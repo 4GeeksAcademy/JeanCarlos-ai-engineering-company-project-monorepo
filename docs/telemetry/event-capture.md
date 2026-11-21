@@ -2,13 +2,14 @@
 
 ## Alcance implementado
 
-Contrato: [event-schemas.json](./event-schemas.json), versión `1.0.0`.
+Contrato: [event-schemas.json](./event-schemas.json), versión `2.0.0`.
 Diseño: [telemetry-plan.md](./telemetry-plan.md).
 
-Se instrumentaron los flujos existentes, como se acordó: **19 de 32 eventos**,
-incluidos **5 de los 14 obligatorios** del catálogo. No se inventan productores
-clínicos ni eventos de un gateway inexistente. Esto no equivale a cubrir todo el
-BRIEFING ni a implementar almacenamiento o auditoría de seguridad confiable.
+Se instrumentaron los flujos existentes: **17 de 25 eventos**, de los cuales
+solo **1 de los 5 obligatorios** del BRIEFING (`inbound_order_created`) puede
+emitirse hoy. Los otros cuatro dependen de cambios de modelo/API descritos en
+[Eventos pendientes](#eventos-pendientes). Esto no equivale a cubrir el BRIEFING
+ni a implementar almacenamiento o auditoría de seguridad confiable.
 
 Todos los eventos pasan por `track()` en
 [`telemetry.ts`](../../uis/backoffice/src/services/telemetry.ts). Los componentes
@@ -16,11 +17,9 @@ no construyen envelopes ni envían lotes directamente.
 
 | Evento | Clasificación | Punto de captura |
 | --- | --- | --- |
-| `inventory_inbound_order_created` | Obligatorio, RFI | Cliente inventory, respuesta exitosa del alta |
-| `inventory_outbound_order_created` | Obligatorio, RFI | Cliente inventory, respuesta exitosa del alta |
-| `inventory_order_validation_failed` | Obligatorio, RFI | Cliente inventory, HTTP 422; campos/códigos permitidos, agrupación de 5 s |
-| `inventory_outbound_insufficient_stock_rejected` | Obligatorio, RFI | Cliente inventory, HTTP 400 y stock autoritativo en `X-Available-Stock` |
-| `inventory_stock_threshold_triggered` | Obligatorio, RFI | Comparación de lecturas válidas del catálogo: cruce observado de >10 a <=10 |
+| `inbound_order_created` | Obligatorio, BRIEFING | Cliente inventory, respuesta exitosa del alta; `product_category` por mapeo transitorio, `supplier_id: null`, `country` del producto |
+| `inventory_order_validation_failed` | Propuesta | Cliente inventory, HTTP 422; campos/códigos permitidos, agrupación de 5 s |
+| `inventory_outbound_insufficient_stock_rejected` | Propuesta | Cliente inventory, HTTP 400 y stock autoritativo en `X-Available-Stock`; categoría/país del último catálogo cargado, `department: null` |
 | `inventory_orders_viewed` | Propuesta | Historial cargado correctamente; deduplicación de 30 s |
 | `supplier_created` | Propuesta | Cliente suppliers, alta confirmada |
 | `supplier_rate_updated` | Propuesta | Cambio confirmado; dirección respecto a la tarifa mostrada previamente, sin monto |
@@ -39,16 +38,27 @@ no construyen envelopes ni envían lotes directamente.
 La latencia se mide desde el navegador hasta el proxy de Next.js y su API, no
 como duración exclusiva de FastAPI. Se conservan hasta 1000 muestras por grupo
 ruta/método/clase HTTP por ventana; no incluye solicitudes abortadas o sin
-respuesta HTTP. La detección de stock bajo es observacional por pestaña, no un
-evento global garantizado después de cada commit. Los cambios de proveedor
+respuesta HTTP. El badge informativo `<=10` del catálogo ya no emite eventos:
+no es el mínimo por clínica del BRIEFING. Los cambios de proveedor
 usan el valor previamente mostrado, que puede quedar obsoleto entre operadores.
 
 ### Eventos pendientes
 
-Los ocho obligatorios de claims, citas/no-shows y CME/licencias no tienen
-productor en este backoffice. `inventory_direct_stock_edit_rejected` requiere
-un gateway confiable que todavía no existe: un 404 del navegador no prueba un
-intento de evadir controles. Permanecen documentados, pero no se emiten.
+Obligatorios del BRIEFING sin productor todavía:
+
+| Evento | Bloqueo | Productor previsto |
+| --- | --- | --- |
+| `outbound_order_created` | Las salidas no registran `department`, obligatorio en el contrato. Antes se emitía como `inventory_outbound_order_created`; se dejó de emitir para no publicar eventos fuera de contrato. | Cliente inventory, en cuanto la API acepte y devuelva `department`. |
+| `stock_threshold_triggered` | Stock global y sin mínimo configurable por clínica. | Backend, en la transacción de la salida. |
+| `direct_stock_edit_rejected` | No existe la ruta de control con rechazo explícito 403/405; un 404 del navegador no prueba intención. | Backend/gateway. |
+| `supply_expiry_flagged` | `Product` no tiene `expiry_date`. | Job diario del backend. |
+
+Las altas de insumos con categoría API `diagnostics` no emiten
+`inbound_order_created` ni el rechazo por stock: su categoría del BRIEFING se
+decide por producto y no hay valor por defecto seguro.
+
+Las métricas de claims, citas y CME/licencias del `CONTEXT` de Hito 2 se
+eliminaron del catálogo `2.0.0`.
 
 Cuatro propuestas siguen pendientes: `user_admin_action_completed`,
 `profile_access_denied`, `inventory_product_created` y
