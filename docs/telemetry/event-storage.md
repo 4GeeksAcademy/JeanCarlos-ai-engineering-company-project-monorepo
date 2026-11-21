@@ -101,6 +101,12 @@ node scripts/generate-telemetry-contract.mjs --check
   `tags`, `UPDATE` y `DELETE` denegados.
 - **Supabase:** sin avisos de seguridad.
 
+### Esquema en Supabase
+
+Esquema de la tabla en el panel de Supabase (proyecto `healthcore`).
+
+![Esquema de telemetry_events en Supabase](./evidence/06-supabase-schema.png)
+
 ### Filas en `telemetry_events`
 
 Resultado de una consulta SQL en el proyecto `healthcore`: 10 de las 34 filas,
