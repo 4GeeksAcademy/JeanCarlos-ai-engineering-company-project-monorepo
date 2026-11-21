@@ -125,8 +125,8 @@
       "category": "business_inventory",
       "description": "El stock de un insumo en una clínica cae por debajo del mínimo configurado para esa clínica y ese insumo.",
       "hypothesisDecision": "Necesitamos saber con qué frecuencia una clínica se queda corta de un insumo crítico (EPP, medicamento) para priorizar el reabastecimiento urgente y escalar a Operaciones Clínicas.",
-      "delivery": {"mode": "stream", "cadence": "En el commit de la salida que provoca el cruce; deduplicado por clinic_id + product_id hasta recuperar el mínimo"},
-      "privacy": {"containsSensitiveData": true, "handling": "Sin PHI. El evento lo emite el backend, no la UI; el badge informativo <=10 no es este umbral."},
+      "delivery": {"mode": "stream", "cadence": "La API detecta el cruce en el commit de la salida y lo devuelve; el backoffice lo emite. Rearmado al recuperar el mínimo"},
+      "privacy": {"containsSensitiveData": true, "handling": "Sin PHI. El cruce lo calcula la API, no la UI; el badge informativo <=10 no es este umbral."},
       "allowlist": ["clinic_id", "country", "product_id", "product_category", "quantity", "min_stock_threshold", "department"],
       "properties": {
         "clinic_id": {"type": "integer", "minimum": 1, "maximum": 12, "required": true, "description": "Clínica (1–12) donde ocurre el hecho de inventario.", "sensitive": true},
@@ -166,7 +166,7 @@
       "category": "business_inventory",
       "description": "Un insumo con fecha de vencimiento y stock disponible en una clínica entra en la ventana de 30 días previos al vencimiento.",
       "hypothesisDecision": "Necesitamos saber qué insumos están por vencer antes de que se conviertan en pérdida o riesgo de cumplimiento para priorizar su uso o su baja controlada antes del vencimiento.",
-      "delivery": {"mode": "batch", "cadence": "Job diario; un evento por clinic_id + product_id + expiry_date al entrar en la ventana"},
+      "delivery": {"mode": "batch", "cadence": "Fase 2: backoffice al cargar GET /inventory/expiring, una vez por clinic_id + product_id + expiry_date y navegador. Objetivo: job diario con deduplicación global"},
       "privacy": {"containsSensitiveData": true, "handling": "Sin PHI. La fecha de vencimiento es del insumo, nunca de una persona."},
       "allowlist": ["clinic_id", "country", "product_id", "product_category", "quantity", "expiry_date", "days_until_expiry", "expiry_window_days"],
       "properties": {

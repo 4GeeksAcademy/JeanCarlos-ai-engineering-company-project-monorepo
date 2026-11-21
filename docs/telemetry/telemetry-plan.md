@@ -20,13 +20,13 @@ Quedan **fuera** de este catálogo; ver [Exclusiones](#dry-gaps-y-exclusiones).
 
 Entidades del briefing y su estado en la API actual:
 
-| Entidad del briefing | API actual | Brecha |
+| Entidad del briefing | API actual | Estado |
 | --- | --- | --- |
-| `Product` con `category` ∈ `medication`/`ppe`/`consumable`/`equipment` y fecha de vencimiento | `category` ∈ `ppe`/`wound_care`/`diagnostics`/`medications`/`consumables`; sin vencimiento | Añadir `product_category` del briefing y `expiry_date` al modelo `Product` (§6). |
-| `InboundOrder` (proveedor → clínica) | `POST /inventory/orders/inbound` con `clinic_id` y `vendor_name` libre | Añadir `supplier_id` referenciado al directorio. |
-| `OutboundOrder` (consumo por departamento) | `POST /inventory/orders/outbound` con `clinic_id` y `consumption_type`; sin departamento | Añadir `department` controlado. |
-| `clinic` (país + estado/región) | `clinic_id` 1–12; `country` es del producto | Tabla de clínicas con país/región; `country` del evento = país de la clínica. |
-| Stock y mínimo por clínica | Stock global (entregas − consumos); solo badge UI `<=10` | Stock por `clinic_id + product_id` y mínimo configurable por clínica e insumo. |
+| `Product` con `category` ∈ `medication`/`ppe`/`consumable`/`equipment` y fecha de vencimiento | `product_category` (obligatorio al crear) y `expiry_date` en `medical_supply`; se mantiene la `category` operativa | Resuelto. |
+| `InboundOrder` (proveedor → clínica) | `POST /inventory/orders/inbound` con `clinic_id` y `vendor_name` libre | Pendiente: `supplier_id` referenciado al directorio. |
+| `OutboundOrder` (consumo por departamento) | `POST /inventory/orders/outbound` exige `department` controlado | Resuelto. |
+| `clinic` (país + estado/región) | `clinic_id` 1–12; `country` es del producto | Pendiente: tabla de clínicas con país/región. |
+| Stock y mínimo por clínica | Salidas validadas contra el stock de su clínica; mínimos en `clinic_stock_minimum` | Resuelto. El catálogo sigue mostrando el total global. |
 
 Clasificación:
 
@@ -78,29 +78,39 @@ Los cinco eventos obligatorios llevan en `properties`, como mínimo:
 Flujo: sesión autenticada → catálogo `GET /inventory/products` → selección de
 insumo → validación → `POST /inventory/orders/inbound` o `POST
 /inventory/orders/outbound` → commit transaccional (actualiza stock por
-clínica) → evaluación del mínimo → refresco del catálogo. En paralelo, un job
-diario evalúa vencimientos.
+clínica) → evaluación del mínimo → refresco del catálogo. El panel de
+vencimientos del catálogo consulta los insumos que vencen en 30 días.
 
-1. **`inbound_order_created`**: backend, después del commit 201, vía outbox.
+En la Fase 2 todos los eventos se emiten desde el backoffice con `track()`,
+después de la respuesta autoritativa de la API; la API decide los hechos
+(commit, cruce de mínimo, rechazo, vencimiento) y el navegador solo los
+reporta. El objetivo de producción es emitir los de negocio desde un outbox en
+backend.
+
+1. **`inbound_order_created`**: tras el commit 201 de la entrada.
    Incluye `supplier_id` para segmentar por proveedor.
-2. **`outbound_order_created`**: backend, después del commit 201, vía outbox,
-   con `department` obligatorio.
-3. **`stock_threshold_triggered`**: backend, en la misma transacción de la
-   salida que deja el stock de `clinic_id + product_id` **por debajo del mínimo
-   configurado para esa clínica** (`quantity < min_stock_threshold`). Solo en el
-   flanco de bajada (antes `>=` mínimo, ahora `<`); se rearma cuando una entrada
-   devuelve el stock a `>=` mínimo. El badge UI `<=10` sobre stock global
-   **no** es este umbral y no emite este evento.
-4. **`direct_stock_edit_rejected`**: backend/gateway, al rechazar
-   explícitamente (403/405) un intento de fijar stock fuera de una orden en la
-   ruta de control `/inventory/clinics/{clinic_id}/products/{product_id}/stock`.
+2. **`outbound_order_created`**: tras el commit 201 de la salida, con
+   `department` obligatorio.
+3. **`stock_threshold_triggered`**: la API detecta, en la misma transacción de
+   la salida, que el stock de `clinic_id + product_id` queda **por debajo del
+   mínimo configurado para esa clínica** (`quantity < min_stock_threshold`) y lo
+   devuelve en `stock_threshold`; el backoffice emite el evento con esa
+   respuesta. Solo en el flanco de bajada (antes `>=` mínimo, ahora `<`); se
+   rearma cuando una entrada devuelve el stock a `>=` mínimo. El badge UI `<=10`
+   sobre stock global **no** es este umbral y no emite este evento.
+4. **`direct_stock_edit_rejected`**: al rechazar la API explícitamente (403)
+   un intento de fijar stock fuera de una orden en la ruta de control
+   `/inventory/clinics/{clinic_id}/products/{product_id}/stock`; el backoffice
+   lo emite desde el panel de ajuste directo.
    Se emiten la plantilla de ruta, el método, `clinic_id`, `product_id`,
    categoría y cantidad intentada (`null` si no es válida); nunca el path
    literal ni el cuerpo. Un 404 genérico no prueba intención y no cuenta.
-5. **`supply_expiry_flagged`**: job diario (UTC) que recorre los insumos con
-   `Product.expiry_date` y stock `> 0` por clínica. Emite cuando
-   `days_until_expiry <= 30` (`expiry_window_days = 30`), una sola vez por
-   `clinic_id + product_id + expiry_date`.
+5. **`supply_expiry_flagged`**: `GET /inventory/expiring` devuelve los
+   insumos con `Product.expiry_date` y stock `> 0` por clínica cuando
+   `days_until_expiry <= 30` (`expiry_window_days = 30`). Fase 2: el backoffice
+   lo emite al cargar el panel de vencimientos, una vez por
+   `clinic_id + product_id + expiry_date` y navegador. Objetivo: un job diario
+   (UTC) con deduplicación global por esa clave.
 
 ## Catálogo de eventos
 
@@ -160,8 +170,9 @@ operativo de red y las alertas de cumplimiento.
   rearme durable por par clínica/insumo para evitar duplicados entre
   instancias. Si el mínimo se reconfigura por encima del stock actual, no se
   emite hasta la siguiente salida que confirme el cruce.
-- **Vencimiento:** dedupe por `clinic_id + product_id + expiry_date`; si el
-  stock llega a 0 antes del vencimiento no se emite. Ventana fija de 30 días.
+- **Vencimiento:** dedupe por `clinic_id + product_id + expiry_date` (hoy por
+  navegador; la Fase 3 debe deduplicar en almacenamiento); si el stock llega a
+  0 antes del vencimiento no se emite. Ventana fija de 30 días.
 - **Latencia:** ventanas de 60 s por `route_template`, método y clase de
   status; alerta cuando p95 > 200 ms durante 5 ventanas o 5xx > 2 % durante
   5 min. Ajustar tras línea base.
@@ -195,31 +206,24 @@ operativo de red y las alertas de cumplimiento.
 
 ## Dry-gaps y exclusiones
 
-1. **Mínimo por clínica y stock por clínica:** hoy el stock es global y solo
-   existe el badge UI `<=10`. `stock_threshold_triggered` requiere stock por
-   `clinic_id + product_id` y una tabla de mínimos configurables. Hasta
-   entonces el evento no se emite; el badge no lo sustituye.
-2. **Vencimiento:** `Product` no tiene `expiry_date`. Debe añadirse al modelo
-   de producto, no a la orden (§6), para calcular `supply_expiry_flagged` de
-   forma consistente entre clínicas.
-3. **Categoría:** el briefing usa `medication`/`ppe`/`consumable`/`equipment`.
-   Guardar esa categoría en `Product`. Mapeo transitorio desde la API actual:
-   `medications→medication`, `ppe→ppe`, `consumables→consumable`,
-   `wound_care→consumable`; `diagnostics` se decide por producto
-   (`equipment` o `consumable`) con Operaciones Clínicas, nunca por defecto.
-4. **Departamento:** la salida no lo registra. Añadir `department` controlado
-   a `OutboundOrder`; el catálogo de valores se confirma con Operaciones
-   Clínicas.
-5. **Proveedor en entradas:** `vendor_name` es texto libre y no se envía.
+1. **Resueltos en la Fase 2:** stock y mínimo por clínica
+   (`clinic_stock_minimum`), `Product.expiry_date`, `product_category` del
+   briefing (obligatorio al crear; migración de los existentes:
+   `medications→medication`, `ppe→ppe`, `consumables`/`wound_care→consumable`;
+   `diagnostics` se asigna por producto), `department` en salidas y ruta de
+   rechazo explícito de edición directa.
+2. **Departamento:** catálogo de valores pendiente de confirmar con
+   Operaciones Clínicas.
+3. **Proveedor en entradas:** `vendor_name` es texto libre y no se envía.
    `supplier_id` va `null` hasta que la entrada referencie el directorio.
-6. **País de la clínica:** hoy `country` sale del producto. Debe derivarse de
+4. **País de la clínica:** hoy `country` sale del producto. Debe derivarse de
    la clínica (tabla de clínicas con país y estado/región).
-7. **Edición directa:** no existe endpoint. Hay que implementar la ruta de
-   control con rechazo explícito 403/405; sin ella el evento no se emite.
-8. **Fuera de alcance:** métricas de claims (tasa de denegación 8 %), citas
+5. **Vencimientos:** el productor actual es el backoffice (por navegador); un
+   job diario debe sustituirlo para garantizar una sola emisión por clave.
+6. **Fuera de alcance:** métricas de claims (tasa de denegación 8 %), citas
    (no-show 20 %, coste) y personal (CME, licencias 90/30 días) son del
    `CONTEXT` de Hito 2, no de este briefing. No se catalogan aquí.
-9. **Cuerpos fallidos, credenciales, latencia por usuario, IP, replay, heatmaps
+7. **Cuerpos fallidos, credenciales, latencia por usuario, IP, replay, heatmaps
    y resultado “cuenta encontrada” de recuperación:** excluidos por riesgo de
    privacidad o falta de decisión concreta.
 
@@ -250,8 +254,8 @@ disparen `stock_threshold_triggered` y el job emita 1
 | `POST /inventory/orders/inbound` | **`inbound_order_created`**, `inventory_order_validation_failed` |
 | `POST /inventory/orders/outbound` | **`outbound_order_created`**, **`stock_threshold_triggered`** (si cruza el mínimo), `inventory_outbound_insufficient_stock_rejected`, `inventory_order_validation_failed` |
 | `GET /inventory/orders` | `inventory_orders_viewed` |
-| Ruta de control `/inventory/clinics/{clinic_id}/products/{product_id}/stock` (por implementar) | **`direct_stock_edit_rejected`** |
-| Job diario de vencimientos (por implementar) | **`supply_expiry_flagged`** |
+| `PUT`/`PATCH /inventory/clinics/{clinic_id}/products/{product_id}/stock` (siempre 403) | **`direct_stock_edit_rejected`** |
+| `GET /inventory/expiring` | **`supply_expiry_flagged`** |
 | Otras 4xx/5xx y errores cliente | `api_error_aggregated`, `frontend_unhandled_error` |
 
 Las rutas se registran como plantilla, nunca con identificadores ni query
@@ -272,4 +276,4 @@ string.
 
 La captura del backoffice, el contrato generado y la validación de la API
 (`schemaVersion: "2.0.0"`) ya están migrados. El estado de cada evento
-obligatorio está en [event-capture.md](./event-capture.md#eventos-pendientes).
+obligatorio está en [event-capture.md](./event-capture.md#obligatorios-del-briefing).

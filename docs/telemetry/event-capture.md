@@ -5,66 +5,70 @@
 Contrato: [event-schemas.json](./event-schemas.json), versión `2.0.0`.
 Diseño: [telemetry-plan.md](./telemetry-plan.md).
 
-Se instrumentaron los flujos existentes: **17 de 25 eventos**, de los cuales
-solo **1 de los 5 obligatorios** del BRIEFING (`inbound_order_created`) puede
-emitirse hoy. Los otros cuatro dependen de cambios de modelo/API descritos en
-[Eventos pendientes](#eventos-pendientes). Esto no equivale a cubrir el BRIEFING
-ni a implementar almacenamiento o auditoría de seguridad confiable.
+Se instrumentaron **21 de 25 eventos**, incluidos **los 5 obligatorios** del
+BRIEFING, y el piso técnico transversal: errores de frontend, latencia de API y
+navegación. Esto no implementa todavía almacenamiento: el receptor
+`POST /telemetry/events` es un stub que valida el envelope, registra en log la
+cantidad y los `event_type` del lote y responde `{ "received": N }`.
 
 Todos los eventos pasan por `track()` en
 [`telemetry.ts`](../../uis/backoffice/src/services/telemetry.ts). Los componentes
 no construyen envelopes ni envían lotes directamente.
 
-| Evento | Clasificación | Punto de captura |
+### Obligatorios del BRIEFING
+
+| Evento | Punto de captura | Fuente del dato |
 | --- | --- | --- |
-| `inbound_order_created` | Obligatorio, BRIEFING | Cliente inventory, respuesta exitosa del alta; `product_category` por mapeo transitorio, `supplier_id: null`, `country` del producto |
-| `inventory_order_validation_failed` | Propuesta | Cliente inventory, HTTP 422; campos/códigos permitidos, agrupación de 5 s |
-| `inventory_outbound_insufficient_stock_rejected` | Propuesta | Cliente inventory, HTTP 400 y stock autoritativo en `X-Available-Stock`; categoría/país del último catálogo cargado, `department: null` |
-| `inventory_orders_viewed` | Propuesta | Historial cargado correctamente; deduplicación de 30 s |
-| `supplier_created` | Propuesta | Cliente suppliers, alta confirmada |
-| `supplier_rate_updated` | Propuesta | Cambio confirmado; dirección respecto a la tarifa mostrada previamente, sin monto |
-| `supplier_status_changed` | Propuesta | Cambio confirmado; estado previo mostrado y nuevo, sin ID |
-| `supplier_filter_applied` | Propuesta | Listado filtrado válido; debounce de 500 ms y tamaño agrupado |
-| `form_flow_started` | Propuesta | Primer cambio en formulario de entrada/salida |
-| `form_flow_abandoned` | Propuesta | Desmontaje/pagehide de formulario iniciado sin éxito; no se atribuye abandono durante un envío pendiente |
-| `frontend_route_viewed` | Propuesta | Provider de navegación; solo rutas canónicas, deduplicación de 30 s |
-| `frontend_unhandled_error` | Propuesta | `error`, `unhandledrejection` y Error Boundary; código fijo, deduplicación de 30 s |
-| `api_latency_aggregated` | Propuesta | `telemetryFetch`, ventanas de 60 s; p50/p95 y volumen de respuestas HTTP |
-| `auth_login_succeeded` | Propuesta | Helper de autenticación; tras recuperar rol e identidad seudónima |
-| `auth_login_failed` | Propuesta | Helper de autenticación; razón normalizada, sin credenciales |
-| `auth_session_rejected` | Propuesta | HTTP 401 de inventario/proveedores; razón genérica `invalid`, sin inferir expiración |
-| `auth_password_recovery_requested` | Propuesta | Respuesta neutral exitosa de recuperación |
+| `inbound_order_created` | `createInbound()` en `src/lib/inventory.ts`, llamado por `InventoryMovementForm` (entrada) tras el 201 | Respuesta de `POST /inventory/orders/inbound`; `supplier_id: null` hasta que la entrada referencie el directorio |
+| `outbound_order_created` | `createOutbound()` en `src/lib/inventory.ts`, llamado por `InventoryMovementForm` (salida) tras el 201 | Respuesta de `POST /inventory/orders/outbound`; `department` elegido en el formulario |
+| `stock_threshold_triggered` | `createOutbound()`, mismo commit que la salida | La API calcula el cruce por clínica (`stock_threshold` en la respuesta) solo en el flanco de bajada bajo `clinic_stock_minimum` |
+| `direct_stock_edit_rejected` | `attemptDirectStockEdit()` en `src/lib/inventory.ts`, panel «Ajuste directo de stock» del catálogo | Rechazo 403 explícito de `PUT /inventory/clinics/{clinic_id}/products/{product_id}/stock` |
+| `supply_expiry_flagged` | `listExpiring()` en `src/lib/inventory.ts`, panel «Por vencer en 30 días» del catálogo | `GET /inventory/expiring`: stock por clínica de insumos con `expiry_date` en ≤ 30 días |
+
+`country` sale del producto hasta que exista una tabla de clínicas. Un insumo sin
+`product_category` (creado antes de 2.0.0 y no migrado) no emite eventos de
+inventario, porque no puede cumplir el contrato.
+
+`supply_expiry_flagged` se captura en el backoffice al cargar el panel y se
+deduplica por `clinic_id + product_id + expiry_date` en `localStorage` del
+navegador. Distintos navegadores pueden emitir el mismo aviso: la Fase 3 debe
+deduplicar en almacenamiento por esa clave (o mover el productor a un job diario,
+como prevé el plan).
+
+### Identificados (propuestas propias)
+
+| Evento | Categoría | Punto de captura |
+| --- | --- | --- |
+| `inventory_order_validation_failed` | Negocio | `request()` en `src/lib/inventory.ts`, HTTP 422; campos/códigos permitidos, agrupación de 5 s |
+| `inventory_outbound_insufficient_stock_rejected` | Negocio | `request()` en `src/lib/inventory.ts`, HTTP 400 con stock de la clínica en `X-Available-Stock` |
+| `inventory_orders_viewed` | Navegación | `listOrders()` en `src/lib/inventory.ts`; deduplicación de 30 s |
+| `supplier_created` | Negocio | `src/lib/suppliers.ts`, alta confirmada |
+| `supplier_rate_updated` | Negocio | `src/lib/suppliers.ts`; dirección respecto a la tarifa mostrada, sin monto |
+| `supplier_status_changed` | Negocio | `src/lib/suppliers.ts`; estado previo y nuevo, sin ID |
+| `supplier_filter_applied` | Navegación | `src/lib/suppliers.ts`; debounce de 500 ms y tamaño agrupado |
+| `form_flow_started` | Funnel | Hook `useTelemetryFlow`; primer cambio en formulario de entrada/salida |
+| `form_flow_abandoned` | Funnel | Hook `useTelemetryFlow`; desmontaje/pagehide sin envío completado |
+| `frontend_route_viewed` | Navegación | `TelemetryProvider` → `trackNavigation()`; solo rutas canónicas, deduplicación de 30 s |
+| `frontend_unhandled_error` | Errores | Listeners `error`/`unhandledrejection` en `telemetry.ts` y Error Boundary `src/app/error.tsx` |
+| `api_latency_aggregated` | Rendimiento | `telemetryFetch()` en `telemetry.ts`; ventanas de 60 s con p50/p95 |
+| `auth_login_succeeded` | Autenticación | `captureAuthentication()` desde `src/lib/auth.ts` |
+| `auth_login_failed` | Autenticación | `src/lib/auth.ts` / `captureAuthentication()`; `invalid_credentials`, `rate_limited` o `service_unavailable`, nunca credenciales |
+| `auth_session_rejected` | Autenticación | `telemetryFetch()` ante HTTP 401 de inventario/proveedores |
+| `auth_password_recovery_requested` | Autenticación | `captureAuthentication()`; respuesta neutral |
 
 La latencia se mide desde el navegador hasta el proxy de Next.js y su API, no
 como duración exclusiva de FastAPI. Se conservan hasta 1000 muestras por grupo
 ruta/método/clase HTTP por ventana; no incluye solicitudes abortadas o sin
-respuesta HTTP. El badge informativo `<=10` del catálogo ya no emite eventos:
-no es el mínimo por clínica del BRIEFING. Los cambios de proveedor
-usan el valor previamente mostrado, que puede quedar obsoleto entre operadores.
+respuesta HTTP. El indicador informativo `<=10` del catálogo no emite eventos:
+no es el mínimo por clínica del BRIEFING. Los cambios de proveedor usan el valor
+previamente mostrado, que puede quedar obsoleto entre operadores.
 
-### Eventos pendientes
+### Pendientes
 
-Obligatorios del BRIEFING sin productor todavía:
-
-| Evento | Bloqueo | Productor previsto |
-| --- | --- | --- |
-| `outbound_order_created` | Las salidas no registran `department`, obligatorio en el contrato. Antes se emitía como `inventory_outbound_order_created`; se dejó de emitir para no publicar eventos fuera de contrato. | Cliente inventory, en cuanto la API acepte y devuelva `department`. |
-| `stock_threshold_triggered` | Stock global y sin mínimo configurable por clínica. | Backend, en la transacción de la salida. |
-| `direct_stock_edit_rejected` | No existe la ruta de control con rechazo explícito 403/405; un 404 del navegador no prueba intención. | Backend/gateway. |
-| `supply_expiry_flagged` | `Product` no tiene `expiry_date`. | Job diario del backend. |
-
-Las altas de insumos con categoría API `diagnostics` no emiten
-`inbound_order_created` ni el rechazo por stock: su categoría del BRIEFING se
-decide por producto y no hay valor por defecto seguro.
-
-Las métricas de claims, citas y CME/licencias del `CONTEXT` de Hito 2 se
-eliminaron del catálogo `2.0.0`.
-
-Cuatro propuestas siguen pendientes: `user_admin_action_completed`,
-`profile_access_denied`, `inventory_product_created` y
-`api_error_aggregated`. Los formularios de proveedor no capturan aún el funnel
-start/abandon; sí se capturan sus operaciones confirmadas. No se añadieron
-Web Vitals, una actividad opcional que requiere ampliar el contrato aprobado.
+Cuatro propuestas no tienen productor todavía: `user_admin_action_completed`,
+`profile_access_denied`, `inventory_product_created` (no hay alta de producto en
+el backoffice) y `api_error_aggregated`. No se añadieron Web Vitals: requieren
+ampliar el contrato aprobado con un evento nuevo.
 
 ## Configuración
 
@@ -182,17 +186,35 @@ validación del catálogo en servidor y vinculación de identidad confiable.
   y sesión anónima 401. Se detuvieron los servidores y eliminó el almacenamiento
   temporal después de la comprobación.
 
-No se realizó verificación visual en DevTools ni se generó captura de pantalla.
-El entorno de navegador preparado anteriormente no dispone de todas sus
-bibliotecas de sistema; las comprobaciones anteriores no sustituyen esa captura.
+### Flujo completo en navegador (contrato 2.0.0)
+
+Flujo recorrido en Chromium contra la API local y Postgres con el seed de
+desarrollo: login fallido y correcto → catálogo (vencimientos y ajuste directo
+rechazado) → salida que deja la clínica 2 bajo su mínimo → salida insuficiente →
+entrada → historial → error no controlado → espera de 60 s.
+
+- Todos los lotes `POST /api/telemetry/events` respondieron **200** con
+  `{"received": N}` (por ejemplo 16 y 7 eventos) y el log del stub registró
+  `Received telemetry batch count=N types=...`.
+- Los 5 obligatorios llegaron con sus propiedades del contrato.
+- Al navegar con recarga completa, la cola pendiente salió por `sendBeacon` y
+  el stub la recibió.
+- Ningún lote contenía el usuario, la contraseña ni el nombre del proveedor
+  introducidos.
+- API: 47 pruebas correctas, 6 de ellas nuevas (`test_inventory_telemetry_sources.py`) para stock por clínica, cruce de mínimo, rechazo de edición directa y vencimientos.
+
+La captura de pantalla de la pestaña Network de DevTools se hace a mano: el
+navegador automatizado no muestra DevTools.
 
 ### Comprobación manual pendiente
 
 1. Iniciar UI/API con las variables anteriores.
 2. Abrir Network en DevTools y filtrar `telemetry/events`.
-3. Navegar por catálogo/historial, registrar una orden con datos de desarrollo
-   y esperar 10 s; también probar un rechazo por stock insuficiente.
+3. Navegar por catálogo/historial, intentar un ajuste directo de stock,
+   registrar una salida con departamento (por ejemplo 3 unidades de
+   `HCR-WND-001` en la clínica 1 para cruzar su mínimo) y esperar 10 s; también
+   probar un rechazo por stock insuficiente.
 4. Verificar `events: []`, metadatos automáticos, allowlists y respuesta
    `200 { "received": N }`; ocultar la pestaña para comprobar beacon.
 5. Capturar únicamente el lote sintético y su respuesta, sin cookies, tokens
-   ni datos reales. Adjuntar la captura al PR `feat: telemetry event-capture`.
+   ni datos reales. Adjuntar la captura al PR `feat: telemetry event capture`.
