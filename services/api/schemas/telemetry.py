@@ -25,13 +25,10 @@ class TelemetryEvent(BaseModel):
         return value
 
 
-class TelemetryBatch(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    events: list[TelemetryEvent] = Field(min_length=1, max_length=20)
-
-
 class TelemetryReceipt(BaseModel):
     received: int
+    stored: int
+    rejected: int
 
 
 class TelemetrySession(BaseModel):

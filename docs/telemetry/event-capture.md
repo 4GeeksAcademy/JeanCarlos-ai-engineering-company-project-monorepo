@@ -7,9 +7,8 @@ Diseño: [telemetry-plan.md](./telemetry-plan.md).
 
 Se instrumentaron **21 de 25 eventos**, incluidos **los 5 obligatorios** del
 BRIEFING, y el piso técnico transversal: errores de frontend, latencia de API y
-navegación. Esto no implementa todavía almacenamiento: el receptor
-`POST /telemetry/events` es un stub que valida el envelope, registra en log la
-cantidad y los `event_type` del lote y responde `{ "received": N }`.
+navegación. El receptor `POST /telemetry/events` valida cada evento contra el contrato y los persiste en
+Supabase: ver [event-storage.md](./event-storage.md).
 
 Todos los eventos pasan por `track()` en
 [`telemetry.ts`](../../uis/backoffice/src/services/telemetry.ts). Los componentes
@@ -84,7 +83,8 @@ npm run dev
 ```
 
 FastAPI lee `TELEMETRY_ENDPOINT` al iniciar y lo conserva en
-`app.state.telemetry_endpoint`; por ahora no redirige tráfico ni persiste nada.
+`app.state.telemetry_endpoint`; no redirige tráfico. La persistencia usa
+`TELEMETRY_DATABASE_URL` (ver [event-storage.md](./event-storage.md)).
 Su valor predeterminado es `http://localhost:8000/telemetry/events`. Exportar la
 variable también en la terminal que inicia la API. Sus variables existentes de
 JWT, almacenamiento y correo siguen siendo necesarias.
@@ -162,14 +162,12 @@ Versionar también
   Se mantienen los mismos `eventId`; la Fase 3 deberá deduplicarlos.
   La cola se pierde si el proceso/pestaña se destruye sin entrega.
 
-El stub público valida el **envelope**, límites de lote y tipos JSON;
-`POST /telemetry/events` devuelve `{ "received": N }`. Solo registra cantidad y
-nombres de eventos, no sus propiedades. Los errores 422 no reflejan la entrada.
-No escribe en TinyDB, SQL ni Supabase. Todavía no valida el catálogo completo
-del lado servidor, ni autentica los identificadores enviados por clientes:
-no debe tratarse como fuente de auditoría confiable. Antes de exposición pública
-en producción se necesitan límites de tráfico/body en el servidor/gateway,
-validación del catálogo en servidor y vinculación de identidad confiable.
+Desde la Fase 3 el receptor valida cada evento contra el catálogo y lo guarda en
+Supabase, deduplicando por `eventId`, así que un lote reenviado no duplica filas
+([event-storage.md](./event-storage.md)). Sigue sin autenticar los
+identificadores enviados por clientes: no debe tratarse como fuente de auditoría
+confiable. Antes de exposición pública en producción se necesitan límites de
+tráfico/body en el servidor/gateway y vinculación de identidad confiable.
 
 ## Verificación realizada
 
