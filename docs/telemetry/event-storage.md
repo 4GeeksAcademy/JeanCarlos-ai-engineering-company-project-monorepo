@@ -109,7 +109,14 @@ Esquema de la tabla en el panel de Supabase (proyecto `healthcore`).
 
 ### Filas en `telemetry_events`
 
-Resultado de una consulta SQL en el proyecto `healthcore`: 10 de las 34 filas,
-generadas desde el backoffice, con 5 eventos de negocio y 5 técnicos.
+Table Editor de Supabase con las filas guardadas desde el backoffice: eventos de
+negocio (`inbound_order_created`, `stock_threshold_triggered`,
+`supply_expiry_flagged`, `inventory_outbound_insufficient_stock_rejected`) y
+técnicos (`api_latency_aggregated`, `frontend_unhandled_error`,
+`frontend_route_viewed`, `auth_login_succeeded`).
+
+![Table Editor de telemetry_events](./evidence/07-supabase-table-editor.png)
+
+Detalle de `tags` en 10 de esas filas, obtenido con una consulta SQL:
 
 ![Filas de telemetry_events en Supabase](./evidence/05-supabase-telemetry-events.png)
