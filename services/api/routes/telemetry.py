@@ -2,15 +2,23 @@ import hashlib
 import hmac
 import logging
 import os
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, HTTPException, Query
 from sqlalchemy.exc import SQLAlchemyError
 
 from ..core.dependencies import CurrentUser
 from ..core.security import get_settings
 from ..schemas.telemetry import TelemetryReceipt, TelemetrySession
-from ..services.telemetry_store import get_telemetry_engine, parse_events, store_events
+from ..services.cache import response_cache
+from ..services.telemetry_store import (
+    get_report_engine,
+    get_telemetry_engine,
+    parse_events,
+    store_events,
+)
+from services.telemetry.analysis import build_report
 
 router = APIRouter(prefix="/telemetry", tags=["telemetry"])
 logger = logging.getLogger("api.telemetry")
@@ -64,3 +72,53 @@ def receive_events(payload: Annotated[Any, Body()]) -> TelemetryReceipt:
         ",".join(event.event_type for event in valid),
     )
     return receipt
+
+
+REPORT_CACHE_NAMESPACE = "telemetry-report"
+REPORT_CACHE_TTL_SECONDS = 60
+REPORT_DEFAULT_WINDOW = timedelta(days=7)
+REPORT_MAX_WINDOW = timedelta(days=93)
+
+
+def _as_utc(value: datetime) -> datetime:
+    # ISO 8601 without offset is read as UTC.
+    return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
+
+
+def resolve_period(start_date: datetime | None, end_date: datetime | None) -> tuple[datetime, datetime]:
+    """Resolve the [start, end) window once; metric functions never apply their own default."""
+    end = _as_utc(end_date) if end_date else datetime.now(timezone.utc)
+    start = _as_utc(start_date) if start_date else end - REPORT_DEFAULT_WINDOW
+    if start >= end:
+        raise HTTPException(status_code=422, detail="start_date must be before end_date")
+    if end - start > REPORT_MAX_WINDOW:
+        raise HTTPException(status_code=422, detail="The report window cannot exceed 93 days")
+    return start, end
+
+
+@router.get("/report")
+def report(
+    _user: CurrentUser,
+    start_date: Annotated[datetime | None, Query(description="ISO 8601; default end_date - 7 days")] = None,
+    end_date: Annotated[datetime | None, Query(description="ISO 8601; default now (UTC)")] = None,
+) -> dict[str, Any]:
+    # Cache by the requested parameters, so the default "last 7 days" request is
+    # also reused for 60 s instead of recomputing with a slightly different now().
+    key = (
+        _as_utc(start_date).isoformat() if start_date else None,
+        _as_utc(end_date).isoformat() if end_date else None,
+    )
+    hit, cached, version = response_cache.get(REPORT_CACHE_NAMESPACE, key)
+    if hit:
+        return cached
+    start, end = resolve_period(start_date, end_date)
+    try:
+        result = build_report(get_report_engine(), start, end)
+    except (RuntimeError, ValueError, SQLAlchemyError) as exc:
+        logger.error("Telemetry report failed: %s", type(exc).__name__)
+        raise HTTPException(status_code=503, detail="Telemetry report unavailable") from exc
+    response_cache.set(
+        REPORT_CACHE_NAMESPACE, key, result,
+        ttl_seconds=REPORT_CACHE_TTL_SECONDS, expected_version=version,
+    )
+    return result

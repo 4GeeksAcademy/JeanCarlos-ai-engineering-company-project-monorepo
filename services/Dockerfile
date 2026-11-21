@@ -7,6 +7,7 @@ WORKDIR /app
 COPY api/requirements.txt ./services/api/requirements.txt
 RUN uv pip install --system --no-cache -r services/api/requirements.txt
 COPY api ./services/api
+COPY telemetry ./services/telemetry
 
 EXPOSE 8000
-CMD ["uvicorn", "services.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/services/api"]
+CMD ["uvicorn", "services.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/services/api", "--reload-dir", "/app/services/telemetry"]

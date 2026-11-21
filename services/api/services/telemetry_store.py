@@ -47,20 +47,31 @@ def load_contract() -> dict[str, dict[str, Any]]:
     return {event["event_type"]: event for event in catalog["events"]}
 
 
-@lru_cache(maxsize=1)
-def get_telemetry_engine() -> Engine:
-    database_url = os.environ.get("TELEMETRY_DATABASE_URL")
+def _engine_from_env(variable: str) -> Engine:
+    database_url = os.environ.get(variable)
     if not database_url:
-        raise RuntimeError("TELEMETRY_DATABASE_URL is required to store telemetry")
+        raise RuntimeError(f"{variable} is required")
     url = make_url(database_url)
     if url.drivername not in {"postgres", "postgresql", "postgresql+psycopg"}:
-        raise RuntimeError("TELEMETRY_DATABASE_URL must use PostgreSQL")
+        raise RuntimeError(f"{variable} must use PostgreSQL")
     # prepare_threshold=None keeps psycopg compatible with Supabase's transaction pooler.
     return create_engine(
         url.set(drivername="postgresql+psycopg"),
         pool_pre_ping=True,
         connect_args={"prepare_threshold": None},
     )
+
+
+@lru_cache(maxsize=1)
+def get_telemetry_engine() -> Engine:
+    """Writer connection (telemetry_writer: INSERT only)."""
+    return _engine_from_env("TELEMETRY_DATABASE_URL")
+
+
+@lru_cache(maxsize=1)
+def get_report_engine() -> Engine:
+    """Read-only connection for the technical report (telemetry_reader)."""
+    return _engine_from_env("TELEMETRY_REPORT_DATABASE_URL")
 
 
 def service_name() -> str:
