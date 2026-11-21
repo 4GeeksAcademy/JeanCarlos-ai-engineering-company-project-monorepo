@@ -13,7 +13,7 @@ class TelemetryEvent(BaseModel):
     sessionId: Annotated[str, Field(max_length=64)] | None
     userId: Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")] | None
     event_type: str = Field(pattern=r"^[a-z]+_[a-z_]+$", max_length=80)
-    schemaVersion: Literal["1.0.0"]
+    schemaVersion: Literal["2.0.0"]
     requestId: Annotated[str, Field(max_length=64)] | None
     properties: dict[str, JsonValue] = Field(max_length=20)
 
