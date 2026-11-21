@@ -48,3 +48,10 @@ small { display: block; font-size: .8rem; font-weight: normal; margin-top: .5rem
   .form-grid { grid-template-columns: minmax(0, 1fr); }
   .filters { align-items: stretch; flex-direction: column; }
 }
+
+/* Technical telemetry report */
+.report-period { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-bottom: .75rem; }
+.report-period label { display: grid; gap: .25rem; }
+.metric-bar { position: relative; min-width: 9rem; height: 1.5rem; background: #eef2f6; border-radius: .3rem; overflow: hidden; }
+.metric-bar-fill { position: absolute; inset: 0 auto 0 0; background: #8fb6d8; }
+.metric-bar-label { position: relative; padding: 0 .4rem; line-height: 1.5rem; font-variant-numeric: tabular-nums; }
