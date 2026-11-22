@@ -219,8 +219,10 @@ la fila.
 > tabla de destino del BRIEFING tiene grano clínica × mes y no tiene columna
 > `department`. La v1 guarda el total por clínica. El desglose por
 > `department` queda calculado en `data/process` y se expone como detalle
-> opcional, sin cambiar la tabla del BRIEFING. En la v1 ese detalle se publica en
-> el snapshot de evaluación (`data/eval/monthly_clinic_supply_performance/<mes>.json`, §10).
+> opcional, sin cambiar la tabla del BRIEFING. Se guarda con el checkpoint del mes
+> (`pipeline_run_months.consumption_by_department`, migración
+> `20261122140000_reporting_consumption_by_department.sql`), y lo devuelven el endpoint y el
+> dashboard (§11). También va en el snapshot de `data/eval/`.
 
 ---
 
@@ -461,10 +463,10 @@ insertan cuando el valor cambia de verdad.
 | --- | --- |
 | **Flow principal** | `monthly_clinic_supply_performance_flow(months: list[date] \| None = None, trigger: str = "scheduled", triggered_by: str \| None = None, run_id: str \| None = None)`. Si no recibe meses, usa el mes en curso y el anterior. Sin `run_id` usa el id de la corrida de Prefect, así que un *retry* de la misma corrida salta los meses ya confirmados. |
 | **Flow opcional** | `backfill_monthly_clinic_supply_performance_flow(start_month, end_month)`: recorre el rango y llama al flow principal con `trigger="backfill"`. |
-| **Tasks** | `acquire_run_lock` → `extract_supply_events(month_start)` → `extract_inventory_counts(month_start)` *(opcional)* → `transform_monthly_clinic_kpis(events, clinics, month_start)` → `validate_kpis(kpis, clinics, month_start, events, inventory_counts)` → `load_monthly_clinic_supply_performance(kpis, run_id, month_start)` → `export_eval_snapshot` *(opcional)*. El log lo escriben `run_log.start_run` y `run_log.finish_run` al empezar y al terminar el flow (lo que el diseño llamaba `record_pipeline_run`). |
+| **Tasks** | `acquire_run_lock` → `extract_supply_events(month_start)` → `extract_inventory_counts(month_start)` *(opcional)* → `normalize_supply_events(events, clinics, month_start)` → `compute_total_supply_cost` · `compute_supply_consumption_count` · `compute_critical_stockout_count` · `compute_expiry_risk_count` (una task por KPI) → `assemble_monthly_clinic_kpis` → `validate_kpis(kpis, clinics, month_start, events, inventory_counts)` → `load_monthly_clinic_supply_performance(kpis, run_id, month_start)` → `export_eval_snapshot` *(opcional)*. El log lo escriben `run_log.start_run` y `run_log.finish_run` al empezar y al terminar el flow (lo que el diseño llamaba `record_pipeline_run`). |
 | **Reintentos** | `acquire_run_lock`, `extract_supply_events` y `load_*` reintentan 3 veces (`retry_delay_seconds=[10, 30, 90]`), y solo ante errores de conexión (`retry_condition_fn`). `extract_inventory_counts`, que es opcional, reintenta 2 veces cada 5 s. `transform` y `validate` no reintentan, porque son deterministas y un fallo ahí es un problema de datos, no transitorio. |
 | **Pasos opcionales** | `extract_inventory_counts` y `export_eval_snapshot` se invocan con `return_state=True`. Si fallan, el flow registra un aviso en `pipeline_runs.warnings` y la carga sigue. |
-| **Caché** | `transform_monthly_clinic_kpis` usa `cache_key_fn` (mes + conjunto de `id` de eventos + registro + hash del código) y `cache_expiration` de 1 hora. |
+| **Caché** | `normalize_supply_events` (el paso costoso de la transformación) usa `cache_key_fn` (mes + conjunto de `id` de eventos + registro + hash del código) y `cache_expiration` de 1 hora. |
 | **Concurrencia** | Etiqueta `reporting-monthly-supply` con un límite de 1 (en la task de carga), además del advisory lock. |
 | **Programación** | Deployment con cron `0 5 * * *` (UTC, diario): mantiene el mes en curso al día y absorbe eventos tardíos del anterior. El primer día hábil, el mes anterior ya está calculado y revisado. |
 
@@ -511,9 +513,12 @@ data/
     run_log.py                    # lectura y escritura de reporting.pipeline_runs
     connections.py                # URLs: variable de entorno o Secret block de Prefect
     tables.py                     # tablas (SQLAlchemy Core)
-    tests/                        # KPIs puros + flow completo contra Postgres
 services/
   reporting/                      # router FastAPI: solo HTTP, sin lógica de ETL
+tests/pipelines/
+  test_pipeline.py                # tests unitarios de las tasks de transformación (en memoria)
+  test_pipeline_postgres.py       # flow completo contra Postgres
+uis/backoffice/src/app/reporting/ # dashboard de negocio (§11)
 supabase/migrations/20261122120000_reporting_monthly_clinic_supply_performance.sql
 ```
 
@@ -528,7 +533,7 @@ función importada de `data/pipelines/`. Nunca ocurre al revés.
 
 | Endpoint | Para qué | Importa de `data/pipelines/` | Respuesta |
 | --- | --- | --- | --- |
-| `GET /reporting/monthly-clinic-supply-performance?month_start=YYYY-MM-01` | Feed de KPIs para el reporte de la junta y el dashboard de la Parte 3. Sin parámetro, devuelve el último mes calculado. | `pipeline.get_monthly_clinic_supply_performance(month_start: date \| None)`: solo lee `reporting.monthly_clinic_supply_performance`, sus revisiones y `pipeline_run_months`. | El JSON del BRIEFING (§6), con `month_start` y `clinics[]`, más `computed_at`, `last_run_id`, `revised`, `coverage_checked` y `coverage_warnings`. `clinic_id` usa el `location_id` (`us-tx-001`…). Devuelve `404` si el mes no está calculado (nunca ceros) y `422` si `month_start` no es día 1. |
+| `GET /reporting/monthly-clinic-supply-performance?month_start=YYYY-MM-01` | Feed de KPIs para el reporte de la junta y el dashboard de la Parte 3. Sin parámetro, devuelve el último mes calculado. | `pipeline.get_monthly_clinic_supply_performance(month_start: date \| None)`: solo lee `reporting.monthly_clinic_supply_performance`, sus revisiones y `pipeline_run_months`. | El JSON del BRIEFING (§6), con `month_start` y `clinics[]`, más `consumption_by_department`, `computed_at`, `last_run_id`, `revised`, `coverage_checked` y `coverage_warnings`. `clinic_id` usa el `location_id` (`us-tx-001`…). Devuelve `404` si el mes no está calculado (nunca ceros) y `422` si `month_start` no es día 1. |
 | `GET /reporting/pipeline-runs/latest` | Estado de la última corrida: si se calculó, cuándo, con cuántos eventos y si falló. | `run_log.get_latest_run(pipeline_name="monthly_clinic_supply_performance")` | `run_id`, `status`, `trigger`, `started_at`, `finished_at`, `months`, `source_events_read`, `rows_upserted`, `rows_changed`, `events_skipped`, `warnings`, `error_stage`, `error_message`, `code_version`. Devuelve `404` antes de la primera corrida. |
 | `POST /reporting/pipeline-runs` | Disparo manual, con body opcional `{"months": ["2026-11-01"]}` | `pipeline.trigger_run(months, triggered_by)`. Con `REPORTING_PREFECT_DEPLOYMENT`, lanza el deployment (`run_deployment(..., timeout=0)`). Sin él (desarrollo local), ejecuta el flow en un hilo en segundo plano. En ningún caso ejecuta el ETL dentro de la petición. | `202 Accepted` con `run_id`, `flow_run_id` y `mode`. Devuelve `409` si ya hay una corrida en curso y `422` si un mes no es día 1 o es futuro. |
 
@@ -619,7 +624,7 @@ python data/pipelines/pipeline.py --backfill 2026-01-01 2026-06-01
 | Flows y tasks con entradas y salidas explícitas | `pipeline.py`: 2 flows y 7 tasks (§7). |
 | Fallos parciales tolerados | `extract_inventory_counts(..., return_state=True)` y `export_eval_snapshot(..., return_state=True)`: el flow comprueba `state.is_completed()`, registra el aviso y sigue con transformación y carga. |
 | Reintentos en tasks externas, justificados | `DB_RETRIES = 3`, `DB_RETRY_DELAYS = [10, 30, 90]`, con el comentario de por qué 3, y `retry_condition_fn=retry_on_transient_errors`. La reconciliación opcional usa 2 × 5 s. |
-| Caché de una hora | `transform_monthly_clinic_kpis(cache_key_fn=transform_cache_key, cache_expiration=timedelta(hours=1))`. |
+| Caché de una hora | `normalize_supply_events(cache_key_fn=transform_cache_key, cache_expiration=timedelta(hours=1))`. |
 | Carga idempotente | `load_monthly_clinic_supply_performance`: una transacción por mes con `ON CONFLICT (clinic_id, month_start) DO UPDATE … WHERE … IS DISTINCT FROM`. |
 | Metadata de cada corrida | `reporting.pipeline_runs`: `started_at`, `finished_at`, `source_events_read`, `rows_upserted`, `rows_changed`, `status`, `error_stage` y `error_message`, entre otros (§6). |
 | Ejecutable como script | `if __name__ == "__main__": raise SystemExit(main())`. |
@@ -639,10 +644,9 @@ python data/pipelines/pipeline.py --backfill 2026-01-01 2026-06-01
 ### Verificación
 
 - **Tests:**
-  - `data/pipelines/tests/test_supply_kpis.py`: reglas de cada KPI, bordes de mes
-    en UTC, motivos de descarte, validación, cobertura y desglose por
-    departamento.
-  - `data/pipelines/tests/test_pipeline_postgres.py`: flow completo contra
+  - `tests/pipelines/test_pipeline.py`: tests unitarios de las tasks de
+    transformación (§11).
+  - `tests/pipelines/test_pipeline_postgres.py`: flow completo contra
     Postgres. Dos corridas dejan la tabla idéntica; un evento tardío produce una
     revisión; los pasos opcionales fallan sin detener la corrida; un fallo
     crítico queda registrado con su etapa; el lock salta la corrida concurrente;
@@ -665,3 +669,107 @@ python data/pipelines/pipeline.py --backfill 2026-01-01 2026-06-01
   - **Disparo manual:** un `POST /reporting/pipeline-runs` devuelve `202`, y un
     segundo inmediato, `409`. `GET /reporting/pipeline-runs/latest` pasa de
     `running` a `completed` con su `flow_run_id` de Prefect.
+
+---
+
+## 11. Subflows, tests y dashboard (Parte 3)
+
+### Subflows
+
+El flow principal, `monthly_clinic_supply_performance_flow`, ya no contiene lógica
+de ETL. Crea el registro de la corrida, toma el lock, recorre los meses y coordina
+estos subflows. Cada uno tiene entradas y salidas explícitas y resuelve su propia
+conexión con `connections.py`, sin variables globales compartidas. Se puede
+ejecutar y monitorear por separado en Prefect:
+
+| Subflow | Fase | Entradas → salida | Tasks |
+| --- | --- | --- | --- |
+| `extract_supply_events_flow` | Extracción | `month_start` → eventos del mes (`DataFrame`) | `extract_supply_events` |
+| `reconcile_inventory_movements_flow` *(opcional, `return_state=True`)* | Extracción de dominio | `month_start` → movimientos por clínica | `extract_inventory_counts` |
+| `compute_monthly_clinic_supply_kpis_flow` | Transformación | eventos, registro, mes, movimientos → `kpis`, `events_skipped`, `source_event_counts`, `consumption_by_department`, `coverage` | `normalize_supply_events` (en caché), una task por KPI, `assemble_monthly_clinic_kpis`, `validate_kpis` |
+| `load_monthly_clinic_supply_performance_flow` | Carga | `kpis`, `run_id`, mes, `trigger`, checkpoint → `rows_upserted`, `rows_changed` | `load_monthly_clinic_supply_performance` |
+| `export_board_pack_snapshot_flow` *(opcional, `return_state=True`)* | Exportación secundaria | `run_id`, mes, resultado → ruta del JSON | `export_eval_snapshot` |
+
+Las tasks por KPI llevan el nombre del KPI del BRIEFING:
+
+| Task | KPI |
+| --- | --- |
+| `compute_total_supply_cost` | Costo de insumos por clínica |
+| `compute_supply_consumption_count` | Volumen de consumo de insumos |
+| `compute_critical_stockout_count` | Frecuencia de quiebre crítico |
+| `compute_expiry_risk_count` | Conteo de riesgo de vencimiento |
+
+La lógica de cada una vive en `data/process/supply_kpis.py`, y las cuatro rechazan
+la entrada mal formada con `KpiInputError`.
+
+El comando de §10 no cambia: `python data/pipelines/pipeline.py` sigue corriendo
+el ETL completo. Tras el refactor, la corrida sobre Supabase dio
+`rows_changed = 0` frente a las cifras de la Parte 2: mismos KPIs.
+
+### Tests unitarios
+
+```bash
+python -m pytest tests/pipelines/test_pipeline.py
+```
+
+- **28 tests** que llaman a cada task con `task.fn(...)` sobre filas en memoria
+  con la forma de `telemetry_events` (`id`, `timestamp`, `event_type` y `tags`
+  con las propiedades del BRIEFING de telemetría). No usan base de datos ni
+  servidor de Prefect.
+- **Un test por KPI:** cada una de las cuatro tasks de KPI.
+- **Mes calculado a mano:** `test_month_matches_the_briefing_definitions`
+  compara las 12 filas de destino con valores calculados a mano. Por ejemplo, en
+  `us-tx-001` el costo es 124.00 + 21.45 = 145.45 USD y hay 3 consumos, no 11
+  unidades. En `uk-lon-002`, 3 avisos sobre 2 lotes dan 2 lotes en riesgo.
+- **Defensivos:**
+  - `total_cost` nulo, de texto, negativo o `NaN` no suma ni resta, y no rompe el
+    mes;
+  - `tags` mal formados o un `clinic_id` nulo se descartan y se cuentan;
+  - una entrada sin columnas, con un mes que no es día 1 o que no es un
+    `DataFrame` da `KpiInputError`;
+  - `validate_kpis` bloquea filas faltantes o duplicadas, valores negativos, una
+    moneda incoherente, otro mes o una columna con forma de dato de paciente.
+
+`tests/pipelines/test_pipeline_postgres.py` mantiene las pruebas de integración
+de la Parte 2 (idempotencia, eventos tardíos, lock, corridas huérfanas), ahora a
+través de los subflows.
+
+### Dashboard de negocio: `/reporting` en el backoffice
+
+- **Fuente:** `GET /reporting/monthly-clinic-supply-performance` y
+  `GET /reporting/pipeline-runs/latest`, a través de un proxy de solo lectura
+  (`uis/backoffice/src/app/api/reporting/[...path]/route.ts`).
+- **Una sección por KPI**, con el nombre exacto del BRIEFING y una frase sobre
+  qué mide y por qué importa.
+- **Por país:** cada sección tiene un gráfico de barras por clínica para Estados
+  Unidos y otro para Reino Unido, cada uno con su total en su moneda. USD y GBP
+  nunca se suman.
+- **Lenguaje para la CEO y la CCO:**
+  - las clínicas se muestran por nombre (`Texas 1`, `Londres 1`), no por id;
+  - las cantidades llevan unidad (`2 veces`, `1 lote`, `$62.00`);
+  - el periodo se escribe completo («noviembre de 2026, del 1 al 30 de
+    noviembre»);
+  - el mes en curso se marca como parcial.
+- **Volumen de consumo por departamento:** el KPI del BRIEFING se define «por
+  departamento», así que su sección añade una tabla clínica × departamento (campo
+  `consumption_by_department` del endpoint).
+- **Notas sobre los datos:** las clínicas con cobertura fuera de rango (*), las
+  entradas sin costo y si el mes fue corregido por eventos tardíos.
+- **Un mes no calculado** muestra «Ese mes todavía no tiene un reporte
+  calculado», nunca ceros.
+
+![Dashboard /reporting con datos reales de noviembre de 2026](./evidence/reporting-dashboard.png)
+
+### Mejoras adicionales de las preguntas de diseño
+
+| Mejora | Pregunta del diseño a la que responde | Por qué se priorizó |
+| --- | --- | --- |
+| **Alerta de silencio en el dashboard.** Si la última corrida falló, o la última completada tiene más de 26 h (corrida diaria + margen), el dashboard muestra un aviso visible. | «¿Cómo distingues que el pipeline no corrió de que no hubo actividad?» (§6, «Silencio vs. ausencia real») | El log ya registraba la falta de corridas, pero nadie del liderazgo consulta `pipeline-runs/latest`. Sin el aviso, una junta podía leer cifras viejas como si fueran del día. |
+| **Registro de la corrida antes de lanzarla.** `trigger_run` inserta la fila `running` antes de arrancar el flow. | «¿Qué pasa si el cron y un disparo manual se solapan?» (§6, «Corridas concurrentes») | En la Parte 2, dos `POST` seguidos daban `202` y `202`. El lock evitaba datos duplicados, pero la segunda petición debía recibir `409`. Ahora lo recibe. |
+| **Validación defensiva de entrada en las tasks de KPI** (`KpiInputError`). | «¿Qué haces con eventos con campos faltantes o mal tipados?» (§6, «Integridad») | Un cambio en el contrato o un export mal formado debe fallar en la transformación con un mensaje claro, no producir un KPI silenciosamente erróneo. |
+
+Antes de esta parte ya estaban implementados el lock de concurrencia (advisory
+lock), la idempotencia de reintentos (`ON CONFLICT` por `eventId` y por
+`(clinic_id, month_start)`) y el cierre de corridas huérfanas. Esta parte no
+añade nada que el diseño no hubiera señalado.
+

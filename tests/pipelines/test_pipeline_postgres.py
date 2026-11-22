@@ -24,6 +24,7 @@ NOVEMBER = date(2026, 11, 1)
 MIGRATIONS = [
     "20261121180000_telemetry_events.sql",
     "20261122120000_reporting_monthly_clinic_supply_performance.sql",
+    "20261122140000_reporting_consumption_by_department.sql",
 ]
 
 
@@ -165,6 +166,10 @@ def test_coverage_against_inventory_is_recorded(engine, inventory, november_even
     assert report["coverage_checked"] is True
     assert report["coverage_warnings"] == ["uk-lon-001"]  # telemetry inbound without an inventory movement
     assert report["revised"] is False
+    assert report["consumption_by_department"] == [
+        {"clinic_id": "us-tx-001", "department": "emergency", "supply_consumption_count": 1},
+        {"clinic_id": "us-tx-001", "department": "surgery", "supply_consumption_count": 1},
+    ]
     assert [clinic["clinic_id"] for clinic in report["clinics"]][:1] == ["us-fl-001"]  # US first, then UK
     assert set(report["clinics"][0]) == {"clinic_id", "country", "total_supply_cost", "supply_consumption_count",
                                          "critical_stockout_count", "expiry_risk_count", "currency"}

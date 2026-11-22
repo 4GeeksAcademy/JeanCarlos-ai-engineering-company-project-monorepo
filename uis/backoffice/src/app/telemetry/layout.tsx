@@ -9,6 +9,7 @@ export default async function TelemetryLayout({ children }: { children: React.Re
         <Link href="/suppliers">Proveedores</Link>
         <Link href="/inventory/products">Catálogo</Link>
         <Link href="/inventory/orders">Historial</Link>
+        <Link href="/reporting">Reporte mensual</Link>
         <Link href="/telemetry">Telemetría</Link>
       </nav>
       {children}

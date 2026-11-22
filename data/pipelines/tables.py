@@ -81,6 +81,7 @@ pipeline_run_months = Table(
     Column("inventory_counts", JSONB),
     Column("clinics_without_events", ARRAY(Text), nullable=False),
     Column("coverage", JSONB),
+    Column("consumption_by_department", JSONB, nullable=False, server_default="[]"),
     Column("rows_changed", Integer, nullable=False),
     Column("completed_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
     schema="reporting",

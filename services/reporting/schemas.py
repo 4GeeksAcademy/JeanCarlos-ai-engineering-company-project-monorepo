@@ -16,11 +16,20 @@ class ClinicSupplyPerformance(BaseModel):
     currency: Literal["USD", "GBP"]
 
 
+class DepartmentConsumption(BaseModel):
+    """Detail of KPI «Volumen de consumo de insumos» por departamento."""
+
+    clinic_id: str
+    department: str
+    supply_consumption_count: int
+
+
 class MonthlyClinicSupplyPerformance(BaseModel):
     """BRIEFING §6: month_start + clinics[]; the rest is audit context from the design (§8)."""
 
     month_start: date
     clinics: list[ClinicSupplyPerformance]
+    consumption_by_department: list[DepartmentConsumption] = []
     computed_at: datetime
     last_run_id: str | None
     revised: bool

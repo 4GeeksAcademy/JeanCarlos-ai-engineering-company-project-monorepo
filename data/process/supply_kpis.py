@@ -124,32 +124,88 @@ def normalize_events(raw: pd.DataFrame, registry: pd.DataFrame) -> tuple[pd.Data
 
 # --- aggregate --------------------------------------------------------------------
 
-def aggregate_monthly_kpis(events: pd.DataFrame, registry: pd.DataFrame, month_start: date) -> pd.DataFrame:
-    """One row per registry clinic for month_start; clinics without events get zeros."""
-    month = events[events["month_start"] == month_start]
-    of_type = {event_type: month[month["event_type"] == event_type] for event_type in SOURCE_EVENT_TYPES}
-    kpis = pd.concat(
-        {
-            # min_count=1: inbound events without total_cost add nothing (NaN), never a fake 0.
-            "total_supply_cost": of_type[INBOUND].groupby("clinic_id")["total_cost"].sum(min_count=1),
-            "supply_consumption_count": of_type[OUTBOUND].groupby("clinic_id").size(),
-            "critical_stockout_count": of_type[STOCKOUT].groupby("clinic_id").size(),
-            # A lot is (product, expiry date) in a clinic: the flag is deduplicated per browser,
-            # so several browsers may flag the same lot; counting events would inflate it.
-            "expiry_risk_count": (
-                of_type[EXPIRY].dropna(subset=["product_id", "expiry_date"])
-                .drop_duplicates(subset=["clinic_id", "product_id", "expiry_date"])
-                .groupby("clinic_id").size()
-            ),
-        },
-        axis=1,
+class KpiInputError(ValueError):
+    """The events frame given to a KPI function is malformed (missing columns, wrong month type)."""
+
+
+_KPI_INPUT_COLUMNS = ("event_type", "clinic_id", "month_start")
+
+
+def _month_events(events: pd.DataFrame, event_type: str, month_start: date, extra: tuple[str, ...] = ()) -> pd.DataFrame:
+    """Defensive slice shared by the KPI functions: one event type, one month, a usable clinic_id."""
+    if not isinstance(events, pd.DataFrame):
+        raise KpiInputError(f"events must be a DataFrame, got {type(events).__name__}")
+    if not isinstance(month_start, date) or month_start.day != 1:
+        raise KpiInputError(f"month_start must be the first day of a month, got {month_start!r}")
+    missing = [column for column in (*_KPI_INPUT_COLUMNS, *extra) if column not in events.columns]
+    if missing:
+        raise KpiInputError(f"events is missing columns: {', '.join(missing)}")
+    selected = events[(events["event_type"] == event_type) & (events["month_start"] == month_start)]
+    clinic = pd.to_numeric(selected["clinic_id"], errors="coerce")
+    return selected.assign(clinic_id=clinic)[clinic.notna()].astype({"clinic_id": int})
+
+
+def total_supply_cost(events: pd.DataFrame, month_start: date) -> pd.Series:
+    """KPI «Costo de insumos por clínica»: sum of inbound_order_created.total_cost per clinic.
+
+    Missing, non-numeric or negative costs add nothing (they are reported as
+    inbound_without_cost by normalize_events); they are never read as a 0 cost.
+    """
+    inbound = _month_events(events, INBOUND, month_start, ("total_cost",))
+    cost = pd.to_numeric(inbound["total_cost"], errors="coerce")
+    cost = cost.where(cost >= 0)
+    return cost.groupby(inbound["clinic_id"]).sum(min_count=1).dropna().round(2).rename("total_supply_cost")
+
+
+def supply_consumption_count(events: pd.DataFrame, month_start: date) -> pd.Series:
+    """KPI «Volumen de consumo de insumos»: number of outbound_order_created events per clinic."""
+    outbound = _month_events(events, OUTBOUND, month_start)
+    return outbound.groupby("clinic_id").size().rename("supply_consumption_count")
+
+
+def critical_stockout_count(events: pd.DataFrame, month_start: date) -> pd.Series:
+    """KPI «Frecuencia de quiebre crítico»: stock_threshold_triggered events per clinic.
+
+    Each event is already one crossing below the minimum (the API emits it on the falling edge).
+    """
+    stockouts = _month_events(events, STOCKOUT, month_start)
+    return stockouts.groupby("clinic_id").size().rename("critical_stockout_count")
+
+
+def expiry_risk_count(events: pd.DataFrame, month_start: date) -> pd.Series:
+    """KPI «Conteo de riesgo de vencimiento»: distinct lots (product_id, expiry_date) flagged per clinic.
+
+    The flag is deduplicated per browser, so several browsers may flag the same lot:
+    counting events would inflate the number of lots at risk.
+    """
+    flagged = _month_events(events, EXPIRY, month_start, ("product_id", "expiry_date"))
+    lots = flagged.dropna(subset=["product_id", "expiry_date"]).drop_duplicates(
+        subset=["clinic_id", "product_id", "expiry_date"]
     )
+    return lots.groupby("clinic_id").size().rename("expiry_risk_count")
+
+
+def assemble_monthly_kpis(registry: pd.DataFrame, month_start: date, *kpi_series: pd.Series) -> pd.DataFrame:
+    """Rows of reporting.monthly_clinic_supply_performance: one per registry clinic, zeros if no events."""
+    kpis = pd.concat(kpi_series, axis=1) if kpi_series else pd.DataFrame()
     kpis = kpis.reindex(index=registry["clinic_id"], columns=list(KPI_COLUMNS)).astype(float).fillna(0)
     rows = registry.set_index("clinic_id").join(kpis).reset_index().assign(month_start=month_start)
     rows["total_supply_cost"] = rows["total_supply_cost"].astype(float).round(2)
     rows[list(KPI_COLUMNS[1:])] = rows[list(KPI_COLUMNS[1:])].astype(int)
     rows = rows.rename(columns={"clinic_id": "clinic_number", "location_id": "clinic_id"})
     return rows[list(DESTINATION_COLUMNS)].reset_index(drop=True)  # registry order (clinic 1 → 12)
+
+
+def aggregate_monthly_kpis(events: pd.DataFrame, registry: pd.DataFrame, month_start: date) -> pd.DataFrame:
+    """The four BRIEFING KPIs for one month, assembled into the destination rows."""
+    return assemble_monthly_kpis(
+        registry,
+        month_start,
+        total_supply_cost(events, month_start),
+        supply_consumption_count(events, month_start),
+        critical_stockout_count(events, month_start),
+        expiry_risk_count(events, month_start),
+    )
 
 
 def consumption_by_department(events: pd.DataFrame, month_start: date) -> list[dict[str, Any]]:

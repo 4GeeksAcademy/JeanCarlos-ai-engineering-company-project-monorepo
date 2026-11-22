@@ -16,6 +16,9 @@ REPORT = {
         {"clinic_id": "uk-lon-001", "country": "UK", "total_supply_cost": 80.0, "supply_consumption_count": 3,
          "critical_stockout_count": 0, "expiry_risk_count": 0, "currency": "GBP"},
     ],
+    "consumption_by_department": [
+        {"clinic_id": "us-tx-001", "department": "primary_care", "supply_consumption_count": 340},
+    ],
     "computed_at": "2026-11-22T05:00:01+00:00",
     "last_run_id": "0e083ef3-900e-48ca-b025-03d1eae63aba",
     "revised": False,

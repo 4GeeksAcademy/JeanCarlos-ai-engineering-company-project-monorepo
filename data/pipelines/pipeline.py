@@ -249,24 +249,64 @@ def extract_inventory_counts(month_start: date) -> pd.DataFrame:
     return counts.reindex(columns=["inbound", "outbound"], fill_value=0).astype(int).reset_index()
 
 
-# Cached: this is the expensive step (JSON parsing of every event's tags, registry join and
-# groupbys). A manual run shortly after the scheduled one, or a Prefect retry, reuses the
+# Cached: this is the expensive step (JSON parsing of every event's tags, deduplication and
+# registry join). A manual run shortly after the scheduled one, or a Prefect retry, reuses the
 # result instead of recomputing it. The key (transform_cache_key) includes the event ids,
 # so the cache is only reused for exactly the same source data. It is valid for 1 hour:
 # long enough to cover retries and back-to-back runs, short enough that a code or registry
 # change deployed without restarting Prefect never serves stale KPIs for long.
-@task(name="transform_monthly_clinic_kpis", cache_key_fn=transform_cache_key,
+@task(name="normalize_supply_events", cache_key_fn=transform_cache_key,
       cache_expiration=timedelta(hours=1), persist_result=True)
-def transform_monthly_clinic_kpis(events: pd.DataFrame, clinics: pd.DataFrame, month_start: date) -> dict[str, Any]:
-    """Deterministic, no retries: a failure here is a data problem, not a transient one."""
+def normalize_supply_events(events: pd.DataFrame, clinics: pd.DataFrame, month_start: date) -> dict[str, Any]:
+    """Dedupe by event id, extract tags, UTC month, clinic registry join (no retries: deterministic)."""
     normalized, skipped = supply_kpis.normalize_events(events, clinics)
     return {
-        "kpis": supply_kpis.aggregate_monthly_kpis(normalized, clinics, month_start),
         "events": normalized,
         "events_skipped": skipped,
         "source_event_counts": supply_kpis.source_event_counts(normalized, month_start),
         "consumption_by_department": supply_kpis.consumption_by_department(normalized, month_start),
     }
+
+
+# One task per BRIEFING KPI (§2). Deterministic and cheap once events are normalized:
+# no retries (a failure is a data problem) and no cache (normalize_supply_events already is).
+@task(name="compute_total_supply_cost", cache_policy=NO_CACHE, persist_result=False)
+def compute_total_supply_cost(events: pd.DataFrame, month_start: date) -> pd.Series:
+    """Costo de insumos por clínica."""
+    return supply_kpis.total_supply_cost(events, month_start)
+
+
+@task(name="compute_supply_consumption_count", cache_policy=NO_CACHE, persist_result=False)
+def compute_supply_consumption_count(events: pd.DataFrame, month_start: date) -> pd.Series:
+    """Volumen de consumo de insumos."""
+    return supply_kpis.supply_consumption_count(events, month_start)
+
+
+@task(name="compute_critical_stockout_count", cache_policy=NO_CACHE, persist_result=False)
+def compute_critical_stockout_count(events: pd.DataFrame, month_start: date) -> pd.Series:
+    """Frecuencia de quiebre crítico."""
+    return supply_kpis.critical_stockout_count(events, month_start)
+
+
+@task(name="compute_expiry_risk_count", cache_policy=NO_CACHE, persist_result=False)
+def compute_expiry_risk_count(events: pd.DataFrame, month_start: date) -> pd.Series:
+    """Conteo de riesgo de vencimiento."""
+    return supply_kpis.expiry_risk_count(events, month_start)
+
+
+@task(name="assemble_monthly_clinic_kpis", cache_policy=NO_CACHE, persist_result=False)
+def assemble_monthly_clinic_kpis(
+    clinics: pd.DataFrame,
+    month_start: date,
+    total_supply_cost: pd.Series,
+    supply_consumption_count: pd.Series,
+    critical_stockout_count: pd.Series,
+    expiry_risk_count: pd.Series,
+) -> pd.DataFrame:
+    """12 destination rows (BRIEFING §5 columns), clinics without events at zero."""
+    return supply_kpis.assemble_monthly_kpis(
+        clinics, month_start, total_supply_cost, supply_consumption_count, critical_stockout_count, expiry_risk_count,
+    )
 
 
 @task(name="validate_kpis", cache_policy=NO_CACHE, persist_result=False)
@@ -394,7 +434,76 @@ def export_eval_snapshot(run_id: UUID, month_start: date, result: dict[str, Any]
     return str(path)
 
 
-# --- flows --------------------------------------------------------------------------
+# --- subflows ---------------------------------------------------------------------------
+# Each phase of the design is its own flow: it can run, be monitored and be retried on its
+# own, and the main flow only coordinates them. Inputs and outputs are explicit parameters
+# and return values; connections are resolved inside each subflow (connections.py), never
+# shared through globals.
+
+@flow(name="extract_supply_events_flow")
+def extract_supply_events_flow(month_start: date) -> pd.DataFrame:
+    """Extraction: the 4 BRIEFING supply events of one month from public.telemetry_events (read-only)."""
+    return extract_supply_events(pipeline_engine(), month_start)
+
+
+@flow(name="reconcile_inventory_movements_flow")
+def reconcile_inventory_movements_flow(month_start: date) -> pd.DataFrame:
+    """Optional extraction: inventory movements per clinic (supply_delivery, supply_consumption)."""
+    return extract_inventory_counts(month_start)
+
+
+@flow(name="compute_monthly_clinic_supply_kpis_flow")
+def compute_monthly_clinic_supply_kpis_flow(
+    events: pd.DataFrame,
+    clinics: pd.DataFrame,
+    month_start: date,
+    inventory_counts: pd.DataFrame | None = None,
+    coverage_tolerance: float = DEFAULT_CONFIG["coverage_tolerance"],
+) -> dict[str, Any]:
+    """Transformation: normalize events, compute the 4 BRIEFING KPIs, assemble and validate the rows.
+
+    Returns kpis (12 rows), events_skipped, source_event_counts, consumption_by_department
+    and coverage (None when the inventory reconciliation was not available).
+    """
+    normalized = normalize_supply_events(events, clinics, month_start)
+    clinic_events = normalized["events"]
+    kpis = assemble_monthly_clinic_kpis(
+        clinics,
+        month_start,
+        compute_total_supply_cost(clinic_events, month_start),
+        compute_supply_consumption_count(clinic_events, month_start),
+        compute_critical_stockout_count(clinic_events, month_start),
+        compute_expiry_risk_count(clinic_events, month_start),
+    )
+    coverage = validate_kpis(kpis, clinics, month_start, clinic_events, inventory_counts, coverage_tolerance)
+    return {
+        "kpis": kpis,
+        "events_skipped": normalized["events_skipped"],
+        "source_event_counts": normalized["source_event_counts"],
+        "consumption_by_department": normalized["consumption_by_department"],
+        "coverage": coverage,
+    }
+
+
+@flow(name="load_monthly_clinic_supply_performance_flow")
+def load_monthly_clinic_supply_performance_flow(
+    kpis: pd.DataFrame,
+    run_id: UUID,
+    month_start: date,
+    trigger: str,
+    checkpoint: dict[str, Any],
+) -> dict[str, int]:
+    """Load: idempotent upsert of one month into reporting.monthly_clinic_supply_performance."""
+    return load_monthly_clinic_supply_performance(pipeline_engine(), kpis, run_id, month_start, trigger, checkpoint)
+
+
+@flow(name="export_board_pack_snapshot_flow")
+def export_board_pack_snapshot_flow(run_id: UUID, month_start: date, kpis_result: dict[str, Any]) -> str:
+    """Optional: JSON snapshot of the month in data/eval/ (board pack review and validation)."""
+    return export_eval_snapshot(run_id, month_start, kpis_result, kpis_result["coverage"])
+
+
+# --- main flow ---------------------------------------------------------------------------
 
 @flow(name="monthly_clinic_supply_performance_flow", log_prints=True)
 def monthly_clinic_supply_performance_flow(
@@ -403,7 +512,7 @@ def monthly_clinic_supply_performance_flow(
     triggered_by: str | None = None,
     run_id: str | None = None,
 ) -> dict[str, Any]:
-    """Recompute whole months from the source and upsert them (PIPELINE_DESIGN.md §5–§7)."""
+    """Coordinates the subflows month by month (PIPELINE_DESIGN.md §5–§7); holds no ETL logic."""
     logger = get_run_logger()
     if trigger not in {"scheduled", "manual", "backfill"}:
         raise ValueError(f"Unknown trigger: {trigger}")
@@ -441,17 +550,17 @@ def monthly_clinic_supply_performance_flow(
             raise KpiValidationError(f"Clinic registry has {len(clinics)} clinics, expected {config['expected_clinics']}")
         done = run_log.completed_months(engine, current_run)
 
-        for month in months:  # orchestration over months, one transaction each
+        for month in months:  # orchestration over months, one load transaction each
             if month in done:
                 logger.info("%s already completed by this run: skipped", month)
                 continue
             stage = "extract"
-            events = extract_supply_events(engine, month)
+            events = extract_supply_events_flow(month)
             summary["source_events_read"] += len(events)
 
-            # Optional step: return_state=True so a failure is handled here instead of
+            # Optional subflow: return_state=True so a failure is handled here instead of
             # propagating. Without inventory the month is still loaded, only without coverage.
-            inventory_state = extract_inventory_counts(month, return_state=True)
+            inventory_state = reconcile_inventory_movements_flow(month, return_state=True)
             if inventory_state.is_completed():
                 inventory_counts = inventory_state.result()
             else:
@@ -460,37 +569,39 @@ def monthly_clinic_supply_performance_flow(
                 logger.warning("%s: inventory reconciliation failed (%s); continuing without coverage",
                                month, inventory_state.message)
 
-            stage = "transform"
-            result = transform_monthly_clinic_kpis(events, clinics, month)
+            stage = "transform"  # includes validate_kpis: a KpiValidationError is reported as "validate"
+            result = compute_monthly_clinic_supply_kpis_flow(
+                events, clinics, month, inventory_counts, float(config["coverage_tolerance"]),
+            )
             for reason, count in result["events_skipped"].items():
                 skipped[reason] += count
-
-            stage = "validate"
-            coverage = validate_kpis(result["kpis"], clinics, month, result["events"], inventory_counts,
-                                     float(config["coverage_tolerance"]))
+            coverage = result["coverage"]
             if coverage and not coverage["ready_for_board"]:
                 warnings.append(f"{month}: coverage_out_of_range:{','.join(coverage['warnings'] or coverage['clinics_without_events'])}")
 
             stage = "load"
-            loaded = load_monthly_clinic_supply_performance(
-                engine, result["kpis"], current_run, month, trigger,
+            loaded = load_monthly_clinic_supply_performance_flow(
+                result["kpis"], current_run, month, trigger,
                 {
                     "source_event_counts": result["source_event_counts"],
                     "inventory_counts": (inventory_counts.to_dict(orient="records")
                                          if inventory_counts is not None else None),
                     "clinics_without_events": coverage["clinics_without_events"] if coverage else [],
                     "coverage": coverage,
+                    "consumption_by_department": result["consumption_by_department"],
                 },
             )
             summary["rows_upserted"] += loaded["rows_upserted"]
             summary["rows_changed"] += loaded["rows_changed"]
 
-            # Optional step: a failed snapshot is logged and the run still completes.
-            snapshot_state = export_eval_snapshot(current_run, month, result, coverage, return_state=True)
+            # Optional subflow: a failed snapshot is logged and the run still completes.
+            snapshot_state = export_board_pack_snapshot_flow(current_run, month, result, return_state=True)
             if not snapshot_state.is_completed():
                 warnings.append(f"{month}: eval_snapshot_failed")
                 logger.warning("%s: eval snapshot failed (%s)", month, snapshot_state.message)
     except Exception as error:
+        if isinstance(error, KpiValidationError):
+            stage = "validate"
         run_log.finish_run(engine, current_run, status="failed", events_skipped=skipped, warnings=warnings,
                            error_stage=stage, error_message=run_log.describe_error(error), **summary)
         raise
@@ -540,7 +651,8 @@ def get_monthly_clinic_supply_performance(month_start: date | None = None, engin
             select(func.count()).select_from(revisions).where(revisions.c.month_start == month_start)
         ).scalar()
         checkpoint = connection.execute(
-            select(pipeline_run_months.c.run_id, pipeline_run_months.c.coverage, pipeline_run_months.c.completed_at)
+            select(pipeline_run_months.c.run_id, pipeline_run_months.c.coverage,
+                   pipeline_run_months.c.consumption_by_department, pipeline_run_months.c.completed_at)
             .where(pipeline_run_months.c.month_start == month_start, pipeline_run_months.c.status == "completed")
             .order_by(desc(pipeline_run_months.c.completed_at)).limit(1)
         ).first()
@@ -559,6 +671,8 @@ def get_monthly_clinic_supply_performance(month_start: date | None = None, engin
             }
             for row in rows
         ],
+        # KPI «Volumen de consumo de insumos» por departamento (from the month's last checkpoint).
+        "consumption_by_department": (checkpoint.consumption_by_department or []) if checkpoint else [],
         "computed_at": max(row.computed_at for row in rows).isoformat(),
         "last_run_id": str(checkpoint.run_id) if checkpoint else None,
         "revised": bool(revised),

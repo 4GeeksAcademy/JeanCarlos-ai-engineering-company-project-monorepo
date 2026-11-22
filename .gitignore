@@ -8,3 +8,5 @@
 data/eval/monthly_clinic_supply_performance/
 data/**/__pycache__/
 services/reporting/__pycache__/
+tests/**/__pycache__/
+tests/__pycache__/
