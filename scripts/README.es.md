@@ -14,3 +14,12 @@ uv sync
 uv run python scripts/train_sales_forecast.py
 uv run pytest tests/pipelines/test_sales_forecast.py
 ```
+
+## `evaluate_sales_model.py`
+
+Evaluación formal del modelo de ventas, solo sobre los 8 años de entrenamiento: validación cruzada temporal (`TimeSeriesSplit`, 5 folds de 12 meses, sin barajar y sin fuga de lags entre folds), MAE y RMSE de entrenamiento y validación (media ± desviación estándar) y curva de aprendizaje. Escribe `data/eval/learning_curve.png`, `data/eval/cv_folds.png` y `data/eval/sales_model_evaluation.json`; el diagnóstico está en [`data/eval/evaluation_report.md`](../data/eval/evaluation_report.md).
+
+```bash
+uv run python scripts/evaluate_sales_model.py
+uv run pytest tests/pipelines/test_temporal_cv.py
+```

@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -179,14 +180,27 @@ def month_features(month: pd.Timestamp, history: np.ndarray) -> dict[str, float]
     }
 
 
-def build_training_frame(train: pd.DataFrame) -> pd.DataFrame:
-    """One row per training month with full history. The first MAX_LAG months only
+@dataclass(frozen=True)
+class FeatureSet:
+    """How features are built: a causal builder (month, past revenue) -> dict with `_level`,
+    the columns the model uses, and the months of history the builder needs."""
+
+    builder: Callable[[pd.Timestamp, np.ndarray], dict[str, float]]
+    names: list[str]
+    min_history: int
+
+
+DEFAULT_FEATURE_SET = FeatureSet(month_features, FEATURES, MAX_LAG)
+
+
+def build_training_frame(train: pd.DataFrame, feature_set: FeatureSet = DEFAULT_FEATURE_SET) -> pd.DataFrame:
+    """One row per training month with full history. The first `min_history` months only
     feed lags (their features would be NaN), so they are dropped, not imputed.
     Target: revenue / level, a scale-free ratio the trees can learn without extrapolating."""
     revenue = train[TARGET].to_numpy()
     rows = []
-    for i in range(MAX_LAG, len(train)):
-        features = month_features(train["month"].iloc[i], revenue[:i])
+    for i in range(feature_set.min_history, len(train)):
+        features = feature_set.builder(train["month"].iloc[i], revenue[:i])
         features["month"] = train["month"].iloc[i]
         features["target_ratio"] = revenue[i] / features["_level"]
         features[TARGET] = revenue[i]
@@ -194,36 +208,36 @@ def build_training_frame(train: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def build_pipeline() -> Pipeline:
+def build_pipeline(**model_params) -> Pipeline:
     """StandardScaler + Random Forest. Trees split on thresholds, so standardising does not
     change their predictions; it is kept, fitted on training rows only, so the feature
     matrix is on one scale for importances and for anyone swapping in a scale-sensitive
     model. Hyper-parameters are conservative for 81 rows: shallow-ish leaves, half the
-    features per split to decorrelate trees."""
-    return Pipeline([
-        ("scale", StandardScaler()),
-        ("model", RandomForestRegressor(
-            n_estimators=N_TREES, min_samples_leaf=2, max_features=0.5,
-            oob_score=True, random_state=SEED, n_jobs=1,
-        )),
-    ])
+    features per split to decorrelate trees. `model_params` override them (evaluation)."""
+    params = {"n_estimators": N_TREES, "min_samples_leaf": 2, "max_features": 0.5,
+              "oob_score": True, "random_state": SEED, "n_jobs": 1, **model_params}
+    return Pipeline([("scale", StandardScaler()), ("model", RandomForestRegressor(**params))])
 
 
 # ---------------------------------------------------------------- forecasting
 
 
-def recursive_forecast(pipeline: Pipeline, history: np.ndarray, months: list[pd.Timestamp]) -> dict[str, np.ndarray]:
+def recursive_forecast(
+    pipeline: Pipeline, history: np.ndarray, months: list[pd.Timestamp], with_paths: bool = True,
+    feature_set: FeatureSet = DEFAULT_FEATURE_SET,
+) -> dict[str, np.ndarray]:
     """Forecast `months` one after another, feeding each prediction back as history.
 
     Returns the forest forecast ("point") and one trajectory per tree ("paths", shape
     trees x months): each tree feeds back its own predictions, so the band widens with the
-    horizon as errors compound, like a real 24-month plan.
+    horizon as errors compound, like a real 24-month plan. with_paths=False skips them
+    (cross-validation only needs the point forecast).
     """
     scaler, forest = pipeline.named_steps["scale"], pipeline.named_steps["model"]
 
     def step(hist: np.ndarray, month: pd.Timestamp) -> tuple[np.ndarray, float]:
-        features = month_features(month, hist)
-        x = scaler.transform(pd.DataFrame([features])[FEATURES])
+        features = feature_set.builder(month, hist)
+        x = scaler.transform(pd.DataFrame([features])[feature_set.names])
         return x, features["_level"]
 
     point_hist = history.astype(float).copy()
@@ -233,6 +247,8 @@ def recursive_forecast(pipeline: Pipeline, history: np.ndarray, months: list[pd.
         value = forest.predict(x)[0] * level
         point.append(value)
         point_hist = np.append(point_hist, value)
+    if not with_paths:
+        return {"point": np.array(point)}
 
     paths = np.empty((len(forest.estimators_), len(months)))
     for t, tree in enumerate(forest.estimators_):
