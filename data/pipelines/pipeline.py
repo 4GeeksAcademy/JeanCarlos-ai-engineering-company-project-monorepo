@@ -742,12 +742,15 @@ def main(argv: list[str] | None = None) -> int:
                         help="month to compute (YYYY-MM-01); repeatable. Default: current and previous month")
     parser.add_argument("--backfill", type=_month, nargs=2, metavar=("START", "END"),
                         help="recompute every month from START to END (inclusive)")
+    parser.add_argument("--trigger", choices=("scheduled", "manual"),
+                        help="recorded in pipeline_runs.trigger (default: manual with --month, else scheduled); "
+                             "scripts/nightly_export.py passes scheduled")
     args = parser.parse_args(argv)
     if args.backfill:
         result = backfill_monthly_clinic_supply_performance_flow(*args.backfill)
     else:
         result = monthly_clinic_supply_performance_flow(
-            months=args.month, trigger="manual" if args.month else "scheduled",
+            months=args.month, trigger=args.trigger or ("manual" if args.month else "scheduled"),
         )
     print(json.dumps(result, indent=2, default=str))
     return 0 if result.get("status") in {"completed", "skipped_locked"} else 1

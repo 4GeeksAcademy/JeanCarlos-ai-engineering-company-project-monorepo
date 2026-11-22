@@ -600,6 +600,11 @@ python data/pipelines/pipeline.py --backfill 2026-01-01 2026-06-01
 ### Frecuencia prevista
 
 - **Diaria a las 05:00 UTC** (`0 5 * * *`), sobre el mes en curso y el anterior.
+  - **Desde DEV-53**, el disparador en producción es el job nocturno
+    `scripts/nightly_export.py`, en el contenedor `scheduler` con la misma
+    expresión cron. El job exporta el CSV de respaldo del día anterior y lanza
+    `pipeline.py --month <mes del día> --trigger scheduled`
+    ([docs/operations/nightly-export.md](../../docs/operations/nightly-export.md)).
 - El reporte de la junta es **mensual** y se lee el primer día hábil. Correr a
   diario mantiene el mes en curso al día y absorbe los eventos tardíos del mes
   anterior (§5). Así, ese día el mes cerrado ya está calculado y revisado, sin
