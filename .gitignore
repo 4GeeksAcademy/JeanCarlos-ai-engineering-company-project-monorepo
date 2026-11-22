@@ -4,3 +4,18 @@
 .env
 .env.*
 !.env.example
+# Business pipeline: generated eval snapshots and Python bytecode
+data/eval/monthly_clinic_supply_performance/
+data/**/__pycache__/
+services/reporting/__pycache__/
+tests/**/__pycache__/
+tests/__pycache__/
+
+# DEV-53: nightly CSV backups (data/raw/telemetry_YYYY-MM-DD.csv) stay out of git;
+# telemetry_2026-11-21.csv is committed once as a sample of the format.
+data/raw/telemetry_*.csv
+!data/raw/telemetry_2026-11-21.csv
+
+# Python (uv)
+.venv/
+__pycache__/
