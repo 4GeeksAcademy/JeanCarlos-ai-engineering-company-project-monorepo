@@ -244,7 +244,8 @@ docker compose up -d qdrant          # Qdrant en localhost:6333 (volumen qdrant_
 python -m data.process.rag           # o: docker compose exec api python -m data.process.rag
 ```
 
-- **Configuración** (en `services/api/.env`, sin versionar): `LLM_API_URL`,
+- **Configuración** (en `services/api/.env`, sin versionar; plantilla en
+  [`services/api/.env.example`](../../services/api/.env.example)): `LLM_API_URL`,
   `LLM_API_KEY`, `EMBEDDING_MODEL`, `GENERATION_MODEL`, `QDRANT_URL` (por defecto
   `http://localhost:6333`; en Compose, `http://qdrant:6333`) y, opcionalmente,
   `QDRANT_API_KEY` y `RAG_MIN_SCORE`.
