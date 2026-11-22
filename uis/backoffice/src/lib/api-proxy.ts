@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { apiUrl, sameOrigin, SESSION_COOKIE } from "@/lib/server-api";
 
 export async function proxyApi(
-  resource: "suppliers" | "inventory" | "telemetry",
+  resource: "suppliers" | "inventory" | "telemetry" | "reporting",
   request: Request,
   context: { params: Promise<{ path?: string[] }> },
 ) {

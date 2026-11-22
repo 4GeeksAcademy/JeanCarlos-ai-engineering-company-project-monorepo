@@ -4,3 +4,9 @@
 .env
 .env.*
 !.env.example
+# Business pipeline: generated eval snapshots and Python bytecode
+data/eval/monthly_clinic_supply_performance/
+data/**/__pycache__/
+services/reporting/__pycache__/
+tests/**/__pycache__/
+tests/__pycache__/
