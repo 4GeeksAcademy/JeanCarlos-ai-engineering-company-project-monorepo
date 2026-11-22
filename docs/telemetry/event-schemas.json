@@ -1,7 +1,7 @@
 {
   "contract": "HealthCore Telemetry Event Catalog",
   "format": "custom-event-schema-catalog-v1",
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "2.1.0",
   "envelope": {
     "required": [
       "eventId",
@@ -28,12 +28,18 @@
         "description": "ISO 8601 UTC."
       },
       "sessionId": {
-        "type": ["string", "null"],
+        "type": [
+          "string",
+          "null"
+        ],
         "required": true,
         "description": "ID aleatorio seudónimo; null para jobs."
       },
       "userId": {
-        "type": ["string", "null"],
+        "type": [
+          "string",
+          "null"
+        ],
         "required": true,
         "description": "Seudónimo HMAC derivado por servidor; null si anónimo."
       },
@@ -45,11 +51,15 @@
       },
       "schemaVersion": {
         "type": "string",
-        "const": "1.0.0",
-        "required": true
+        "enum": ["2.0.0", "2.1.0"],
+        "required": true,
+        "description": "SemVer del contrato. La API acepta 2.0.0 (eventos previos al costo) y 2.1.0."
       },
       "requestId": {
-        "type": ["string", "null"],
+        "type": [
+          "string",
+          "null"
+        ],
         "required": true,
         "description": "ID confiable de correlación de request o job."
       },
@@ -62,51 +72,120 @@
     }
   },
   "propertyDescriptor": {
-    "requiredFields": ["type", "required", "description", "sensitive"],
+    "requiredFields": [
+      "type",
+      "required",
+      "description",
+      "sensitive"
+    ],
     "sensitive": "Indica PII, dato operacional restringido o dimensión sensible."
   },
   "events": [
     {
-      "event_type": "inventory_inbound_order_created",
+      "event_type": "inbound_order_created",
       "classification": "mandatory_briefing",
-      "source": "RFI de inventario",
+      "source": "BRIEFING HealthCore §3 / POST /inventory/orders/inbound",
       "category": "business_inventory",
-      "description": "Entrada de inventario confirmada después del commit.",
-      "hypothesisDecision": "Necesitamos entradas diarias por producto y sede para decidir reposición y planificación de recepción.",
-      "delivery": {"mode": "stream", "cadence": "Tras commit; agregado diario"},
-      "privacy": {"containsSensitiveData": true, "handling": "IDs operativos limitados a acceso RBAC; userId seudónimo; no nombre de proveedor."},
-      "allowlist": ["order_id", "supply_id", "quantity", "clinic_id", "country"],
+      "description": "Una clínica registra la recepción de insumos de un proveedor; se emite tras el commit 201.",
+      "hypothesisDecision": "Necesitamos saber cuánto y qué insumo se compra, por clínica y proveedor, para consolidar compras entre clínicas y negociar mejores condiciones con proveedores.",
+      "delivery": {"mode": "stream", "cadence": "Tras commit vía outbox; agregado diario por clínica, país, categoría y proveedor"},
+      "privacy": {"containsSensitiveData": true, "handling": "Sin PHI. IDs operativos bajo RBAC; nunca vendor_name libre, notas ni usuario real."},
+      "allowlist": ["clinic_id", "country", "product_id", "product_category", "quantity", "supplier_id", "total_cost"],
       "properties": {
-        "order_id": {"type": "integer", "required": true, "description": "ID de entrada de API.", "sensitive": true},
-        "supply_id": {"type": "integer", "required": true, "description": "ID de catálogo; nunca SKU/nombre.", "sensitive": true},
-        "quantity": {"type": "integer", "required": true, "description": "Unidades confirmadas.", "sensitive": true},
-        "clinic_id": {"type": "integer", "required": true, "description": "ID de clínica 1–12.", "sensitive": true},
-        "country": {"type": "string", "enum": ["US", "UK"], "required": true, "description": "País del producto.", "sensitive": false}
+        "clinic_id": {"type": "integer", "minimum": 1, "maximum": 12, "required": true, "description": "Clínica (1–12) donde ocurre el hecho de inventario.", "sensitive": true},
+        "country": {"type": "string", "enum": ["US", "UK"], "required": true, "description": "País de la clínica; eje de agregación US/UK.", "sensitive": false},
+        "product_id": {"type": "integer", "required": true, "description": "ID interno del insumo; nunca SKU, nombre ni lote libre.", "sensitive": true},
+        "product_category": {"type": "string", "enum": ["medication", "ppe", "consumable", "equipment"], "required": true, "description": "Categoría del briefing, leída del modelo Product.", "sensitive": false},
+        "quantity": {"type": "integer", "minimum": 1, "required": true, "description": "Unidades recibidas y confirmadas.", "sensitive": true},
+        "supplier_id": {"type": ["integer", "null"], "required": true, "description": "ID del proveedor del directorio; null mientras la orden solo tenga vendor_name libre (dry-gap).", "sensitive": true},
+        "total_cost": {"type": "number", "minimum": 0, "required": false, "description": "Costo total de la entrada (quantity × unit_cost) en la moneda de la clínica, 2 decimales. Ausente si la entrada se registró sin costo unitario. Añadido en 2.1.0 para el KPI de costo de insumos.", "sensitive": false}
       }
     },
     {
-      "event_type": "inventory_outbound_order_created",
+      "event_type": "outbound_order_created",
       "classification": "mandatory_briefing",
-      "source": "RFI de inventario",
+      "source": "BRIEFING HealthCore §3 / POST /inventory/orders/outbound",
       "category": "business_inventory",
-      "description": "Salida confirmada después del commit.",
-      "hypothesisDecision": "Necesitamos salidas diarias para decidir planificación de stock y consumo por sede.",
-      "delivery": {"mode": "stream", "cadence": "Tras commit; agregado diario"},
-      "privacy": {"containsSensitiveData": true, "handling": "IDs operativos con acceso RBAC; userId seudónimo."},
-      "allowlist": ["order_id", "supply_id", "quantity", "clinic_id", "consumption_type", "country"],
+      "description": "Una clínica registra el consumo de un insumo en la atención de un departamento; se emite tras el commit 201.",
+      "hypothesisDecision": "Necesitamos saber qué insumos se consumen más, y a qué ritmo, por clínica y departamento, para ajustar la reposición automática de insumos críticos por clínica.",
+      "delivery": {"mode": "stream", "cadence": "Tras commit vía outbox; agregado diario por clínica, país, categoría y departamento"},
+      "privacy": {"containsSensitiveData": true, "handling": "Sin PHI: department es un área clínica, nunca una persona atendida; sin patientId, diagnóstico ni nota."},
+      "allowlist": ["clinic_id", "country", "product_id", "product_category", "quantity", "department"],
       "properties": {
-        "order_id": {"type": "integer", "required": true, "description": "ID de salida de API.", "sensitive": true},
-        "supply_id": {"type": "integer", "required": true, "description": "ID de catálogo.", "sensitive": true},
-        "quantity": {"type": "integer", "required": true, "description": "Unidades confirmadas.", "sensitive": true},
-        "clinic_id": {"type": "integer", "required": true, "description": "ID de clínica 1–12.", "sensitive": true},
-        "consumption_type": {"type": "string", "enum": ["clinical_use", "expiry_waste"], "required": true, "description": "Tipo controlado de consumo.", "sensitive": true},
-        "country": {"type": "string", "enum": ["US", "UK"], "required": true, "description": "País del producto.", "sensitive": false}
+        "clinic_id": {"type": "integer", "minimum": 1, "maximum": 12, "required": true, "description": "Clínica (1–12) donde ocurre el hecho de inventario.", "sensitive": true},
+        "country": {"type": "string", "enum": ["US", "UK"], "required": true, "description": "País de la clínica; eje de agregación US/UK.", "sensitive": false},
+        "product_id": {"type": "integer", "required": true, "description": "ID interno del insumo; nunca SKU, nombre ni lote libre.", "sensitive": true},
+        "product_category": {"type": "string", "enum": ["medication", "ppe", "consumable", "equipment"], "required": true, "description": "Categoría del briefing, leída del modelo Product.", "sensitive": false},
+        "quantity": {"type": "integer", "minimum": 1, "required": true, "description": "Unidades consumidas y confirmadas.", "sensitive": true},
+        "department": {"type": "string", "enum": ["primary_care", "general_consultation", "specialty_care", "chronic_care"], "required": true, "description": "Área clínica que consume el insumo; catálogo controlado, no texto libre.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "stock_threshold_triggered",
+      "classification": "mandatory_briefing",
+      "source": "BRIEFING HealthCore §3 / mínimo configurado por clínica",
+      "category": "business_inventory",
+      "description": "El stock de un insumo en una clínica cae por debajo del mínimo configurado para esa clínica y ese insumo.",
+      "hypothesisDecision": "Necesitamos saber con qué frecuencia una clínica se queda corta de un insumo crítico (EPP, medicamento) para priorizar el reabastecimiento urgente y escalar a Operaciones Clínicas.",
+      "delivery": {"mode": "stream", "cadence": "La API detecta el cruce en el commit de la salida y lo devuelve; el backoffice lo emite. Rearmado al recuperar el mínimo"},
+      "privacy": {"containsSensitiveData": true, "handling": "Sin PHI. El cruce lo calcula la API, no la UI; el badge informativo <=10 no es este umbral."},
+      "allowlist": ["clinic_id", "country", "product_id", "product_category", "quantity", "min_stock_threshold", "department"],
+      "properties": {
+        "clinic_id": {"type": "integer", "minimum": 1, "maximum": 12, "required": true, "description": "Clínica (1–12) donde ocurre el hecho de inventario.", "sensitive": true},
+        "country": {"type": "string", "enum": ["US", "UK"], "required": true, "description": "País de la clínica; eje de agregación US/UK.", "sensitive": false},
+        "product_id": {"type": "integer", "required": true, "description": "ID interno del insumo; nunca SKU, nombre ni lote libre.", "sensitive": true},
+        "product_category": {"type": "string", "enum": ["medication", "ppe", "consumable", "equipment"], "required": true, "description": "Categoría del briefing, leída del modelo Product.", "sensitive": false},
+        "quantity": {"type": "integer", "minimum": 0, "required": true, "description": "Stock resultante del insumo en esa clínica tras la orden (< min_stock_threshold).", "sensitive": true},
+        "min_stock_threshold": {"type": "integer", "minimum": 1, "required": true, "description": "Mínimo configurado para clinic_id + product_id en el momento del cruce.", "sensitive": false},
+        "department": {"type": ["string", "null"], "enum": ["primary_care", "general_consultation", "specialty_care", "chronic_care", null], "required": true, "description": "Departamento de la salida que provocó el cruce; null si no aplica.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "direct_stock_edit_rejected",
+      "classification": "mandatory_briefing",
+      "source": "BRIEFING HealthCore §3 y §6 / regla de trazabilidad",
+      "category": "security_inventory",
+      "description": "Un usuario intenta modificar el stock fuera de una orden y el sistema lo rechaza explícitamente.",
+      "hypothesisDecision": "Necesitamos saber si el personal intenta saltarse el control de trazabilidad de insumos para reforzar formación o permisos en la clínica donde ocurre con más frecuencia.",
+      "delivery": {"mode": "stream", "cadence": "Por intento; alerta en segundos; agregado diario por clínica"},
+      "privacy": {"containsSensitiveData": true, "handling": "Sin PHI. Solo plantilla de ruta y método; nunca URL con IDs, IP, user-agent ni cuerpo crudo. userId seudónimo en el envelope."},
+      "allowlist": ["clinic_id", "country", "product_id", "product_category", "quantity", "attempted_method", "route_template", "response_status"],
+      "properties": {
+        "clinic_id": {"type": "integer", "minimum": 1, "maximum": 12, "required": true, "description": "Clínica (1–12) donde ocurre el hecho de inventario.", "sensitive": true},
+        "country": {"type": "string", "enum": ["US", "UK"], "required": true, "description": "País de la clínica; eje de agregación US/UK.", "sensitive": false},
+        "product_id": {"type": "integer", "required": true, "description": "ID interno del insumo; nunca SKU, nombre ni lote libre.", "sensitive": true},
+        "product_category": {"type": "string", "enum": ["medication", "ppe", "consumable", "equipment"], "required": true, "description": "Categoría del briefing, leída del modelo Product.", "sensitive": false},
+        "quantity": {"type": ["integer", "null"], "required": true, "description": "Cantidad que se intentó fijar; null si el cuerpo no la contiene o no es un entero válido.", "sensitive": true},
+        "attempted_method": {"type": "string", "enum": ["POST", "PUT", "PATCH", "DELETE"], "required": true, "description": "Método rechazado.", "sensitive": false},
+        "route_template": {"type": "string", "const": "/inventory/clinics/{clinic_id}/products/{product_id}/stock", "required": true, "description": "Plantilla fija de la ruta de rechazo explícito, no el path solicitado.", "sensitive": false},
+        "response_status": {"type": "integer", "enum": [403, 405], "required": true, "description": "Rechazo explícito; un 404 genérico no cuenta.", "sensitive": false}
+      }
+    },
+    {
+      "event_type": "supply_expiry_flagged",
+      "classification": "mandatory_briefing",
+      "source": "BRIEFING HealthCore §3 y §6 / Product.expiry_date",
+      "category": "business_inventory",
+      "description": "Un insumo con fecha de vencimiento y stock disponible en una clínica entra en la ventana de 30 días previos al vencimiento.",
+      "hypothesisDecision": "Necesitamos saber qué insumos están por vencer antes de que se conviertan en pérdida o riesgo de cumplimiento para priorizar su uso o su baja controlada antes del vencimiento.",
+      "delivery": {"mode": "batch", "cadence": "Fase 2: backoffice al cargar GET /inventory/expiring, una vez por clinic_id + product_id + expiry_date y navegador. Objetivo: job diario con deduplicación global"},
+      "privacy": {"containsSensitiveData": true, "handling": "Sin PHI. La fecha de vencimiento es del insumo, nunca de una persona."},
+      "allowlist": ["clinic_id", "country", "product_id", "product_category", "quantity", "expiry_date", "days_until_expiry", "expiry_window_days"],
+      "properties": {
+        "clinic_id": {"type": "integer", "minimum": 1, "maximum": 12, "required": true, "description": "Clínica (1–12) donde ocurre el hecho de inventario.", "sensitive": true},
+        "country": {"type": "string", "enum": ["US", "UK"], "required": true, "description": "País de la clínica; eje de agregación US/UK.", "sensitive": false},
+        "product_id": {"type": "integer", "required": true, "description": "ID interno del insumo; nunca SKU, nombre ni lote libre.", "sensitive": true},
+        "product_category": {"type": "string", "enum": ["medication", "ppe", "consumable", "equipment"], "required": true, "description": "Categoría del briefing, leída del modelo Product.", "sensitive": false},
+        "quantity": {"type": "integer", "minimum": 1, "required": true, "description": "Unidades disponibles en esa clínica que vencen en expiry_date.", "sensitive": true},
+        "expiry_date": {"type": "string", "format": "date", "required": true, "description": "Fecha de vencimiento registrada en el modelo Product.", "sensitive": false},
+        "days_until_expiry": {"type": "integer", "minimum": 0, "maximum": 30, "required": true, "description": "Días naturales entre la fecha de evaluación (UTC) y expiry_date.", "sensitive": false},
+        "expiry_window_days": {"type": "integer", "const": 30, "required": true, "description": "Ventana de aviso del briefing.", "sensitive": false}
       }
     },
     {
       "event_type": "inventory_order_validation_failed",
-      "classification": "mandatory_briefing",
-      "source": "RFI de inventario",
+      "classification": "proposed_opportunity",
+      "source": "POST /inventory/orders/inbound|outbound 422",
       "category": "business_inventory",
       "description": "Validación 422 de entrada o salida rechazada.",
       "hypothesisDecision": "Necesitamos los códigos y campos que fallan para decidir correcciones de formularios o datos maestros.",
@@ -121,208 +200,23 @@
       }
     },
     {
-      "event_type": "inventory_direct_stock_edit_rejected",
-      "classification": "mandatory_briefing",
-      "source": "RFI de inventario / regla de negocio",
-      "category": "security_inventory",
-      "description": "El gateway rechazó un intento de modificar stock fuera de órdenes.",
-      "hypothesisDecision": "Necesitamos detectar intentos de eludir las órdenes trazables para decidir refuerzo de controles.",
-      "delivery": {"mode": "stream", "cadence": "Por intento; alerta en segundos"},
-      "privacy": {"containsSensitiveData": true, "handling": "Solo plantilla de ruta y método; nunca URL/ID/IP/user-agent crudos."},
-      "allowlist": ["attempted_method", "route_template", "response_status", "detection_source"],
-      "properties": {
-        "attempted_method": {"type": "string", "enum": ["POST", "PUT", "PATCH", "DELETE"], "required": true, "description": "Método detectado.", "sensitive": false},
-        "route_template": {"type": "string", "const": "/inventory/products/{supply_id}/stock", "required": true, "description": "Plantilla fija, no path solicitado.", "sensitive": false},
-        "response_status": {"type": "integer", "enum": [403, 404, 405], "required": true, "description": "Rechazo explícito del gateway.", "sensitive": false},
-        "detection_source": {"type": "string", "const": "trusted_gateway", "required": true, "description": "Productor confiable.", "sensitive": false}
-      }
-    },
-    {
-      "event_type": "inventory_stock_threshold_triggered",
-      "classification": "mandatory_briefing",
-      "source": "RFI de inventario / badge UI actual",
-      "category": "business_inventory",
-      "description": "Stock global cruza por primera vez hacia <=10 unidades.",
-      "hypothesisDecision": "Necesitamos contar productos que alcanzan el badge bajo para priorizar reposición.",
-      "delivery": {"mode": "stream", "cadence": "Solo cruce >10 a <=10; deduplicado"},
-      "privacy": {"containsSensitiveData": true, "handling": "IDs operativos; sin información de paciente. Confirmar umbral con Operations."},
-      "allowlist": ["supply_id", "current_stock", "threshold", "unit"],
-      "properties": {
-        "supply_id": {"type": "integer", "required": true, "description": "ID de producto.", "sensitive": true},
-        "current_stock": {"type": "integer", "minimum": 0, "required": true, "description": "Stock global calculado.", "sensitive": true},
-        "threshold": {"type": "integer", "const": 10, "required": true, "description": "Umbral informativo actual del badge UI.", "sensitive": false},
-        "unit": {"type": "string", "enum": ["box", "unit", "pack", "vial"], "required": true, "description": "Unidad de inventario.", "sensitive": false}
-      }
-    },
-    {
       "event_type": "inventory_outbound_insufficient_stock_rejected",
-      "classification": "mandatory_briefing",
-      "source": "RFI de inventario / validador de dominio",
+      "classification": "proposed_opportunity",
+      "source": "POST /inventory/orders/outbound 400",
       "category": "business_inventory",
       "description": "API rechazó una salida que excede stock disponible.",
       "hypothesisDecision": "Necesitamos entender las solicitudes rechazadas para decidir reposición o cambios en el proceso de solicitud.",
       "delivery": {"mode": "stream", "cadence": "Por rechazo; agregado diario"},
       "privacy": {"containsSensitiveData": true, "handling": "No incluye mensaje HTTP completo, usuario real ni datos clínicos."},
-      "allowlist": ["supply_id", "available_quantity", "requested_quantity", "clinic_id"],
+      "allowlist": ["clinic_id", "country", "product_id", "product_category", "available_quantity", "requested_quantity", "department"],
       "properties": {
-        "supply_id": {"type": "integer", "required": true, "description": "ID del producto.", "sensitive": true},
-        "available_quantity": {"type": "integer", "minimum": 0, "required": true, "description": "Stock observado por API.", "sensitive": true},
+        "clinic_id": {"type": "integer", "minimum": 1, "maximum": 12, "required": true, "description": "Clínica (1–12) donde ocurre el hecho de inventario.", "sensitive": true},
+        "country": {"type": "string", "enum": ["US", "UK"], "required": true, "description": "País de la clínica; eje de agregación US/UK.", "sensitive": false},
+        "product_id": {"type": "integer", "required": true, "description": "ID interno del insumo; nunca SKU, nombre ni lote libre.", "sensitive": true},
+        "product_category": {"type": "string", "enum": ["medication", "ppe", "consumable", "equipment"], "required": true, "description": "Categoría del briefing, leída del modelo Product.", "sensitive": false},
+        "available_quantity": {"type": "integer", "minimum": 0, "required": true, "description": "Stock observado por la API.", "sensitive": true},
         "requested_quantity": {"type": "integer", "minimum": 1, "required": true, "description": "Cantidad rechazada.", "sensitive": true},
-        "clinic_id": {"type": "integer", "minimum": 1, "maximum": 12, "required": true, "description": "Clínica solicitante.", "sensitive": true}
-      }
-    },
-    {
-      "event_type": "claim_denial_rate_calculated",
-      "classification": "mandatory_briefing",
-      "source": "CONTEXT HealthCore / reporte de claims",
-      "category": "business_revenue_cycle",
-      "description": "Tasa de claims denegados por payer o ubicación.",
-      "hypothesisDecision": "Necesitamos comparar la tasa con benchmark 8% para priorizar revisiones de payer/sede.",
-      "delivery": {"mode": "batch", "cadence": "Reporte semanal del lunes"},
-      "privacy": {"containsSensitiveData": true, "handling": "Solo agregado; no patientId, claimId, claimAmount ni motivo individual."},
-      "allowlist": ["group_by", "payerId", "locationId", "periodStart", "periodEnd", "claimsTotal", "claimsDenied", "denialRatePercent", "thresholdPercent"],
-      "properties": {
-        "group_by": {"type": "string", "enum": ["payerId", "locationId"], "required": true, "description": "Dimensión agregada.", "sensitive": false},
-        "payerId": {"type": ["string", "null"], "required": true, "description": "Código payer agregado; null si group_by locationId.", "sensitive": true},
-        "locationId": {"type": ["string", "null"], "required": true, "description": "ID de clínica agregado; null si group_by payerId.", "sensitive": true},
-        "periodStart": {"type": "string", "format": "date", "required": true, "description": "Inicio de ventana agregada.", "sensitive": false},
-        "periodEnd": {"type": "string", "format": "date", "required": true, "description": "Fin de ventana agregada.", "sensitive": false},
-        "claimsTotal": {"type": "integer", "minimum": 1, "required": true, "description": "Denominador.", "sensitive": true},
-        "claimsDenied": {"type": "integer", "minimum": 0, "required": true, "description": "Numerador.", "sensitive": true},
-        "denialRatePercent": {"type": "number", "minimum": 0, "maximum": 100, "required": true, "description": "Porcentaje calculado.", "sensitive": true},
-        "thresholdPercent": {"type": "number", "const": 8, "required": true, "description": "Benchmark HealthCore exacto.", "sensitive": false}
-      }
-    },
-    {
-      "event_type": "claim_high_denial_rate_flagged",
-      "classification": "mandatory_briefing",
-      "source": "CONTEXT HealthCore / flagHighDenialPayers",
-      "category": "business_revenue_cycle",
-      "description": "Tasa agregada de payer supera benchmark.",
-      "hypothesisDecision": "Necesitamos identificar payers >8% para decidir orden de revisión de denegaciones.",
-      "delivery": {"mode": "batch", "cadence": "Al generar reporte semanal"},
-      "privacy": {"containsSensitiveData": true, "handling": "Código payer agregado; suprimir grupos pequeños."},
-      "allowlist": ["payerId", "periodStart", "periodEnd", "denialRatePercent", "thresholdPercent", "claimsTotal"],
-      "properties": {
-        "payerId": {"type": "string", "required": true, "description": "Código de payer; no nombre libre.", "sensitive": true},
-        "periodStart": {"type": "string", "format": "date", "required": true, "description": "Inicio de periodo.", "sensitive": false},
-        "periodEnd": {"type": "string", "format": "date", "required": true, "description": "Fin de periodo.", "sensitive": false},
-        "denialRatePercent": {"type": "number", "minimum": 0, "maximum": 100, "required": true, "description": "Tasa calculada.", "sensitive": true},
-        "thresholdPercent": {"type": "number", "const": 8, "required": true, "description": "Benchmark exacto.", "sensitive": false},
-        "claimsTotal": {"type": "integer", "minimum": 10, "required": true, "description": "Tamaño mínimo agregado.", "sensitive": true}
-      }
-    },
-    {
-      "event_type": "appointment_no_show_cost_calculated",
-      "classification": "mandatory_briefing",
-      "source": "CONTEXT HealthCore / calculateNoShowCost",
-      "category": "business_clinical_operations",
-      "description": "Pérdida estimada por no-shows en ventana semanal inclusiva.",
-      "hypothesisDecision": "Necesitamos USD perdidos por sede en siete días para priorizar acciones de confirmación y acceso.",
-      "delivery": {"mode": "batch", "cadence": "Reporte semanal del lunes"},
-      "privacy": {"containsSensitiveData": true, "handling": "Solo total por sede/periodo; no appointmentId, patientId, tarifa individual ni motivo."},
-      "allowlist": ["locationId", "periodStart", "periodEnd", "noShowCount", "estimatedLossUsd"],
-      "properties": {
-        "locationId": {"type": "string", "required": true, "description": "ID de clínica.", "sensitive": true},
-        "periodStart": {"type": "string", "format": "date", "required": true, "description": "Primer día de los siete.", "sensitive": false},
-        "periodEnd": {"type": "string", "format": "date", "required": true, "description": "Último día inclusive.", "sensitive": false},
-        "noShowCount": {"type": "integer", "minimum": 0, "required": true, "description": "Citas agregadas.", "sensitive": true},
-        "estimatedLossUsd": {"type": "number", "minimum": 0, "required": true, "description": "Estimación agregada USD redondeada a 2 decimales.", "sensitive": true}
-      }
-    },
-    {
-      "event_type": "appointment_no_show_rate_calculated",
-      "classification": "mandatory_briefing",
-      "source": "CONTEXT HealthCore / noShowRateByLocation",
-      "category": "business_clinical_operations",
-      "description": "Tasa de no-show por ubicación.",
-      "hypothesisDecision": "Necesitamos comparar tasas con 20% para decidir intervención por clínica.",
-      "delivery": {"mode": "batch", "cadence": "Reporte semanal"},
-      "privacy": {"containsSensitiveData": true, "handling": "Solo agregado por ubicación; no IDs de paciente/cita."},
-      "allowlist": ["locationId", "periodStart", "periodEnd", "appointmentsTotal", "noShowCount", "noShowRatePercent", "thresholdPercent"],
-      "properties": {
-        "locationId": {"type": "string", "required": true, "description": "ID de clínica.", "sensitive": true},
-        "periodStart": {"type": "string", "format": "date", "required": true, "description": "Inicio de periodo.", "sensitive": false},
-        "periodEnd": {"type": "string", "format": "date", "required": true, "description": "Fin de periodo.", "sensitive": false},
-        "appointmentsTotal": {"type": "integer", "minimum": 1, "required": true, "description": "Denominador.", "sensitive": true},
-        "noShowCount": {"type": "integer", "minimum": 0, "required": true, "description": "Numerador.", "sensitive": true},
-        "noShowRatePercent": {"type": "number", "minimum": 0, "maximum": 100, "required": true, "description": "Porcentaje redondeado a 2 decimales.", "sensitive": true},
-        "thresholdPercent": {"type": "number", "const": 20, "required": true, "description": "Umbral interno exacto.", "sensitive": false}
-      }
-    },
-    {
-      "event_type": "appointment_high_no_show_rate_flagged",
-      "classification": "mandatory_briefing",
-      "source": "CONTEXT HealthCore / flagHighNoShowLocations",
-      "category": "business_clinical_operations",
-      "description": "Ubicación supera el umbral de no-show.",
-      "hypothesisDecision": "Necesitamos localizar sedes >20% para decidir revisión operativa.",
-      "delivery": {"mode": "batch", "cadence": "Al generar reporte semanal"},
-      "privacy": {"containsSensitiveData": true, "handling": "Grupo agregado; suprimir cohortes <10 citas."},
-      "allowlist": ["locationId", "periodStart", "periodEnd", "noShowRatePercent", "thresholdPercent", "appointmentsTotal"],
-      "properties": {
-        "locationId": {"type": "string", "required": true, "description": "ID de clínica.", "sensitive": true},
-        "periodStart": {"type": "string", "format": "date", "required": true, "description": "Inicio de periodo.", "sensitive": false},
-        "periodEnd": {"type": "string", "format": "date", "required": true, "description": "Fin de periodo.", "sensitive": false},
-        "noShowRatePercent": {"type": "number", "minimum": 0, "maximum": 100, "required": true, "description": "Tasa calculada.", "sensitive": true},
-        "thresholdPercent": {"type": "number", "const": 20, "required": true, "description": "Umbral interno exacto.", "sensitive": false},
-        "appointmentsTotal": {"type": "integer", "minimum": 10, "required": true, "description": "Denominador agregado mínimo.", "sensitive": true}
-      }
-    },
-    {
-      "event_type": "clinician_cme_report_generated",
-      "classification": "mandatory_briefing",
-      "source": "CONTEXT HealthCore / generateCMEReport",
-      "category": "business_workforce_compliance",
-      "description": "Resumen agregado de cumplimiento CME por rol.",
-      "hypothesisDecision": "Necesitamos estado y distribución de horas para decidir seguimiento de CME; Physician requiere 40 y Nurse Practitioner 30 horas/año.",
-      "delivery": {"mode": "batch", "cadence": "Reporte semanal del lunes"},
-      "privacy": {"containsSensitiveData": true, "handling": "Dato laboral sensible: solo agregado por rol, mínimo 10 personas por cohorte; aprobación RR. HH./Compliance."},
-      "allowlist": ["cycleStart", "asOfDate", "clinicianCount", "onTrackCount", "atRiskCount", "overdueCount", "completeCount", "hoursRequiredByRole", "atRiskGapPercentagePoints"],
-      "properties": {
-        "cycleStart": {"type": "string", "format": "date", "required": true, "description": "Inicio de ciclo reportado.", "sensitive": false},
-        "asOfDate": {"type": "string", "format": "date", "required": true, "description": "Fecha de cálculo.", "sensitive": false},
-        "clinicianCount": {"type": "integer", "minimum": 10, "required": true, "description": "Total agregado; publicar solo sobre mínimo de cohorte.", "sensitive": true},
-        "onTrackCount": {"type": "integer", "minimum": 0, "required": true, "description": "Conteo agregado.", "sensitive": true},
-        "atRiskCount": {"type": "integer", "minimum": 0, "required": true, "description": "Conteo agregado.", "sensitive": true},
-        "overdueCount": {"type": "integer", "minimum": 0, "required": true, "description": "Conteo agregado.", "sensitive": true},
-        "completeCount": {"type": "integer", "minimum": 0, "required": true, "description": "Conteo agregado.", "sensitive": true},
-        "hoursRequiredByRole": {"type": "object", "required": true, "additionalProperties": false, "description": "Horas anuales conocidas: physician=40, nurse_practitioner=30; no inferir las demás.", "sensitive": true, "properties": {"physician": {"type": "integer", "const": 40}, "nurse_practitioner": {"type": "integer", "const": 30}}},
-        "atRiskGapPercentagePoints": {"type": "number", "const": 15, "required": true, "description": "Rezago HealthCore exacto.", "sensitive": false}
-      }
-    },
-    {
-      "event_type": "clinician_cme_at_risk_detected",
-      "classification": "mandatory_briefing",
-      "source": "CONTEXT HealthCore / getCliniciansAtRisk",
-      "category": "business_workforce_compliance",
-      "description": "Conteo agregado de clínicos en riesgo o overdue.",
-      "hypothesisDecision": "Necesitamos cuantificar cumplimiento atrasado frente a rezago 15 pp para decidir seguimiento preventivo.",
-      "delivery": {"mode": "batch", "cadence": "Reporte semanal; sin alerta individual analítica"},
-      "privacy": {"containsSensitiveData": true, "handling": "Solo conteo agregado de cohorte >=10; no clinicianId/nombre/horas individuales."},
-      "allowlist": ["asOfDate", "atRiskCount", "overdueCount", "atRiskGapPercentagePoints"],
-      "properties": {
-        "asOfDate": {"type": "string", "format": "date", "required": true, "description": "Fecha de cálculo.", "sensitive": false},
-        "atRiskCount": {"type": "integer", "minimum": 0, "required": true, "description": "Conteo agregado en riesgo.", "sensitive": true},
-        "overdueCount": {"type": "integer", "minimum": 0, "required": true, "description": "Conteo agregado vencido.", "sensitive": true},
-        "atRiskGapPercentagePoints": {"type": "number", "const": 15, "required": true, "description": "Umbral exacto del ciclo.", "sensitive": false}
-      }
-    },
-    {
-      "event_type": "clinician_license_alert_triggered",
-      "classification": "mandatory_briefing",
-      "source": "CONTEXT HealthCore / getCliniciansWithExpiringLicences",
-      "category": "business_workforce_compliance",
-      "description": "Conteo de alertas de licencia por ventana configurada.",
-      "hypothesisDecision": "Necesitamos saber vencimientos en 90 días y urgentes en 30 para priorizar renovación de credenciales.",
-      "delivery": {"mode": "stream", "cadence": "Evaluación diaria; primera alerta a 90 y urgente a 30 días"},
-      "privacy": {"containsSensitiveData": true, "handling": "Dato laboral regulatorio: solo conteo agregado de cohorte >=10; alerta individual queda en sistema RR. HH. autorizado."},
-      "allowlist": ["asOfDate", "windowDays", "alertLevel", "clinicianCount"],
-      "properties": {
-        "asOfDate": {"type": "string", "format": "date", "required": true, "description": "Fecha de evaluación.", "sensitive": false},
-        "windowDays": {"type": "integer", "enum": [90, 30], "required": true, "description": "Umbral exacto de primera o urgente advertencia.", "sensitive": false},
-        "alertLevel": {"type": "string", "enum": ["warning", "urgent"], "required": true, "description": "90=warning; 30=urgent.", "sensitive": false},
-        "clinicianCount": {"type": "integer", "minimum": 10, "required": true, "description": "Conteo agregado; solo publicar cohorte suficiente.", "sensitive": true}
+        "department": {"type": ["string", "null"], "enum": ["primary_care", "general_consultation", "specialty_care", "chronic_care", null], "required": true, "description": "Departamento solicitante; null hasta que la API lo capture.", "sensitive": false}
       }
     },
     {
@@ -335,7 +229,9 @@
       "delivery": {"mode": "batch", "cadence": "Agregación diaria"},
       "privacy": {"containsSensitiveData": true, "handling": "userId HMAC; no username, email, token o IP; agregar y eliminar detalle según retención."},
       "allowlist": ["role"],
-      "properties": {"role": {"type": "string", "enum": ["admin", "manager", "user"], "required": true, "description": "Rol vigente, no identidad.", "sensitive": true}}
+      "properties": {
+        "role": {"type": "string", "enum": ["admin", "manager", "user"], "required": true, "description": "Rol vigente, no identidad.", "sensitive": true}
+      }
     },
     {
       "event_type": "auth_login_failed",
@@ -347,7 +243,9 @@
       "delivery": {"mode": "stream", "cadence": "Alertar por tasa agregada; detalle solo códigos"},
       "privacy": {"containsSensitiveData": true, "handling": "No incluir username/email/IP/contraseña; evento agregado y neutral."},
       "allowlist": ["failure_reason"],
-      "properties": {"failure_reason": {"type": "string", "enum": ["invalid_credentials", "rate_limited", "service_unavailable"], "required": true, "description": "Código no identificable.", "sensitive": false}}
+      "properties": {
+        "failure_reason": {"type": "string", "enum": ["invalid_credentials", "rate_limited", "service_unavailable"], "required": true, "description": "Código no identificable.", "sensitive": false}
+      }
     },
     {
       "event_type": "auth_session_rejected",
@@ -374,7 +272,9 @@
       "delivery": {"mode": "batch", "cadence": "Agregado diario"},
       "privacy": {"containsSensitiveData": true, "handling": "No email, estado known/unknown, token, IP ni resultado de lookup."},
       "allowlist": ["outcome"],
-      "properties": {"outcome": {"type": "string", "const": "accepted_neutral", "required": true, "description": "No revela existencia de cuenta.", "sensitive": false}}
+      "properties": {
+        "outcome": {"type": "string", "const": "accepted_neutral", "required": true, "description": "No revela existencia de cuenta.", "sensitive": false}
+      }
     },
     {
       "event_type": "user_admin_action_completed",
@@ -461,14 +361,15 @@
       "source": "POST /inventory/products",
       "category": "business_inventory",
       "description": "Producto añadido al catálogo.",
-      "hypothesisDecision": "Necesitamos altas por taxonomía para decidir mejoras de catálogo.",
+      "hypothesisDecision": "Necesitamos altas por categoría y la proporción con fecha de vencimiento para decidir mejoras de calidad del catálogo.",
       "delivery": {"mode": "batch", "cadence": "Agregado diario"},
       "privacy": {"containsSensitiveData": true, "handling": "No SKU/nombre; usar solo taxonomías de API."},
-      "allowlist": ["category", "unit", "country"],
+      "allowlist": ["product_category", "unit", "country", "has_expiry_date"],
       "properties": {
-        "category": {"type": "string", "enum": ["ppe", "wound_care", "diagnostics", "medications", "consumables"], "required": true, "description": "Categoría API.", "sensitive": false},
+        "product_category": {"type": "string", "enum": ["medication", "ppe", "consumable", "equipment"], "required": true, "description": "Categoría del briefing, leída del modelo Product.", "sensitive": false},
         "unit": {"type": "string", "enum": ["box", "unit", "pack", "vial"], "required": true, "description": "Unidad API.", "sensitive": false},
-        "country": {"type": "string", "enum": ["US", "UK"], "required": true, "description": "País API.", "sensitive": false}
+        "country": {"type": "string", "enum": ["US", "UK"], "required": true, "description": "País de la clínica; eje de agregación US/UK.", "sensitive": false},
+        "has_expiry_date": {"type": "boolean", "required": true, "description": "Si el insumo registra fecha de vencimiento en Product.", "sensitive": false}
       }
     },
     {
@@ -548,7 +449,9 @@
       "delivery": {"mode": "batch", "cadence": "Agregado diario"},
       "privacy": {"containsSensitiveData": true, "handling": "Solo nombre de flujo; no valores ingresados."},
       "allowlist": ["flow_id"],
-      "properties": {"flow_id": {"type": "string", "enum": ["supplier_create", "inventory_inbound", "inventory_outbound"], "required": true, "description": "Flujo controlado.", "sensitive": false}}
+      "properties": {
+        "flow_id": {"type": "string", "enum": ["supplier_create", "inventory_inbound", "inventory_outbound"], "required": true, "description": "Flujo controlado.", "sensitive": false}
+      }
     },
     {
       "event_type": "form_flow_abandoned",
@@ -592,7 +495,9 @@
       "delivery": {"mode": "batch", "cadence": "Agregado diario; dedupe 30 s"},
       "privacy": {"containsSensitiveData": true, "handling": "No order IDs, usuario actor ni contenido de filas; sesión pseudónima."},
       "allowlist": ["view_mode"],
-      "properties": {"view_mode": {"type": "string", "const": "read_only_history", "required": true, "description": "Vista utilizada.", "sensitive": false}}
+      "properties": {
+        "view_mode": {"type": "string", "const": "read_only_history", "required": true, "description": "Vista utilizada.", "sensitive": false}
+      }
     }
   ]
 }

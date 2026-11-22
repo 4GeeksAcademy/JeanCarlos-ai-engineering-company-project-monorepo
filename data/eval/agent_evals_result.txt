@@ -1,0 +1,40 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.15, pytest-9.2.0, pluggy-1.7.0 -- <repo>/.venv/bin/python
+rootdir: <repo>
+configfile: pyproject.toml
+plugins: cov-7.1.0, anyio-4.16.0, langsmith-0.16.0
+collecting ... collected 31 items
+
+tests/pipelines/test_agent_evals.py::test_every_case_has_a_recorded_trace_of_the_same_question PASSED [  3%]
+tests/pipelines/test_agent_evals.py::test_route_matches_the_expected_nodes_in_order[cancel-12h] PASSED [  6%]
+tests/pipelines/test_agent_evals.py::test_route_matches_the_expected_nodes_in_order[empty-question] PASSED [  9%]
+tests/pipelines/test_agent_evals.py::test_route_matches_the_expected_nodes_in_order[first-visit] PASSED [ 12%]
+tests/pipelines/test_agent_evals.py::test_route_matches_the_expected_nodes_in_order[medicaid-georgia] PASSED [ 16%]
+tests/pipelines/test_agent_evals.py::test_route_matches_the_expected_nodes_in_order[medicare-no-show] PASSED [ 19%]
+tests/pipelines/test_agent_evals.py::test_route_matches_the_expected_nodes_in_order[off-topic] PASSED [ 22%]
+tests/pipelines/test_agent_evals.py::test_route_matches_the_expected_nodes_in_order[referral-escalation] PASSED [ 25%]
+tests/pipelines/test_agent_evals.py::test_route_matches_the_expected_nodes_in_order[unlisted-insurance] PASSED [ 29%]
+tests/pipelines/test_agent_evals.py::test_trace_invariants[cancel-12h] PASSED [ 32%]
+tests/pipelines/test_agent_evals.py::test_trace_invariants[empty-question] PASSED [ 35%]
+tests/pipelines/test_agent_evals.py::test_trace_invariants[first-visit] PASSED [ 38%]
+tests/pipelines/test_agent_evals.py::test_trace_invariants[medicaid-georgia] PASSED [ 41%]
+tests/pipelines/test_agent_evals.py::test_trace_invariants[medicare-no-show] PASSED [ 45%]
+tests/pipelines/test_agent_evals.py::test_trace_invariants[off-topic] PASSED [ 48%]
+tests/pipelines/test_agent_evals.py::test_trace_invariants[referral-escalation] PASSED [ 51%]
+tests/pipelines/test_agent_evals.py::test_trace_invariants[unlisted-insurance] PASSED [ 54%]
+tests/pipelines/test_agent_evals.py::test_retrieval_finds_the_expected_chunk[cancel-12h] PASSED [ 58%]
+tests/pipelines/test_agent_evals.py::test_retrieval_finds_the_expected_chunk[first-visit] PASSED [ 61%]
+tests/pipelines/test_agent_evals.py::test_retrieval_finds_the_expected_chunk[medicaid-georgia] PASSED [ 64%]
+tests/pipelines/test_agent_evals.py::test_retrieval_finds_the_expected_chunk[medicare-no-show] PASSED [ 67%]
+tests/pipelines/test_agent_evals.py::test_retrieval_finds_the_expected_chunk[referral-escalation] PASSED [ 70%]
+tests/pipelines/test_agent_evals.py::test_retrieval_finds_the_expected_chunk[unlisted-insurance] PASSED [ 74%]
+tests/pipelines/test_agent_evals.py::test_answer_is_anchored_in_the_knowledge_base[cancel-12h] PASSED [ 77%]
+tests/pipelines/test_agent_evals.py::test_answer_is_anchored_in_the_knowledge_base[first-visit] PASSED [ 80%]
+tests/pipelines/test_agent_evals.py::test_answer_is_anchored_in_the_knowledge_base[medicaid-georgia] PASSED [ 83%]
+tests/pipelines/test_agent_evals.py::test_answer_is_anchored_in_the_knowledge_base[medicare-no-show] PASSED [ 87%]
+tests/pipelines/test_agent_evals.py::test_answer_is_anchored_in_the_knowledge_base[referral-escalation] PASSED [ 90%]
+tests/pipelines/test_agent_evals.py::test_answer_is_anchored_in_the_knowledge_base[unlisted-insurance] PASSED [ 93%]
+tests/pipelines/test_agent_evals.py::test_off_topic_question_is_answered_honestly_without_generation PASSED [ 96%]
+tests/pipelines/test_agent_evals.py::test_empty_question_never_reaches_retrieval PASSED [100%]
+
+============================== 31 passed in 0.02s ==============================

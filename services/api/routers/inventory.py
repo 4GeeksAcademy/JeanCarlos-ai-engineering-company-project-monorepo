@@ -1,6 +1,8 @@
+from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
@@ -9,22 +11,27 @@ from ..core.dependencies import CurrentUser
 from ..database import get_db
 from ..models.inventory import MedicalSupply, SupplyConsumption, SupplyDelivery
 from ..schemas.inventory import (
+    ExpiringSupply,
     OrdersResponse,
     ProductCreate,
     ProductListItem,
     ProductResponse,
+    StockThresholdCrossing,
     SupplyConsumptionCreate,
+    SupplyConsumptionCreated,
     SupplyConsumptionResponse,
     SupplyDeliveryCreate,
     SupplyDeliveryResponse,
     SupplySummary,
 )
-from ..services.inventory import stock_for_supply
+from ..services.inventory import expiring_stock, minimum_for, stock_for_supply
 from ..services.cache import response_cache
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 Database = Annotated[Session, Depends(get_db)]
 SupplyId = Annotated[int, Path(gt=0)]
+ClinicId = Annotated[int, Path(ge=1, le=12)]
+EXPIRY_WINDOW_DAYS = 30
 
 
 def supply_or_404(session: Session, supply_id: int, *, lock: bool = False) -> MedicalSupply:
@@ -42,8 +49,13 @@ def supply_summary(supply: MedicalSupply) -> SupplySummary:
 
 
 def delivery_response(delivery: SupplyDelivery, supply: MedicalSupply) -> SupplyDeliveryResponse:
+    total_cost = (
+        (delivery.unit_cost * delivery.quantity).quantize(Decimal("0.01"))
+        if delivery.unit_cost is not None
+        else None
+    )
     return SupplyDeliveryResponse.model_validate(
-        {**delivery.model_dump(), "supply": supply_summary(supply)}
+        {**delivery.model_dump(), "total_cost": total_cost, "supply": supply_summary(supply)}
     )
 
 
@@ -128,11 +140,12 @@ def create_delivery(payload: SupplyDeliveryCreate, user: CurrentUser, session: D
 
 
 @router.post(
-    "/orders/outbound", response_model=SupplyConsumptionResponse, status_code=status.HTTP_201_CREATED
+    "/orders/outbound", response_model=SupplyConsumptionCreated, status_code=status.HTTP_201_CREATED
 )
 def create_consumption(payload: SupplyConsumptionCreate, user: CurrentUser, session: Database):
     supply = supply_or_404(session, payload.supply_id, lock=True)
-    available = stock_for_supply(session, payload.supply_id)
+    # Stock is consumed from the clinic that registers the order.
+    available = stock_for_supply(session, payload.supply_id, payload.clinic_id)
     if payload.quantity > available:
         raise HTTPException(
             status_code=400,
@@ -145,10 +158,53 @@ def create_consumption(payload: SupplyConsumptionCreate, user: CurrentUser, sess
     consumption = SupplyConsumption(**payload.model_dump(), user_uuid=user.id)
     session.add(consumption)
     session.flush()
-    response = consumption_response(consumption, supply)
+    remaining = available - payload.quantity
+    minimum = minimum_for(session, payload.supply_id, payload.clinic_id)
+    # Falling edge only: at or above the minimum before, below it after.
+    crossing = (
+        StockThresholdCrossing(clinic_stock=remaining, min_stock_threshold=minimum)
+        if minimum is not None and available >= minimum > remaining
+        else None
+    )
+    response = SupplyConsumptionCreated.model_validate(
+        {**consumption_response(consumption, supply).model_dump(), "stock_threshold": crossing}
+    )
     session.commit()
     response_cache.invalidate("inventory-products")
     return response
+
+
+@router.api_route(
+    "/clinics/{clinic_id}/products/{supply_id}/stock",
+    methods=["PUT", "PATCH", "POST", "DELETE"],
+    status_code=status.HTTP_403_FORBIDDEN,
+    responses={403: {"description": "Stock only changes through inbound/outbound orders"}},
+)
+def reject_direct_stock_edit(clinic_id: ClinicId, supply_id: SupplyId, _user: CurrentUser, session: Database):
+    supply_or_404(session, supply_id)
+    raise HTTPException(
+        status_code=403,
+        detail="El stock no se modifica directamente: registra una orden de entrada o de salida.",
+    )
+
+
+@router.get("/expiring", response_model=list[ExpiringSupply])
+def list_expiring(
+    _user: CurrentUser,
+    session: Database,
+    within_days: Annotated[int, Query(ge=0, le=EXPIRY_WINDOW_DAYS)] = EXPIRY_WINDOW_DAYS,
+):
+    today = datetime.now(timezone.utc).date()
+    return [
+        ExpiringSupply(
+            supply=supply_summary(supply),
+            clinic_id=clinic_id,
+            quantity=int(quantity),
+            expiry_date=supply.expiry_date,
+            days_until_expiry=(supply.expiry_date - today).days,
+        )
+        for supply, clinic_id, quantity in expiring_stock(session, today, within_days)
+    ]
 
 
 @router.get("/orders", response_model=OrdersResponse)

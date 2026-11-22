@@ -1,0 +1,28 @@
+{
+  "description": "Evals of the LangGraph agent (services/agent). `python -m services.agent.record_evals` runs every case once against the real knowledge base and stores the traces in data/eval/agent_eval_traces.json; tests/pipelines/test_agent_evals.py checks the criteria against those traces, without calling the models again.",
+  "cases": [
+    {"id": "cancel-12h", "question": "¿Cobran cargo por cancelación con 12 horas de anticipación?",
+     "expect": {"route": ["receive_question", "retrieve_context", "generate_answer"], "retrieved_top3": "appointment-policy#1",
+                "answer_contains_all": ["50 USD", "40 GBP", "Medicare", "Medicaid"]}},
+    {"id": "medicare-no-show", "question": "¿A un paciente de Medicare se le cobra si no se presenta a la cita?",
+     "expect": {"route": ["receive_question", "retrieve_context", "generate_answer"], "retrieved_top3": "appointment-policy#1",
+                "answer_contains_any": ["no se le cobra", "no se les cobra", "no se cobra", "no tienen este cargo", "no se aplica"],
+                "answer_not_contains": ["se le cobra 50", "debe pagar 50"]}},
+    {"id": "medicaid-georgia", "question": "¿Aceptan Medicaid en la clínica de Georgia?",
+     "expect": {"route": ["receive_question", "retrieve_context", "generate_answer"], "retrieved_top3": "insurance-coverage#0",
+                "answer_contains_all": ["Texas", "Florida"], "answer_starts_with_any": ["No"]}},
+    {"id": "first-visit", "question": "¿Qué debo traer a mi primera cita?",
+     "expect": {"route": ["receive_question", "retrieve_context", "generate_answer"], "retrieved_top3": "new-patient-checklist#1",
+                "answer_contains_all": ["identidad", "tarjeta de seguro"]}},
+    {"id": "referral-escalation", "question": "Pasaron 6 días hábiles y el paciente no tiene opciones de cita con el especialista, ¿qué hago?",
+     "expect": {"route": ["receive_question", "retrieve_context", "generate_answer"], "retrieved_top3": "referral-process#2",
+                "answer_contains_all": ["Marcus Reid"]}},
+    {"id": "unlisted-insurance", "question": "¿Aceptan el seguro Humana en Texas?",
+     "expect": {"route": ["receive_question", "retrieve_context", "generate_answer"], "retrieved_top3": "insurance-coverage#0",
+                "answer_contains_all": ["Tom Callahan"], "answer_not_contains": ["sí aceptamos Humana", "Humana está cubierto"]}},
+    {"id": "off-topic", "question": "¿Cuál es la receta de la paella valenciana?",
+     "expect": {"route": ["receive_question", "retrieve_context", "answer_no_information"], "answer_equals_no_information": true}},
+    {"id": "empty-question", "question": "   ",
+     "expect": {"route": ["receive_question", "reject_question"], "status": "rejected"}}
+  ]
+}

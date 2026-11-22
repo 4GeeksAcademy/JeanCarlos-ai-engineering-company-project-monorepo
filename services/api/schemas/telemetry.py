@@ -13,7 +13,8 @@ class TelemetryEvent(BaseModel):
     sessionId: Annotated[str, Field(max_length=64)] | None
     userId: Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")] | None
     event_type: str = Field(pattern=r"^[a-z]+_[a-z_]+$", max_length=80)
-    schemaVersion: Literal["1.0.0"]
+    # 2.0.0 stays accepted: tabs opened before 2.1.0 (total_cost) keep sending it.
+    schemaVersion: Literal["2.0.0", "2.1.0"]
     requestId: Annotated[str, Field(max_length=64)] | None
     properties: dict[str, JsonValue] = Field(max_length=20)
 
@@ -25,13 +26,10 @@ class TelemetryEvent(BaseModel):
         return value
 
 
-class TelemetryBatch(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    events: list[TelemetryEvent] = Field(min_length=1, max_length=20)
-
-
 class TelemetryReceipt(BaseModel):
     received: int
+    stored: int
+    rejected: int
 
 
 class TelemetrySession(BaseModel):
