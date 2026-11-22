@@ -1,0 +1,129 @@
+{
+  "dataset": {
+    "path": "data/raw/healthcore_sales.csv",
+    "rows": 120,
+    "region": "consolidated",
+    "first_month": "2016-01",
+    "last_month": "2025-12",
+    "nulls_filled": 0
+  },
+  "split": {
+    "train_years": [
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+    ],
+    "test_years": [
+      2024,
+      2025
+    ],
+    "train_months": 96,
+    "test_months": 24,
+    "train_rows_after_lags": 81,
+    "rows_used_only_as_lag_history": 15,
+    "forecast_mode": "recursive, 24 months ahead from 2023-12, no test actuals as input"
+  },
+  "model": {
+    "algorithm": "RandomForestRegressor",
+    "n_estimators": 500,
+    "min_samples_leaf": 2,
+    "max_features": 0.5,
+    "random_state": 42,
+    "target": "revenue_usd / mean(previous 12 months)",
+    "features": [
+      "month_of_year",
+      "month_sin",
+      "month_cos",
+      "is_flu_season",
+      "is_summer_dip",
+      "lag_1_ratio",
+      "lag_2_ratio",
+      "lag_3_ratio",
+      "lag_12_ratio",
+      "rolling_mean_3_ratio",
+      "rolling_std_12_ratio",
+      "yoy_growth_3m"
+    ],
+    "feature_importance": {
+      "lag_12_ratio": 0.3758645733920483,
+      "is_summer_dip": 0.18327270782627056,
+      "month_of_year": 0.16708102252097218,
+      "is_flu_season": 0.12463614441936416,
+      "month_cos": 0.05269019164610016,
+      "month_sin": 0.02059793162154902,
+      "lag_2_ratio": 0.018985914431994017,
+      "lag_3_ratio": 0.016768288574595818,
+      "rolling_mean_3_ratio": 0.015385328476147651,
+      "lag_1_ratio": 0.010014351162178052,
+      "rolling_std_12_ratio": 0.008035740709788389,
+      "yoy_growth_3m": 0.006667805218991739
+    }
+  },
+  "test": {
+    "mse_usd2": 12632352700.511688,
+    "rmse_usd": 112393.73959661493,
+    "rmse_pct_of_mean_monthly_revenue": 3.33843610533206,
+    "mae_usd": 93931.31408730587,
+    "mape_pct": 2.8114862668429166,
+    "r2_score": 0.9001768295645743,
+    "gini_normalized": 0.8916907022934979,
+    "bias_pct": -0.061266636312873324,
+    "k2_score_note": "K2 Score reported as R2 (coefficient of determination); the D'Agostino-Pearson K2 normality test of the residuals is in residual_k2",
+    "residual_k2": {
+      "statistic": 0.45946470266307066,
+      "p_value": 0.7947462868251626
+    },
+    "band": "P10-P90 of 500 tree trajectories",
+    "band_coverage_pct": 83.33333333333334,
+    "band_mean_width_pct": 8.52256899597591,
+    "mean_monthly_revenue_usd": 3366658.4008333334,
+    "total_revenue_usd": {
+      "actual": 80799801.62,
+      "predicted": 80750298.29939996
+    }
+  },
+  "psi": {
+    "bins": 5,
+    "model_score_seasonal_ratio": 0.14808227149426112,
+    "actual_seasonal_ratio": 0.023434104329289017,
+    "avg_revenue_per_visit_usd": 0.4799866280235139,
+    "revenue_usd_raw": 4.0676901362632805,
+    "us_uk_visit_mix": null,
+    "us_uk_visit_mix_note": "not computable: the provided file only has the consolidated row; avg_revenue_per_visit_usd is the proxy for a mix change"
+  },
+  "baseline_seasonal_naive_test": {
+    "mse_usd2": 14173904764.010504,
+    "rmse_usd": 119054.20935023887,
+    "rmse_pct_of_mean_monthly_revenue": 3.536272326315314,
+    "mae_usd": 92697.30814190929,
+    "mape_pct": 2.785584005760521,
+    "r2_score": 0.8879952021181295,
+    "gini_normalized": 0.9279215934075472,
+    "bias_pct": 0.08943182116423198
+  },
+  "train_in_sample": {
+    "mse_usd2": 1883114970.6506476,
+    "rmse_usd": 43394.87263088403,
+    "rmse_pct_of_mean_monthly_revenue": 1.5392782122763815,
+    "mae_usd": 34616.5677256348,
+    "mape_pct": 1.2409550411387809,
+    "r2_score": 0.9867132558690586,
+    "gini_normalized": 0.9934970677943877,
+    "bias_pct": -0.014826117526312022
+  },
+  "train_out_of_bag": {
+    "mse_usd2": 7977427068.360575,
+    "rmse_usd": 89316.44343770399,
+    "rmse_pct_of_mean_monthly_revenue": 3.1681820235100155,
+    "mae_usd": 72990.30882775995,
+    "mape_pct": 2.6211598165093672,
+    "r2_score": 0.9437134567285974,
+    "gini_normalized": 0.9653011532901528,
+    "bias_pct": -0.020851804166355237
+  }
+}
