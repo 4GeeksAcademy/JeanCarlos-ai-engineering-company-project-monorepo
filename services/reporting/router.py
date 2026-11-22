@@ -5,6 +5,7 @@ Every query and the flow itself are imported from data/pipelines/; no ETL logic 
 
 import logging
 from datetime import date, datetime, timezone
+from uuid import uuid4
 from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
@@ -15,11 +16,14 @@ from services.api.models.auth import Role, User
 from services.api.routes.telemetry import user_pseudonym
 from data.pipelines import run_log
 from data.pipelines.connections import MissingConnection, reporting_reader_engine
-from data.pipelines.pipeline import (
-    PIPELINE_NAME,
-    RunInProgress,
-    get_monthly_clinic_supply_performance,
-    trigger_run,
+from data.pipelines.pipeline import PIPELINE_NAME, get_monthly_clinic_supply_performance
+from kombu.exceptions import OperationalError as BrokerUnavailable
+from redis.exceptions import RedisError
+from services.celery_app import (
+    claim_pipeline_slot,
+    mark_pending,
+    release_pipeline_slot,
+    run_monthly_clinic_supply_performance,
 )
 
 from .schemas import MonthlyClinicSupplyPerformance, PipelineRun, PipelineRunAccepted, PipelineRunRequest
@@ -84,11 +88,34 @@ def start_pipeline_run(
     today = datetime.now(timezone.utc).date()
     if any(month > today for month in months):
         raise HTTPException(status_code=422, detail="months cannot be in the future")
+    return enqueue_pipeline_run(
+        {"run_id": str(uuid4()), "months": [month.isoformat() for month in months] or None,
+         "triggered_by": user_pseudonym(user.id)}
+    )
+
+
+def enqueue_pipeline_run(parameters: dict) -> dict:
+    """Producer: touch only Redis and return at once (202). No database work in the request.
+
+    - The message carries identifiers only: run_id, ISO months, the HMAC pseudonym.
+    - The Celery task_id is the pipeline run_id, so the task, pipeline_runs and the DLQ
+      share one identifier.
+    - A PENDING record is stored first, so GET /tasks/{id} knows the task before a worker
+      picks it up.
+    """
+    task_id = parameters["run_id"]
     try:
-        accepted = trigger_run(months or None, triggered_by=user_pseudonym(user.id), engine=reporting_reader_engine())
-    except RunInProgress as running:
-        raise HTTPException(status_code=409, detail=f"Run {running.run_id} is already in progress") from running
-    except _UNAVAILABLE as error:
-        raise _unavailable(error) from error
-    logger.info("Manual pipeline run accepted run_id=%s mode=%s", accepted["run_id"], accepted["mode"])
-    return accepted
+        holder = claim_pipeline_slot(task_id)
+        if holder:
+            raise HTTPException(status_code=409, detail=f"Run {holder} is already in progress")
+        try:
+            mark_pending(task_id)
+            run_monthly_clinic_supply_performance.apply_async(kwargs=parameters, task_id=task_id)
+        except BaseException:
+            release_pipeline_slot(task_id)
+            raise
+    except (BrokerUnavailable, RedisError, OSError) as error:
+        logger.error("Task queue unavailable: %s", type(error).__name__)
+        raise HTTPException(status_code=503, detail="Task queue unavailable") from error
+    logger.info("Pipeline run queued task_id=%s months=%s", task_id, parameters["months"])
+    return {"task_id": task_id, "run_id": task_id, "status": "accepted"}

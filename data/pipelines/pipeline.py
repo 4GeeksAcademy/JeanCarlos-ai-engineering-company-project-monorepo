@@ -39,7 +39,6 @@ import json
 import logging
 import os
 import subprocess
-import threading
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
@@ -89,14 +88,6 @@ DB_RETRIES = 3
 DB_RETRY_DELAYS = [10, 30, 90]
 
 _TRANSIENT_ERRORS = (OperationalError, InterfaceError, ConnectionError, TimeoutError)
-
-
-class RunInProgress(RuntimeError):
-    """A run of this pipeline is already `running` (POST /reporting/pipeline-runs → 409)."""
-
-    def __init__(self, run_id: str):
-        super().__init__(f"Run {run_id} is still running")
-        self.run_id = run_id
 
 
 class StageError(RuntimeError):
@@ -682,49 +673,19 @@ def get_monthly_clinic_supply_performance(month_start: date | None = None, engin
     }
 
 
-def _run_in_background(**parameters: Any) -> None:
-    try:
-        monthly_clinic_supply_performance_flow(**parameters)
-    except Exception:  # already recorded in reporting.pipeline_runs by the flow
-        logging.getLogger("api.reporting").exception("Manual pipeline run failed")
+def run_manual_run(run_id: str, months: list[str] | None, triggered_by: str | None) -> dict[str, Any]:
+    """Consumer side (Celery worker): the whole flow for a manual run queued by the API.
 
-
-def trigger_run(months: list[date] | None, triggered_by: str | None, engine: Engine | None = None) -> dict[str, Any]:
-    """Start a manual run without executing the ETL inside the HTTP request.
-
-    - With REPORTING_PREFECT_DEPLOYMENT (e.g. "monthly_clinic_supply_performance_flow/daily"),
-      it schedules a run of that Prefect deployment (run_deployment(..., timeout=0)).
-    - Without it (local development) the flow runs in a background thread of this process.
+    The flow registers run_id in pipeline_runs when it starts. Re-running it with the same
+    run_id (a retry) reopens that row and is idempotent: months already checkpointed by this
+    run are skipped and the upsert never duplicates rows.
     """
-    running = run_log.get_running_run(engine or reporting_reader_engine(), PIPELINE_NAME)
-    if running:
-        raise RunInProgress(running["run_id"])
-    run_id = str(uuid4())
-    resolved = resolve_months(months, int(DEFAULT_CONFIG["late_window_months"]))
-    # Register the run as `running` before handing it off: a second POST arriving while the
-    # flow is still starting already gets 409. The flow reopens this same row (same run_id).
-    run_log.start_run(
-        pipeline_engine(), run_id=UUID(run_id), pipeline_name=PIPELINE_NAME, trigger="manual",
-        triggered_by=triggered_by, months=resolved, flow_run_id=None, code_version=code_version(),
+    return monthly_clinic_supply_performance_flow(
+        months=[date.fromisoformat(month) for month in months] if months else None,
+        trigger="manual",
+        triggered_by=triggered_by,
+        run_id=run_id,
     )
-    parameters = {
-        "months": [first_of_month(month) for month in months] if months else None,
-        "trigger": "manual",
-        "triggered_by": triggered_by,
-        "run_id": run_id,
-    }
-    deployment = os.environ.get("REPORTING_PREFECT_DEPLOYMENT")
-    if deployment:
-        from prefect.deployments import run_deployment
-
-        scheduled = run_deployment(
-            name=deployment,
-            parameters={**parameters, "months": [m.isoformat() for m in parameters["months"] or []] or None},
-            timeout=0,
-        )
-        return {"run_id": run_id, "flow_run_id": str(scheduled.id), "mode": "deployment"}
-    threading.Thread(target=_run_in_background, kwargs=parameters, name=f"pipeline-{run_id}", daemon=True).start()
-    return {"run_id": run_id, "flow_run_id": None, "mode": "in_process"}
 
 
 # --- CLI ----------------------------------------------------------------------------

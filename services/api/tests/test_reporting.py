@@ -1,11 +1,12 @@
-"""services/reporting: HTTP contract, auth and error mapping. The pipeline functions are stubbed."""
+"""services/reporting: HTTP contract, auth and error mapping. The pipeline and the queue are stubbed."""
 
+import json
 from datetime import date
 
 import pytest
+from kombu.exceptions import OperationalError
 
 from data.pipelines.connections import MissingConnection
-from data.pipelines.pipeline import RunInProgress
 from services.reporting import router as reporting
 
 REPORT = {
@@ -44,12 +45,16 @@ def stub(monkeypatch):
         calls["report"] = (month_start, engine)
         return REPORT if month_start in (None, date(2026, 11, 1)) else None
 
-    def trigger(months, triggered_by, engine):
-        calls["trigger"] = (months, triggered_by, engine)
-        return {"run_id": "run-1", "flow_run_id": None, "mode": "in_process"}
+    calls["released"] = []
+    monkeypatch.setattr(reporting, "claim_pipeline_slot", lambda task_id: calls.setdefault("holder"))
+    monkeypatch.setattr(reporting, "release_pipeline_slot", lambda task_id: calls["released"].append(task_id))
+    monkeypatch.setattr(reporting, "mark_pending", lambda task_id: calls.setdefault("stored", (task_id, "PENDING")))
 
+    def apply_async(kwargs, task_id):
+        calls["enqueued"] = (kwargs, task_id)
+
+    monkeypatch.setattr(reporting.run_monthly_clinic_supply_performance, "apply_async", apply_async)
     monkeypatch.setattr(reporting, "get_monthly_clinic_supply_performance", report)
-    monkeypatch.setattr(reporting, "trigger_run", trigger)
     monkeypatch.setattr(reporting.run_log, "get_latest_run", lambda engine, name: RUN)
     return calls
 
@@ -103,24 +108,27 @@ def test_endpoints_require_a_session(client, stub):
     assert client.post("/reporting/pipeline-runs").status_code == 401
 
 
-def test_manual_run_is_accepted_for_managers_with_pseudonymous_trigger(client, stub, manager_headers):
+def test_manual_run_is_queued_and_answers_202_with_a_task_id(client, stub, manager_headers):
     response = client.post("/reporting/pipeline-runs", json={"months": ["2026-11-01"]}, headers=manager_headers)
     assert response.status_code == 202
-    assert response.json() == {"run_id": "run-1", "flow_run_id": None, "status": "accepted", "mode": "in_process"}
-    months, triggered_by, engine = stub["trigger"]
-    assert months == [date(2026, 11, 1)]
-    assert len(triggered_by) == 64 and "marcus" not in triggered_by  # HMAC, never the account
-    assert engine == "reader-engine"
+    body = response.json()
+    assert body["status"] == "accepted" and body["task_id"] == body["run_id"]
+    kwargs, task_id = stub["enqueued"]
+    assert task_id == body["task_id"] and stub["stored"] == (task_id, "PENDING")  # known before a worker starts
+    # The message carries identifiers only: run id, ISO months and the HMAC pseudonym.
+    assert set(kwargs) == {"run_id", "months", "triggered_by"} and kwargs["months"] == ["2026-11-01"]
+    assert len(kwargs["triggered_by"]) == 64 and "marcus" not in kwargs["triggered_by"]
+    assert len(json.dumps(kwargs)) < 200
 
 
 def test_manual_run_without_body_uses_default_months(client, stub, manager_headers):
     assert client.post("/reporting/pipeline-runs", headers=manager_headers).status_code == 202
-    assert stub["trigger"][0] is None
+    assert stub["enqueued"][0]["months"] is None
 
 
 def test_manual_run_is_forbidden_for_plain_users(client, stub, user_headers):
     assert client.post("/reporting/pipeline-runs", headers=user_headers).status_code == 403
-    assert "trigger" not in stub
+    assert "enqueued" not in stub
 
 
 @pytest.mark.parametrize("months", [["2026-11-15"], ["2999-01-01"], []])
@@ -128,13 +136,21 @@ def test_manual_run_validates_months(client, stub, manager_headers, months):
     assert client.post("/reporting/pipeline-runs", json={"months": months}, headers=manager_headers).status_code == 422
 
 
-def test_manual_run_conflicts_with_a_running_one(client, stub, manager_headers, monkeypatch):
-    def busy(months, triggered_by, engine):
-        raise RunInProgress("abc")
-
-    monkeypatch.setattr(reporting, "trigger_run", busy)
+def test_manual_run_conflicts_with_a_queued_or_running_one(client, stub, manager_headers, monkeypatch):
+    monkeypatch.setattr(reporting, "claim_pipeline_slot", lambda task_id: "abc")
     response = client.post("/reporting/pipeline-runs", headers=manager_headers)
-    assert response.status_code == 409
+    assert response.status_code == 409 and "abc" in response.json()["detail"]
+    assert "enqueued" not in stub
+
+
+def test_broker_down_is_503_and_frees_the_slot(client, stub, manager_headers, monkeypatch):
+    def down(kwargs, task_id):
+        raise OperationalError("Error 111 connecting to redis:6379")
+
+    monkeypatch.setattr(reporting.run_monthly_clinic_supply_performance, "apply_async", down)
+    response = client.post("/reporting/pipeline-runs", headers=manager_headers)
+    assert response.status_code == 503
+    assert stub["released"] == [stub["stored"][0]]
 
 
 def test_storage_errors_are_503(client, stub, user_headers, manager_headers, monkeypatch):
@@ -143,7 +159,5 @@ def test_storage_errors_are_503(client, stub, user_headers, manager_headers, mon
 
     monkeypatch.setattr(reporting, "get_monthly_clinic_supply_performance", unavailable)
     monkeypatch.setattr(reporting.run_log, "get_latest_run", unavailable)
-    monkeypatch.setattr(reporting, "trigger_run", unavailable)
     assert client.get("/reporting/monthly-clinic-supply-performance", headers=user_headers).status_code == 503
     assert client.get("/reporting/pipeline-runs/latest", headers=user_headers).status_code == 503
-    assert client.post("/reporting/pipeline-runs", headers=manager_headers).status_code == 503

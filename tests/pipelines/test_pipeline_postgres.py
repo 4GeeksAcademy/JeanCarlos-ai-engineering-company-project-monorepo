@@ -199,12 +199,10 @@ def test_concurrent_run_is_skipped_while_the_lock_is_held(engine, november_event
     assert run_log.get_latest_run(engine, pipeline.PIPELINE_NAME)["status"] == "skipped_locked"
 
 
-def test_orphaned_running_rows_are_failed_and_trigger_reports_conflicts(engine, november_events):
+def test_orphaned_running_rows_are_failed(engine, november_events):
     orphan = uuid4()
     run_log.start_run(engine, run_id=orphan, pipeline_name=pipeline.PIPELINE_NAME, trigger="manual",
                       triggered_by=None, months=[NOVEMBER], flow_run_id=None, code_version="test")
-    with pytest.raises(pipeline.RunInProgress):
-        pipeline.trigger_run([NOVEMBER], triggered_by="x" * 64, engine=engine)
 
     result = run()
 
@@ -214,22 +212,16 @@ def test_orphaned_running_rows_are_failed_and_trigger_reports_conflicts(engine, 
     assert status == "failed"
 
 
-def test_manual_trigger_registers_the_run_before_the_flow_starts(engine, monkeypatch):
-    started = []
+def test_celery_retry_of_a_manual_run_reuses_its_run_id(engine, november_events):
+    """What the worker calls (run_manual_run): a retry with the same run_id reopens the same
+    pipeline_runs row and leaves the table identical (idempotent)."""
+    run_id = str(uuid4())
+    first = pipeline.run_manual_run(run_id, ["2026-11-01"], "a" * 64)
+    snapshot = table_snapshot(engine)
+    retry = pipeline.run_manual_run(run_id, ["2026-11-01"], "a" * 64)
 
-    class FakeThread:  # the flow itself is covered above; here only the hand-off matters
-        def __init__(self, target, kwargs, name, daemon):
-            started.append(kwargs)
-
-        def start(self):
-            pass
-
-    monkeypatch.setattr(pipeline.threading, "Thread", FakeThread)
-    accepted = pipeline.trigger_run([NOVEMBER], triggered_by="a" * 64, engine=engine)
-
-    assert accepted["mode"] == "in_process"
-    assert started[0]["run_id"] == accepted["run_id"] and started[0]["trigger"] == "manual"
-    latest = run_log.get_latest_run(engine, pipeline.PIPELINE_NAME)
-    assert (latest["run_id"], latest["status"]) == (accepted["run_id"], "running")
-    with pytest.raises(pipeline.RunInProgress):  # an immediate second POST → 409
-        pipeline.trigger_run(None, triggered_by="a" * 64, engine=engine)
+    assert first["run_id"] == retry["run_id"] == run_id
+    assert table_snapshot(engine) == snapshot
+    with engine.connect() as connection:
+        rows = connection.execute(select(pipeline_runs).where(pipeline_runs.c.run_id == run_id)).all()
+    assert len(rows) == 1 and rows[0].status == "completed" and rows[0].trigger == "manual"

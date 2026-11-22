@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 
 from .database import get_inventory_engine, open_database
 from .core.security import get_settings
-from .routes import auth, auth_password, profiles, suppliers, telemetry, users
+from .routes import auth, auth_password, profiles, suppliers, tasks, telemetry, users
 from .routers import inventory
 from services.reporting.router import router as reporting_router
 from .schemas.errors import ErrorResponse, ValidationErrorResponse, ValidationIssue
@@ -120,3 +120,4 @@ app.include_router(suppliers.router)
 app.include_router(inventory.router)
 app.include_router(telemetry.router)
 app.include_router(reporting_router)
+app.include_router(tasks.router)

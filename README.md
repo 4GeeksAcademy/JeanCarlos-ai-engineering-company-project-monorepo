@@ -55,6 +55,45 @@ ai-engineering-company-project-monorepo/
 
 ---
 
+## Background worker (Celery, ticket DEV-55)
+
+Heavy operations run in a **Celery worker**, a separate process from the FastAPI API, with
+Redis as broker and result backend. The API only enqueues and answers `202` with a
+`task_id`; `GET /tasks/{task_id}` reports `pending`, `started`, `retry`, `success` or
+`failure`. Details: [`docs/operations/async-tasks.md`](./docs/operations/async-tasks.md).
+
+**Start** (Redis, worker and Flower; credentials from `services/api/.env`):
+
+```bash
+COMPOSE_ENV_FILE=services/api/.env docker compose up -d redis worker flower
+open http://localhost:5555                       # Flower: queues, tasks, retries
+```
+
+Without Docker (Redis already on `localhost:6379`):
+
+```bash
+export REDIS_URL=redis://localhost:6379/0
+celery -A services.celery_app worker -Q reporting --loglevel INFO      # worker
+celery -A services.celery_app flower --port=5555                       # Flower
+```
+
+The API must use the same `REDIS_URL`.
+
+**Stop:**
+
+```bash
+docker compose stop worker      # warm shutdown: finishes running tasks (up to 120 s)
+docker compose down             # everything; queued messages stay in the redis_data volume
+```
+
+Without Docker, `Ctrl-C` once does a warm shutdown, and twice a cold one. Unacked tasks
+go back to the queue (`task_acks_late`).
+
+Stopping the API stops neither the worker nor the queued messages. Stopping the worker
+leaves the messages waiting in Redis until a worker starts again.
+
+---
+
 ## Current status
 
 The Talent Pipeline Tracker is a runnable Next.js app. Other monorepo folders remain available for the wider course project.

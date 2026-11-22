@@ -63,7 +63,8 @@ class PipelineRunRequest(BaseModel):
 
 
 class PipelineRunAccepted(BaseModel):
+    """202: the run is queued in Celery; poll GET /tasks/{task_id}."""
+
+    task_id: str
     run_id: str
-    flow_run_id: str | None
     status: Literal["accepted"] = "accepted"
-    mode: Literal["deployment", "in_process"]

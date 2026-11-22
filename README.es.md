@@ -55,6 +55,46 @@ ai-engineering-company-project-monorepo/
 
 ---
 
+## Worker en segundo plano (Celery, ticket DEV-55)
+
+Las operaciones pesadas corren en un **worker de Celery**, un proceso aparte de la API
+FastAPI, con Redis como broker y como backend de resultados. La API solo encola y responde
+`202` con un `task_id`. `GET /tasks/{task_id}` informa del estado: `pending`, `started`,
+`retry`, `success` o `failure`. Detalles en
+[`docs/operations/async-tasks.md`](./docs/operations/async-tasks.md).
+
+**Levantarlo** (Redis, worker y Flower; credenciales en `services/api/.env`):
+
+```bash
+COMPOSE_ENV_FILE=services/api/.env docker compose up -d redis worker flower
+open http://localhost:5555                       # Flower: colas, tareas, reintentos
+```
+
+Sin Docker (con Redis ya en `localhost:6379`):
+
+```bash
+export REDIS_URL=redis://localhost:6379/0
+celery -A services.celery_app worker -Q reporting --loglevel INFO      # worker
+celery -A services.celery_app flower --port=5555                       # Flower
+```
+
+La API tiene que usar el mismo `REDIS_URL`.
+
+**Detenerlo:**
+
+```bash
+docker compose stop worker      # apagado en caliente: termina las tareas en curso (hasta 120 s)
+docker compose down             # todo; los mensajes en cola quedan en el volumen redis_data
+```
+
+Sin Docker, `Ctrl-C` una vez hace un apagado en caliente y dos veces uno en frío. Las
+tareas sin ACK vuelven a la cola (`task_acks_late`).
+
+Detener la API no detiene el worker ni pierde los mensajes en cola. Detener el worker deja
+los mensajes esperando en Redis hasta que vuelva a arrancar.
+
+---
+
 ## Guía de carpetas — qué va en cada una
 
 Lee el `README.md` enlazado dentro de cada carpeta antes de empezar a programar ahí.

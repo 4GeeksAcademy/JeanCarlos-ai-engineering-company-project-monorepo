@@ -444,8 +444,9 @@ solaparse. Hay dos defensas:
 1. **Lock de base de datos:** al empezar, el flow hace
    `pg_try_advisory_lock(hashtext('monthly_clinic_supply_performance'))`. Si no
    lo obtiene, registra `status = skipped_locked` y termina sin escribir nada.
-   `POST /reporting/pipeline-runs` comprueba antes la última corrida y responde
-   `409 Conflict` si hay una en curso.
+   `POST /reporting/pipeline-runs` responde `409 Conflict` si ya hay una corrida
+   manual en cola o en curso. Desde DEV-55 lo decide una clave en Redis
+   (`SET NX`) que libera el worker al terminar o al pasar a la DLQ.
 2. **Límite de concurrencia en Prefect:** la etiqueta
    `reporting-monthly-supply` tiene un límite de 1.
 
@@ -535,7 +536,7 @@ función importada de `data/pipelines/`. Nunca ocurre al revés.
 | --- | --- | --- | --- |
 | `GET /reporting/monthly-clinic-supply-performance?month_start=YYYY-MM-01` | Feed de KPIs para el reporte de la junta y el dashboard de la Parte 3. Sin parámetro, devuelve el último mes calculado. | `pipeline.get_monthly_clinic_supply_performance(month_start: date \| None)`: solo lee `reporting.monthly_clinic_supply_performance`, sus revisiones y `pipeline_run_months`. | El JSON del BRIEFING (§6), con `month_start` y `clinics[]`, más `consumption_by_department`, `computed_at`, `last_run_id`, `revised`, `coverage_checked` y `coverage_warnings`. `clinic_id` usa el `location_id` (`us-tx-001`…). Devuelve `404` si el mes no está calculado (nunca ceros) y `422` si `month_start` no es día 1. |
 | `GET /reporting/pipeline-runs/latest` | Estado de la última corrida: si se calculó, cuándo, con cuántos eventos y si falló. | `run_log.get_latest_run(pipeline_name="monthly_clinic_supply_performance")` | `run_id`, `status`, `trigger`, `started_at`, `finished_at`, `months`, `source_events_read`, `rows_upserted`, `rows_changed`, `events_skipped`, `warnings`, `error_stage`, `error_message`, `code_version`. Devuelve `404` antes de la primera corrida. |
-| `POST /reporting/pipeline-runs` | Disparo manual, con body opcional `{"months": ["2026-11-01"]}` | `pipeline.trigger_run(months, triggered_by)`. Con `REPORTING_PREFECT_DEPLOYMENT`, lanza el deployment (`run_deployment(..., timeout=0)`). Sin él (desarrollo local), ejecuta el flow en un hilo en segundo plano. En ningún caso ejecuta el ETL dentro de la petición. | `202 Accepted` con `run_id`, `flow_run_id` y `mode`. Devuelve `409` si ya hay una corrida en curso y `422` si un mes no es día 1 o es futuro. |
+| `POST /reporting/pipeline-runs` | Disparo manual, con body opcional `{"months": ["2026-11-01"]}` | Desde DEV-55 encola la tarea de Celery `reporting.run_monthly_clinic_supply_performance` (`services/celery_app.py`). El worker llama a `pipeline.run_manual_run(run_id, months, triggered_by)`. La API solo toca Redis y nunca ejecuta el ETL dentro de la petición ([docs/operations/async-tasks.md](../../docs/operations/async-tasks.md)). | `202 Accepted` con `task_id` (= `run_id`); el estado se consulta en `GET /tasks/{task_id}`. Devuelve `409` si ya hay una corrida manual en cola o en curso, `503` si Redis no está disponible y `422` si un mes no es día 1 o es futuro. |
 
 Acceso:
 
@@ -618,9 +619,8 @@ python data/pipelines/pipeline.py --backfill 2026-01-01 2026-06-01
     --name daily --cron "0 5 * * *" --timezone UTC
   ```
 
-  Con `REPORTING_PREFECT_DEPLOYMENT=monthly_clinic_supply_performance_flow/daily`,
-  `POST /reporting/pipeline-runs` dispara ese deployment en lugar de un hilo
-  local.
+  Desde DEV-55, `POST /reporting/pipeline-runs` encola el flow en Celery y lo
+  ejecuta un worker separado (ver §8).
 
 ### Requisitos del ticket en el código
 
@@ -770,7 +770,7 @@ través de los subflows.
 | Mejora | Pregunta del diseño a la que responde | Por qué se priorizó |
 | --- | --- | --- |
 | **Alerta de silencio en el dashboard.** Si la última corrida falló, o la última completada tiene más de 26 h (corrida diaria + margen), el dashboard muestra un aviso visible. | «¿Cómo distingues que el pipeline no corrió de que no hubo actividad?» (§6, «Silencio vs. ausencia real») | El log ya registraba la falta de corridas, pero nadie del liderazgo consulta `pipeline-runs/latest`. Sin el aviso, una junta podía leer cifras viejas como si fueran del día. |
-| **Registro de la corrida antes de lanzarla.** `trigger_run` inserta la fila `running` antes de arrancar el flow. | «¿Qué pasa si el cron y un disparo manual se solapan?» (§6, «Corridas concurrentes») | En la Parte 2, dos `POST` seguidos daban `202` y `202`. El lock evitaba datos duplicados, pero la segunda petición debía recibir `409`. Ahora lo recibe. |
+| **Registro de la corrida antes de lanzarla.** La corrida manual se reserva antes de arrancar el flow (en la Parte 3, una fila `running`; desde DEV-55, una clave en Redis, para responder en menos de 200 ms). | «¿Qué pasa si el cron y un disparo manual se solapan?» (§6, «Corridas concurrentes») | En la Parte 2, dos `POST` seguidos daban `202` y `202`. El lock evitaba datos duplicados, pero la segunda petición debía recibir `409`. Ahora lo recibe. |
 | **Validación defensiva de entrada en las tasks de KPI** (`KpiInputError`). | «¿Qué haces con eventos con campos faltantes o mal tipados?» (§6, «Integridad») | Un cambio en el contrato o un export mal formado debe fallar en la transformación con un mensaje claro, no producir un KPI silenciosamente erróneo. |
 
 Antes de esta parte ya estaban implementados el lock de concurrencia (advisory
