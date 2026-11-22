@@ -107,6 +107,17 @@ python data/eval/evaluate_rag_retrieval.py   # Recall@3
 
 Necesita `LLM_API_URL`, `LLM_API_KEY`, `EMBEDDING_MODEL` y `GENERATION_MODEL` (modelos distintos, del gateway de 4Geeks) en `services/api/.env`. Endpoint: `POST /knowledge/query`; UI: «Asistente» en el backoffice (`/knowledge`).
 
+## Agente de soporte con LangGraph (parte 1)
+
+El flujo RAG como grafo explícito (`services/agent/`): estado mínimo, nodos `receive_question → retrieve_context → generate_answer` (o `answer_no_information` / `reject_question`), checkpoints en SQLite y una traza consultable de cada corrida. Diseño: [`docs/agent/agent-design.md`](docs/agent/agent-design.md).
+
+```bash
+python -m services.agent.record_evals              # graba una corrida real por caso de eval
+python -m pytest tests/pipelines/test_agent_evals.py   # evals contra las trazas grabadas
+```
+
+Endpoints: `POST /agent/query` y `GET /agent/runs/{run_id}/trace` (administradores).
+
 ## Guía de carpetas — qué va en cada una
 
 Lee el `README.md` enlazado dentro de cada carpeta antes de empezar a programar ahí.

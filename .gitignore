@@ -19,3 +19,6 @@ data/raw/telemetry_*.csv
 # Python (uv)
 .venv/
 __pycache__/
+
+# LangGraph agent: checkpoints and traces of local runs (SQLite)
+data/agent_state/

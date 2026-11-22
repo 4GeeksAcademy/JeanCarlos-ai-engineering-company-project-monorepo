@@ -15,3 +15,5 @@ celery[redis]>=5.4,<6
 flower>=2,<3
 qdrant-client>=1.20,<2
 openai>=1.40,<4
+langgraph>=1.2,<2
+langgraph-checkpoint-sqlite>=3,<4

@@ -36,6 +36,8 @@ services:
       TELEMETRY_ENDPOINT: ${TELEMETRY_ENDPOINT:-http://api:8000/telemetry/events}
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
+      # LangGraph checkpoints and traces (SQLite) on the persistent api_data volume.
+      AGENT_STATE_DIR: /data/agent
     depends_on:
       redis:
         condition: service_healthy
@@ -47,6 +49,7 @@ services:
       - ./services/api:/app/services/api
       - ./services/telemetry:/app/services/telemetry
       - ./services/reporting:/app/services/reporting
+      - ./services/agent:/app/services/agent
       - ./data:/app/data
       # RAG corpus, so `docker compose exec api python -m data.process.rag` can re-index it.
       - ./docs/company-knowledge-base:/app/docs/company-knowledge-base:ro

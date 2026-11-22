@@ -106,6 +106,17 @@ python data/eval/evaluate_rag_retrieval.py   # Recall@3
 
 Needs `LLM_API_URL`, `LLM_API_KEY`, `EMBEDDING_MODEL` and `GENERATION_MODEL` (different models, from the 4Geeks gateway) in `services/api/.env`. Endpoint: `POST /knowledge/query`; UI: "Asistente" in the backoffice (`/knowledge`).
 
+## LangGraph support agent (part 1)
+
+The RAG flow as an explicit graph (`services/agent/`): minimal state, nodes `receive_question → retrieve_context → generate_answer` (or `answer_no_information` / `reject_question`), SQLite checkpoints and a queryable trace of every run. Design: [`docs/agent/agent-design.md`](docs/agent/agent-design.md).
+
+```bash
+python -m services.agent.record_evals              # records one live run per eval case
+python -m pytest tests/pipelines/test_agent_evals.py   # evals against the recorded traces
+```
+
+Endpoints: `POST /agent/query` and `GET /agent/runs/{run_id}/trace` (admins).
+
 ## Current status
 
 The Talent Pipeline Tracker is a runnable Next.js app. Other monorepo folders remain available for the wider course project.

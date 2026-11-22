@@ -1,0 +1,977 @@
+{
+  "recorded_at": "2026-11-22T17:40:57+00:00",
+  "traces": [
+    {
+      "case_id": "cancel-12h",
+      "run_id": "37466317-bb9f-48cd-ae05-554ba31d6372",
+      "question": "¿Cobran cargo por cancelación con 12 horas de anticipación?",
+      "status": "answered",
+      "route": "receive_question > retrieve_context > generate_answer",
+      "answer": "Sí, se aplica el cargo por cancelación con menos de 24 horas de anticipación. Para pacientes de pago privado, el cargo es de 50 USD (o 40 GBP en Reino Unido). Si el paciente tiene Medicare o Medicaid, no se le cobra, pero se registra el incidente en su historial.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación",
+      "error": null,
+      "started_at": "2026-11-22T17:40:29.250+00:00",
+      "finished_at": "2026-11-22T17:40:38.259+00:00",
+      "steps": [
+        {
+          "step": 1,
+          "node": "receive_question",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:29.252+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "question": "¿Cobran cargo por cancelación con 12 horas de anticipación?",
+            "status": "received"
+          }
+        },
+        {
+          "step": 2,
+          "node": "retrieve_context",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:29.254+00:00",
+          "duration_ms": 1103.48,
+          "error": null,
+          "output": {
+            "context": [
+              {
+                "source_document": "appointment-policy",
+                "chunk_index": 1,
+                "section": "Política de cancelación",
+                "score": 0.6098
+              },
+              {
+                "source_document": "appointment-policy",
+                "chunk_index": 2,
+                "section": "Recordatorios automáticos",
+                "score": 0.4047
+              },
+              {
+                "source_document": "appointment-policy",
+                "chunk_index": 3,
+                "section": "Política de Citas y Cancelaciones",
+                "score": 0.3761
+              },
+              {
+                "source_document": "appointment-policy",
+                "chunk_index": 0,
+                "section": "Reserva de citas",
+                "score": 0.3067
+              }
+            ],
+            "status": "retrieved"
+          }
+        },
+        {
+          "step": 3,
+          "node": "generate_answer",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:30.358+00:00",
+          "duration_ms": 7898.28,
+          "error": null,
+          "output": {
+            "answer": "Sí, se aplica el cargo por cancelación con menos de 24 horas de anticipación. Para pacientes de pago privado, el cargo es de 50 USD (o 40 GBP en Reino Unido). Si el paciente tiene Medicare o Medicaid, no se le cobra, pero se registra el incidente en su historial.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación",
+            "status": "answered"
+          }
+        }
+      ],
+      "checkpoints": [
+        {
+          "step": -1,
+          "checkpoint_id": "1f1e69bc-f01e-6614-bfff-cd2527e8e990",
+          "next": [
+            "__start__"
+          ],
+          "status": null,
+          "state_keys": []
+        },
+        {
+          "step": 0,
+          "checkpoint_id": "1f1e69bc-f01f-65e6-8000-e27d9b48fb51",
+          "next": [
+            "receive_question"
+          ],
+          "status": null,
+          "state_keys": [
+            "question"
+          ]
+        },
+        {
+          "step": 1,
+          "checkpoint_id": "1f1e69bc-f023-6f7e-8001-cdca38f0518f",
+          "next": [
+            "retrieve_context"
+          ],
+          "status": "received",
+          "state_keys": [
+            "question",
+            "status"
+          ]
+        },
+        {
+          "step": 2,
+          "checkpoint_id": "1f1e69bc-faab-63e8-8002-5386ca791bed",
+          "next": [
+            "generate_answer"
+          ],
+          "status": "retrieved",
+          "state_keys": [
+            "context",
+            "question",
+            "status"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e69bd-4600-6e92-8003-4712620406ca",
+          "next": [],
+          "status": "answered",
+          "state_keys": [
+            "answer",
+            "context",
+            "question",
+            "status"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "medicare-no-show",
+      "run_id": "65520d6f-da58-419c-a9c2-976e4d002cee",
+      "question": "¿A un paciente de Medicare se le cobra si no se presenta a la cita?",
+      "status": "answered",
+      "route": "receive_question > retrieve_context > generate_answer",
+      "answer": "No, a los pacientes de Medicare no se les cobra el cargo por no-show. Según la regulación, se registra el incidente en su historial, pero no hay penalización económica.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación",
+      "error": null,
+      "started_at": "2026-11-22T17:40:38.260+00:00",
+      "finished_at": "2026-11-22T17:40:39.899+00:00",
+      "steps": [
+        {
+          "step": 1,
+          "node": "receive_question",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:38.262+00:00",
+          "duration_ms": 0.01,
+          "error": null,
+          "output": {
+            "question": "¿A un paciente de Medicare se le cobra si no se presenta a la cita?",
+            "status": "received"
+          }
+        },
+        {
+          "step": 2,
+          "node": "retrieve_context",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:38.264+00:00",
+          "duration_ms": 372.05,
+          "error": null,
+          "output": {
+            "context": [
+              {
+                "source_document": "appointment-policy",
+                "chunk_index": 1,
+                "section": "Política de cancelación",
+                "score": 0.5849
+              },
+              {
+                "source_document": "appointment-policy",
+                "chunk_index": 3,
+                "section": "Política de Citas y Cancelaciones",
+                "score": 0.5222
+              },
+              {
+                "source_document": "appointment-policy",
+                "chunk_index": 2,
+                "section": "Recordatorios automáticos",
+                "score": 0.4234
+              },
+              {
+                "source_document": "appointment-policy",
+                "chunk_index": 0,
+                "section": "Reserva de citas",
+                "score": 0.383
+              },
+              {
+                "source_document": "new-patient-checklist",
+                "chunk_index": 2,
+                "section": "Checklist para Pacientes Nuevos",
+                "score": 0.3716
+              }
+            ],
+            "status": "retrieved"
+          }
+        },
+        {
+          "step": 3,
+          "node": "generate_answer",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:38.637+00:00",
+          "duration_ms": 1259.32,
+          "error": null,
+          "output": {
+            "answer": "No, a los pacientes de Medicare no se les cobra el cargo por no-show. Según la regulación, se registra el incidente en su historial, pero no hay penalización económica.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación",
+            "status": "answered"
+          }
+        }
+      ],
+      "checkpoints": [
+        {
+          "step": -1,
+          "checkpoint_id": "1f1e69bd-4608-6d7c-bfff-54c53d77befa",
+          "next": [
+            "__start__"
+          ],
+          "status": null,
+          "state_keys": []
+        },
+        {
+          "step": 0,
+          "checkpoint_id": "1f1e69bd-460a-67a8-8000-6efff2c0884f",
+          "next": [
+            "receive_question"
+          ],
+          "status": null,
+          "state_keys": [
+            "question"
+          ]
+        },
+        {
+          "step": 1,
+          "checkpoint_id": "1f1e69bd-460f-6ba4-8001-07bae9cdd84d",
+          "next": [
+            "retrieve_context"
+          ],
+          "status": "received",
+          "state_keys": [
+            "question",
+            "status"
+          ]
+        },
+        {
+          "step": 2,
+          "checkpoint_id": "1f1e69bd-499e-6c0c-8002-1bd3f53c1ba9",
+          "next": [
+            "generate_answer"
+          ],
+          "status": "retrieved",
+          "state_keys": [
+            "context",
+            "question",
+            "status"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e69bd-55a4-6740-8003-a5e14c55369a",
+          "next": [],
+          "status": "answered",
+          "state_keys": [
+            "answer",
+            "context",
+            "question",
+            "status"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "medicaid-georgia",
+      "run_id": "8d77b21a-ec48-44d3-af66-cfcb04d9a57f",
+      "question": "¿Aceptan Medicaid en la clínica de Georgia?",
+      "status": "answered",
+      "route": "receive_question > retrieve_context > generate_answer",
+      "answer": "No, actualmente Medicaid no se acepta en las clínicas de Georgia. Solo está disponible en las clínicas de Texas y Florida.\n\nFuente: Cobertura de Seguros Aceptados — Estados Unidos (Texas, Florida, Georgia)",
+      "error": null,
+      "started_at": "2026-11-22T17:40:39.900+00:00",
+      "finished_at": "2026-11-22T17:40:45.119+00:00",
+      "steps": [
+        {
+          "step": 1,
+          "node": "receive_question",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:39.902+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "question": "¿Aceptan Medicaid en la clínica de Georgia?",
+            "status": "received"
+          }
+        },
+        {
+          "step": 2,
+          "node": "retrieve_context",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:39.904+00:00",
+          "duration_ms": 379.93,
+          "error": null,
+          "output": {
+            "context": [
+              {
+                "source_document": "insurance-coverage",
+                "chunk_index": 0,
+                "section": "Estados Unidos (Texas, Florida, Georgia)",
+                "score": 0.5542
+              }
+            ],
+            "status": "retrieved"
+          }
+        },
+        {
+          "step": 3,
+          "node": "generate_answer",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:40.284+00:00",
+          "duration_ms": 4833.32,
+          "error": null,
+          "output": {
+            "answer": "No, actualmente Medicaid no se acepta en las clínicas de Georgia. Solo está disponible en las clínicas de Texas y Florida.\n\nFuente: Cobertura de Seguros Aceptados — Estados Unidos (Texas, Florida, Georgia)",
+            "status": "answered"
+          }
+        }
+      ],
+      "checkpoints": [
+        {
+          "step": -1,
+          "checkpoint_id": "1f1e69bd-55ac-6f30-bfff-69b0e84fef95",
+          "next": [
+            "__start__"
+          ],
+          "status": null,
+          "state_keys": []
+        },
+        {
+          "step": 0,
+          "checkpoint_id": "1f1e69bd-55ae-6308-8000-bb3b4847f646",
+          "next": [
+            "receive_question"
+          ],
+          "status": null,
+          "state_keys": [
+            "question"
+          ]
+        },
+        {
+          "step": 1,
+          "checkpoint_id": "1f1e69bd-55b3-6272-8001-2dd283e0a0b7",
+          "next": [
+            "retrieve_context"
+          ],
+          "status": "received",
+          "state_keys": [
+            "question",
+            "status"
+          ]
+        },
+        {
+          "step": 2,
+          "checkpoint_id": "1f1e69bd-5954-6c5a-8002-87ab44e8b236",
+          "next": [
+            "generate_answer"
+          ],
+          "status": "retrieved",
+          "state_keys": [
+            "context",
+            "question",
+            "status"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e69bd-876f-6662-8003-d29084a432a7",
+          "next": [],
+          "status": "answered",
+          "state_keys": [
+            "answer",
+            "context",
+            "question",
+            "status"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "first-visit",
+      "run_id": "ac1f0d07-ff7d-46b3-a1c9-5a886b276485",
+      "question": "¿Qué debo traer a mi primera cita?",
+      "status": "answered",
+      "route": "receive_question > retrieve_context > generate_answer",
+      "answer": "Para su primera cita, debe traer un documento de identidad válido, su tarjeta de seguro (si aplica) y, si el motivo de consulta lo amerita, una lista de sus medicamentos actuales. Además, recuerde que antes de la cita debe completar el formulario de historial médico, disponible en el portal o en papel en recepción.\n\nFuente: Checklist para Pacientes Nuevos — Documentos que el paciente debe traer el día de la cita; Checklist para Pacientes Nuevos — Todo paciente nuevo debe completar antes de su primera cita",
+      "error": null,
+      "started_at": "2026-11-22T17:40:45.120+00:00",
+      "finished_at": "2026-11-22T17:40:47.169+00:00",
+      "steps": [
+        {
+          "step": 1,
+          "node": "receive_question",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:45.122+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "question": "¿Qué debo traer a mi primera cita?",
+            "status": "received"
+          }
+        },
+        {
+          "step": 2,
+          "node": "retrieve_context",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:45.124+00:00",
+          "duration_ms": 387.47,
+          "error": null,
+          "output": {
+            "context": [
+              {
+                "source_document": "new-patient-checklist",
+                "chunk_index": 1,
+                "section": "Documentos que el paciente debe traer el día de la cita",
+                "score": 0.5653
+              },
+              {
+                "source_document": "new-patient-checklist",
+                "chunk_index": 0,
+                "section": "Todo paciente nuevo debe completar antes de su primera cita",
+                "score": 0.5094
+              },
+              {
+                "source_document": "new-patient-checklist",
+                "chunk_index": 2,
+                "section": "Checklist para Pacientes Nuevos",
+                "score": 0.3653
+              }
+            ],
+            "status": "retrieved"
+          }
+        },
+        {
+          "step": 3,
+          "node": "generate_answer",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:45.512+00:00",
+          "duration_ms": 1654.66,
+          "error": null,
+          "output": {
+            "answer": "Para su primera cita, debe traer un documento de identidad válido, su tarjeta de seguro (si aplica) y, si el motivo de consulta lo amerita, una lista de sus medicamentos actuales. Además, recuerde que antes de la cita debe completar el formulario de historial médico, disponible en el portal o en papel en recepción.\n\nFuente: Checklist para Pacientes Nuevos — Documentos que el paciente debe traer el día de la cita; Checklist para Pacientes Nuevos — Todo paciente nuevo debe completar antes de su primera cita",
+            "status": "answered"
+          }
+        }
+      ],
+      "checkpoints": [
+        {
+          "step": -1,
+          "checkpoint_id": "1f1e69bd-8774-6c34-bfff-3be35c3ea22d",
+          "next": [
+            "__start__"
+          ],
+          "status": null,
+          "state_keys": []
+        },
+        {
+          "step": 0,
+          "checkpoint_id": "1f1e69bd-8776-6804-8000-a2d89fc4fe2f",
+          "next": [
+            "receive_question"
+          ],
+          "status": null,
+          "state_keys": [
+            "question"
+          ]
+        },
+        {
+          "step": 1,
+          "checkpoint_id": "1f1e69bd-877b-6610-8001-a2f1187bfb99",
+          "next": [
+            "retrieve_context"
+          ],
+          "status": "received",
+          "state_keys": [
+            "question",
+            "status"
+          ]
+        },
+        {
+          "step": 2,
+          "checkpoint_id": "1f1e69bd-8b30-6468-8002-69c199e8e600",
+          "next": [
+            "generate_answer"
+          ],
+          "status": "retrieved",
+          "state_keys": [
+            "context",
+            "question",
+            "status"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e69bd-9afb-6c30-8003-b78d46e62845",
+          "next": [],
+          "status": "answered",
+          "state_keys": [
+            "answer",
+            "context",
+            "question",
+            "status"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "referral-escalation",
+      "run_id": "43f85eed-c44e-4f5f-a0dc-f414c266459b",
+      "question": "Pasaron 6 días hábiles y el paciente no tiene opciones de cita con el especialista, ¿qué hago?",
+      "status": "answered",
+      "route": "receive_question > retrieve_context > generate_answer",
+      "answer": "Según la política, si el paciente no ha recibido opciones de cita después de 5 días hábiles desde la creación de la referencia, debes escalar el caso directamente a Marcus Reid, Director de Operaciones Clínicas. Como ya han pasado 6 días, es el momento de realizar ese escalamiento para que se gestione la cita.\n\nFuente: Proceso de Referencia Interna — Proceso de Referencia Interna",
+      "error": null,
+      "started_at": "2026-11-22T17:40:47.171+00:00",
+      "finished_at": "2026-11-22T17:40:52.084+00:00",
+      "steps": [
+        {
+          "step": 1,
+          "node": "receive_question",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:47.172+00:00",
+          "duration_ms": 0.01,
+          "error": null,
+          "output": {
+            "question": "Pasaron 6 días hábiles y el paciente no tiene opciones de cita con el especialista, ¿qué hago?",
+            "status": "received"
+          }
+        },
+        {
+          "step": 2,
+          "node": "retrieve_context",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:47.174+00:00",
+          "duration_ms": 312.16,
+          "error": null,
+          "output": {
+            "context": [
+              {
+                "source_document": "referral-process",
+                "chunk_index": 2,
+                "section": "Proceso de Referencia Interna",
+                "score": 0.497
+              },
+              {
+                "source_document": "appointment-policy",
+                "chunk_index": 0,
+                "section": "Reserva de citas",
+                "score": 0.4944
+              },
+              {
+                "source_document": "appointment-policy",
+                "chunk_index": 3,
+                "section": "Política de Citas y Cancelaciones",
+                "score": 0.485
+              },
+              {
+                "source_document": "appointment-policy",
+                "chunk_index": 1,
+                "section": "Política de cancelación",
+                "score": 0.4055
+              },
+              {
+                "source_document": "appointment-policy",
+                "chunk_index": 2,
+                "section": "Recordatorios automáticos",
+                "score": 0.3819
+              }
+            ],
+            "status": "retrieved"
+          }
+        },
+        {
+          "step": 3,
+          "node": "generate_answer",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:47.488+00:00",
+          "duration_ms": 4593.38,
+          "error": null,
+          "output": {
+            "answer": "Según la política, si el paciente no ha recibido opciones de cita después de 5 días hábiles desde la creación de la referencia, debes escalar el caso directamente a Marcus Reid, Director de Operaciones Clínicas. Como ya han pasado 6 días, es el momento de realizar ese escalamiento para que se gestione la cita.\n\nFuente: Proceso de Referencia Interna — Proceso de Referencia Interna",
+            "status": "answered"
+          }
+        }
+      ],
+      "checkpoints": [
+        {
+          "step": -1,
+          "checkpoint_id": "1f1e69bd-9b03-68c2-bfff-a40f4ad4ac1b",
+          "next": [
+            "__start__"
+          ],
+          "status": null,
+          "state_keys": []
+        },
+        {
+          "step": 0,
+          "checkpoint_id": "1f1e69bd-9b05-637a-8000-f49cd212c384",
+          "next": [
+            "receive_question"
+          ],
+          "status": null,
+          "state_keys": [
+            "question"
+          ]
+        },
+        {
+          "step": 1,
+          "checkpoint_id": "1f1e69bd-9b0a-632a-8001-648e18ccb3ee",
+          "next": [
+            "retrieve_context"
+          ],
+          "status": "received",
+          "state_keys": [
+            "question",
+            "status"
+          ]
+        },
+        {
+          "step": 2,
+          "checkpoint_id": "1f1e69bd-9e07-6ac8-8002-b1ecb4e8a508",
+          "next": [
+            "generate_answer"
+          ],
+          "status": "retrieved",
+          "state_keys": [
+            "context",
+            "question",
+            "status"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e69bd-c9d9-68a4-8003-6846278ffd29",
+          "next": [],
+          "status": "answered",
+          "state_keys": [
+            "answer",
+            "context",
+            "question",
+            "status"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "unlisted-insurance",
+      "run_id": "9b85799d-ca48-4ed6-87b9-70ea18291065",
+      "question": "¿Aceptan el seguro Humana en Texas?",
+      "status": "answered",
+      "route": "receive_question > retrieve_context > generate_answer",
+      "answer": "Humana no aparece en la lista de seguros comerciales aceptados en Texas. Para confirmar si es posible aceptarlo, debe verificarlo con el equipo de facturación (Tom Callahan) antes de dar una respuesta al paciente.\n\nFuente: Cobertura de Seguros Aceptados — Estados Unidos (Texas, Florida, Georgia); Cobertura de Seguros Aceptados — Cobertura de Seguros Aceptados",
+      "error": null,
+      "started_at": "2026-11-22T17:40:52.085+00:00",
+      "finished_at": "2026-11-22T17:40:56.795+00:00",
+      "steps": [
+        {
+          "step": 1,
+          "node": "receive_question",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:52.086+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "question": "¿Aceptan el seguro Humana en Texas?",
+            "status": "received"
+          }
+        },
+        {
+          "step": 2,
+          "node": "retrieve_context",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:52.088+00:00",
+          "duration_ms": 344.67,
+          "error": null,
+          "output": {
+            "context": [
+              {
+                "source_document": "insurance-coverage",
+                "chunk_index": 0,
+                "section": "Estados Unidos (Texas, Florida, Georgia)",
+                "score": 0.5372
+              },
+              {
+                "source_document": "insurance-coverage",
+                "chunk_index": 2,
+                "section": "Cobertura de Seguros Aceptados",
+                "score": 0.3113
+              },
+              {
+                "source_document": "insurance-coverage",
+                "chunk_index": 1,
+                "section": "Reino Unido (Londres y Manchester)",
+                "score": 0.305
+              }
+            ],
+            "status": "retrieved"
+          }
+        },
+        {
+          "step": 3,
+          "node": "generate_answer",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:52.434+00:00",
+          "duration_ms": 4358.73,
+          "error": null,
+          "output": {
+            "answer": "Humana no aparece en la lista de seguros comerciales aceptados en Texas. Para confirmar si es posible aceptarlo, debe verificarlo con el equipo de facturación (Tom Callahan) antes de dar una respuesta al paciente.\n\nFuente: Cobertura de Seguros Aceptados — Estados Unidos (Texas, Florida, Georgia); Cobertura de Seguros Aceptados — Cobertura de Seguros Aceptados",
+            "status": "answered"
+          }
+        }
+      ],
+      "checkpoints": [
+        {
+          "step": -1,
+          "checkpoint_id": "1f1e69bd-c9e0-653c-bfff-23257c70c20a",
+          "next": [
+            "__start__"
+          ],
+          "status": null,
+          "state_keys": []
+        },
+        {
+          "step": 0,
+          "checkpoint_id": "1f1e69bd-c9e1-6888-8000-ec562293af06",
+          "next": [
+            "receive_question"
+          ],
+          "status": null,
+          "state_keys": [
+            "question"
+          ]
+        },
+        {
+          "step": 1,
+          "checkpoint_id": "1f1e69bd-c9e6-6d06-8001-a8ec03a44262",
+          "next": [
+            "retrieve_context"
+          ],
+          "status": "received",
+          "state_keys": [
+            "question",
+            "status"
+          ]
+        },
+        {
+          "step": 2,
+          "checkpoint_id": "1f1e69bd-cd32-624e-8002-0dc905ef172a",
+          "next": [
+            "generate_answer"
+          ],
+          "status": "retrieved",
+          "state_keys": [
+            "context",
+            "question",
+            "status"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e69bd-f6c6-6d58-8003-4ee375f998c9",
+          "next": [],
+          "status": "answered",
+          "state_keys": [
+            "answer",
+            "context",
+            "question",
+            "status"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "off-topic",
+      "run_id": "a3dbed58-7284-4f0f-bd60-eef32d6605d8",
+      "question": "¿Cuál es la receta de la paella valenciana?",
+      "status": "answered",
+      "route": "receive_question > retrieve_context > answer_no_information",
+      "answer": "No tengo información sobre eso en la base de conocimiento de HealthCore (seguros aceptados, citas y cancelaciones, referencias internas y checklist de pacientes nuevos). Para no darte un dato incorrecto, consúltalo con la supervisión de Patient Experience (Priya Nair); si es sobre seguros, coberturas o precios, verifícalo con facturación (Tom Callahan).\n\nFuente: ninguna",
+      "error": null,
+      "started_at": "2026-11-22T17:40:56.796+00:00",
+      "finished_at": "2026-11-22T17:40:57.129+00:00",
+      "steps": [
+        {
+          "step": 1,
+          "node": "receive_question",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:56.797+00:00",
+          "duration_ms": 0.01,
+          "error": null,
+          "output": {
+            "question": "¿Cuál es la receta de la paella valenciana?",
+            "status": "received"
+          }
+        },
+        {
+          "step": 2,
+          "node": "retrieve_context",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:56.799+00:00",
+          "duration_ms": 326.17,
+          "error": null,
+          "output": {
+            "context": [],
+            "status": "no_context"
+          }
+        },
+        {
+          "step": 3,
+          "node": "answer_no_information",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:57.127+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "answer": "No tengo información sobre eso en la base de conocimiento de HealthCore (seguros aceptados, citas y cancelaciones, referencias internas y checklist de pacientes nuevos). Para no darte un dato incorrecto, consúltalo con la supervisión de Patient Experience (Priya Nair); si es sobre seguros, coberturas o precios, verifícalo con facturación (Tom Callahan).\n\nFuente: ninguna",
+            "status": "answered"
+          }
+        }
+      ],
+      "checkpoints": [
+        {
+          "step": -1,
+          "checkpoint_id": "1f1e69bd-f6cd-6536-bfff-5527c887eabd",
+          "next": [
+            "__start__"
+          ],
+          "status": null,
+          "state_keys": []
+        },
+        {
+          "step": 0,
+          "checkpoint_id": "1f1e69bd-f6ce-692c-8000-db04b2db9f38",
+          "next": [
+            "receive_question"
+          ],
+          "status": null,
+          "state_keys": [
+            "question"
+          ]
+        },
+        {
+          "step": 1,
+          "checkpoint_id": "1f1e69bd-f6d3-6c24-8001-c16ae32e9dfa",
+          "next": [
+            "retrieve_context"
+          ],
+          "status": "received",
+          "state_keys": [
+            "question",
+            "status"
+          ]
+        },
+        {
+          "step": 2,
+          "checkpoint_id": "1f1e69bd-f9f2-6f7c-8002-5ae9d6238621",
+          "next": [
+            "answer_no_information"
+          ],
+          "status": "no_context",
+          "state_keys": [
+            "context",
+            "question",
+            "status"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e69bd-f9f7-6e96-8003-9ecd26c860be",
+          "next": [],
+          "status": "answered",
+          "state_keys": [
+            "answer",
+            "context",
+            "question",
+            "status"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "empty-question",
+      "run_id": "1b3bd92e-2d3c-4432-97a5-8c3b1b6a6f6a",
+      "question": "   ",
+      "status": "rejected",
+      "route": "receive_question > reject_question",
+      "answer": null,
+      "error": "La pregunta está vacía o es demasiado corta.",
+      "started_at": "2026-11-22T17:40:57.130+00:00",
+      "finished_at": "2026-11-22T17:40:57.136+00:00",
+      "steps": [
+        {
+          "step": 1,
+          "node": "receive_question",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:57.132+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "question": "",
+            "status": "rejected",
+            "error": "La pregunta está vacía o es demasiado corta."
+          }
+        },
+        {
+          "step": 2,
+          "node": "reject_question",
+          "status": "ok",
+          "started_at": "2026-11-22T17:40:57.134+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "status": "rejected",
+            "error": "La pregunta está vacía o es demasiado corta."
+          }
+        }
+      ],
+      "checkpoints": [
+        {
+          "step": -1,
+          "checkpoint_id": "1f1e69bd-f9fe-6480-bfff-79b9ef68b8c9",
+          "next": [
+            "__start__"
+          ],
+          "status": null,
+          "state_keys": []
+        },
+        {
+          "step": 0,
+          "checkpoint_id": "1f1e69bd-f9ff-683a-8000-6c71728f7015",
+          "next": [
+            "receive_question"
+          ],
+          "status": null,
+          "state_keys": [
+            "question"
+          ]
+        },
+        {
+          "step": 1,
+          "checkpoint_id": "1f1e69bd-fa04-6600-8001-4cfeb6091ea9",
+          "next": [
+            "reject_question"
+          ],
+          "status": "rejected",
+          "state_keys": [
+            "error",
+            "question",
+            "status"
+          ]
+        },
+        {
+          "step": 2,
+          "checkpoint_id": "1f1e69bd-fa08-6a5c-8002-89658e29b1ff",
+          "next": [],
+          "status": "rejected",
+          "state_keys": [
+            "error",
+            "question",
+            "status"
+          ]
+        }
+      ]
+    }
+  ]
+}

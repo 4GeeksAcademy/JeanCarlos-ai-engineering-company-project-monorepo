@@ -1,4 +1,4 @@
-name: Python tests (sales forecast, RAG)
+name: Python tests (sales forecast, RAG, agent)
 
 on:
   push:
@@ -10,6 +10,9 @@ on:
       - "data/process/rag.py"
       - "data/pipelines/rag.py"
       - "docs/company-knowledge-base/**"
+      - "services/agent/**"
+      - "data/eval/agent-eval-cases.json"
+      - "data/eval/agent_eval_traces.json"
       - "data/raw/healthcore_sales.csv"
       - "pyproject.toml"
       - "uv.lock"
@@ -32,3 +35,5 @@ jobs:
         run: uv sync --locked
       - name: Temporal CV, forecast and RAG tests (Qdrant and the LLM are stubbed)
         run: uv run python -m pytest tests/pipelines/test_temporal_cv.py tests/pipelines/test_sales_forecast.py tests/pipelines/test_rag.py -v
+      - name: LangGraph agent tests and evals (evals read the recorded traces)
+        run: uv run python -m pytest tests/pipelines/test_agent_graph.py tests/pipelines/test_agent_evals.py -v

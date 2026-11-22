@@ -9,6 +9,7 @@ RUN uv pip install --system --no-cache -r services/api/requirements.txt
 COPY api ./services/api
 COPY telemetry ./services/telemetry
 COPY reporting ./services/reporting
+COPY agent ./services/agent
 # Celery app + DLQ records: shared by the API (producer), the worker and Flower.
 COPY celery_app.py task_dead_letters.py ./services/
 # Business pipeline imported by services/reporting (build context "pipelines" = ./data in compose).
