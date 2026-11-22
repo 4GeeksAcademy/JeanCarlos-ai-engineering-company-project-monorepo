@@ -1,0 +1,20 @@
+[project]
+name = "healthcore-monorepo"
+version = "0.1.0"
+description = "HealthCore monorepo Python tooling: sales forecast model (scripts/train_sales_forecast.py)."
+requires-python = ">=3.13"
+dependencies = [
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.5",
+    "pandas>=3.1.1",
+    "scikit-learn>=1.9.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["scripts"]
+testpaths = ["tests"]

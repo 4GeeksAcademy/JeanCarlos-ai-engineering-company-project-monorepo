@@ -15,3 +15,7 @@ tests/__pycache__/
 # telemetry_2026-11-21.csv is committed once as a sample of the format.
 data/raw/telemetry_*.csv
 !data/raw/telemetry_2026-11-21.csv
+
+# Python (uv)
+.venv/
+__pycache__/
