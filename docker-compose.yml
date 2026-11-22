@@ -35,8 +35,11 @@ services:
       SUPPLIERS_DB_PATH: /data/suppliers.json
       TELEMETRY_ENDPOINT: ${TELEMETRY_ENDPOINT:-http://api:8000/telemetry/events}
       REDIS_URL: redis://redis:6379/0
+      QDRANT_URL: http://qdrant:6333
     depends_on:
       redis:
+        condition: service_healthy
+      qdrant:
         condition: service_healthy
     ports:
       - "127.0.0.1:8000:8000"
@@ -45,6 +48,8 @@ services:
       - ./services/telemetry:/app/services/telemetry
       - ./services/reporting:/app/services/reporting
       - ./data:/app/data
+      # RAG corpus, so `docker compose exec api python -m data.process.rag` can re-index it.
+      - ./docs/company-knowledge-base:/app/docs/company-knowledge-base:ro
       - api_data:/data
     networks:
       - healthcore
@@ -61,6 +66,22 @@ services:
       - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - healthcore
+
+  # Vector database for the RAG knowledge base (collection healthcore_knowledge).
+  # Filled by `python -m data.process.rag` (setup()); the volume keeps it across restarts.
+  qdrant:
+    image: qdrant/qdrant:v1.20.2
+    ports:
+      - "127.0.0.1:6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/6333"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -138,3 +159,4 @@ volumes:
   api_data:
   redis_data:
   flower_data:
+  qdrant_data:

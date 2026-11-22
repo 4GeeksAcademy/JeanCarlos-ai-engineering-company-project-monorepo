@@ -95,6 +95,18 @@ los mensajes esperando en Redis hasta que vuelva a arrancar.
 
 ---
 
+## Base de conocimiento RAG (Hito 7)
+
+Asistente para los coordinadores de pacientes: responde preguntas sobre seguros, citas, referencias y pacientes nuevos solo con los documentos de `docs/company-knowledge-base/`. El diseño completo está en [`docs/rag/rag-design.md`](docs/rag/rag-design.md).
+
+```bash
+docker compose up -d qdrant        # Qdrant en localhost:6333
+python -m data.process.rag         # indexa los documentos en la colección healthcore_knowledge
+python data/eval/evaluate_rag_retrieval.py   # Recall@3
+```
+
+Necesita `LLM_API_URL`, `LLM_API_KEY`, `EMBEDDING_MODEL` y `GENERATION_MODEL` (modelos distintos, del gateway de 4Geeks) en `services/api/.env`. Endpoint: `POST /knowledge/query`; UI: «Asistente» en el backoffice (`/knowledge`).
+
 ## Guía de carpetas — qué va en cada una
 
 Lee el `README.md` enlazado dentro de cada carpeta antes de empezar a programar ahí.

@@ -94,6 +94,18 @@ leaves the messages waiting in Redis until a worker starts again.
 
 ---
 
+## RAG knowledge base (Milestone 7)
+
+Assistant for patient coordinators: answers questions about insurance, appointments, referrals and new patients only from the documents in `docs/company-knowledge-base/`. Full design: [`docs/rag/rag-design.md`](docs/rag/rag-design.md).
+
+```bash
+docker compose up -d qdrant        # Qdrant on localhost:6333
+python -m data.process.rag         # indexes the documents into the healthcore_knowledge collection
+python data/eval/evaluate_rag_retrieval.py   # Recall@3
+```
+
+Needs `LLM_API_URL`, `LLM_API_KEY`, `EMBEDDING_MODEL` and `GENERATION_MODEL` (different models, from the 4Geeks gateway) in `services/api/.env`. Endpoint: `POST /knowledge/query`; UI: "Asistente" in the backoffice (`/knowledge`).
+
 ## Current status
 
 The Talent Pipeline Tracker is a runnable Next.js app. Other monorepo folders remain available for the wider course project.

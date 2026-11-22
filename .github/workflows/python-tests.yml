@@ -1,4 +1,4 @@
-name: Python tests (sales forecast)
+name: Python tests (sales forecast, RAG)
 
 on:
   push:
@@ -7,6 +7,9 @@ on:
     paths:
       - "scripts/**.py"
       - "tests/**"
+      - "data/process/rag.py"
+      - "data/pipelines/rag.py"
+      - "docs/company-knowledge-base/**"
       - "data/raw/healthcore_sales.csv"
       - "pyproject.toml"
       - "uv.lock"
@@ -27,5 +30,5 @@ jobs:
           enable-cache: true
       - name: Install locked dependencies
         run: uv sync --locked
-      - name: Temporal CV and forecast tests
-        run: uv run pytest tests/pipelines/test_temporal_cv.py tests/pipelines/test_sales_forecast.py -v
+      - name: Temporal CV, forecast and RAG tests (Qdrant and the LLM are stubbed)
+        run: uv run python -m pytest tests/pipelines/test_temporal_cv.py tests/pipelines/test_sales_forecast.py tests/pipelines/test_rag.py -v

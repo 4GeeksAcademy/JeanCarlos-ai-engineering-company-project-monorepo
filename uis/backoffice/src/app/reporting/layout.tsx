@@ -11,6 +11,7 @@ export default async function ReportingLayout({ children }: { children: React.Re
         <Link href="/inventory/orders">Historial</Link>
         <Link href="/reporting">Reporte mensual</Link>
         <Link href="/telemetry">Telemetría</Link>
+        <Link href="/knowledge">Asistente</Link>
       </nav>
       {children}
     </>
