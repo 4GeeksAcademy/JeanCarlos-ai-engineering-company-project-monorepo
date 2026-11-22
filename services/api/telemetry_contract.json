@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "2.0.0",
+  "schemaVersion": "2.1.0",
   "events": [
     {
       "event_type": "inbound_order_created",
@@ -9,7 +9,8 @@
         "product_id",
         "product_category",
         "quantity",
-        "supplier_id"
+        "supplier_id",
+        "total_cost"
       ],
       "properties": {
         "clinic_id": {
@@ -51,6 +52,11 @@
             "null"
           ],
           "required": true
+        },
+        "total_cost": {
+          "type": "number",
+          "minimum": 0,
+          "required": false
         }
       }
     },

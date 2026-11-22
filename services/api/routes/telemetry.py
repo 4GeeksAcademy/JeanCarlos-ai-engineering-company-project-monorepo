@@ -28,14 +28,18 @@ def telemetry_endpoint() -> str:
     return os.environ.get("TELEMETRY_ENDPOINT", "http://localhost:8000/telemetry/events")
 
 
-@router.get("/session", response_model=TelemetrySession)
-def session(user: CurrentUser) -> TelemetrySession:
-    digest = hmac.new(
+def user_pseudonym(user_id: str) -> str:
+    """HMAC pseudonym of an account id: telemetry userId and pipeline_runs.triggered_by."""
+    return hmac.new(
         get_settings().secret.encode(),
-        f"healthcore.telemetry.v1:{user.id}".encode(),
+        f"healthcore.telemetry.v1:{user_id}".encode(),
         hashlib.sha256,
     ).hexdigest()
-    return TelemetrySession(userId=digest, role=user.role.value)
+
+
+@router.get("/session", response_model=TelemetrySession)
+def session(user: CurrentUser) -> TelemetrySession:
+    return TelemetrySession(userId=user_pseudonym(user.id), role=user.role.value)
 
 
 MAX_BATCH_EVENTS = 20

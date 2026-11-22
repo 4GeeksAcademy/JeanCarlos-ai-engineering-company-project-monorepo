@@ -94,6 +94,10 @@ def upgrade_inventory_schema(engine: Engine) -> None:
         ))
         connection.execute(text("ALTER TABLE medical_supply ADD COLUMN IF NOT EXISTS expiry_date DATE"))
         connection.execute(text(
+            "ALTER TABLE supply_delivery ADD COLUMN IF NOT EXISTS unit_cost NUMERIC(12, 2) "
+            "CONSTRAINT supply_delivery_unit_cost_check CHECK (unit_cost >= 0)"
+        ))
+        connection.execute(text(
             "ALTER TABLE supply_consumption ADD COLUMN IF NOT EXISTS department VARCHAR "
             f"CONSTRAINT supply_consumption_department_check CHECK (department IN ({departments}))"
         ))

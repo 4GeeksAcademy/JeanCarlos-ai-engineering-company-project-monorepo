@@ -1,4 +1,5 @@
 from datetime import date, datetime, timezone
+from decimal import Decimal
 
 from sqlalchemy import CheckConstraint, DateTime, UniqueConstraint
 from sqlmodel import Field, SQLModel
@@ -48,6 +49,9 @@ class SupplyDelivery(SQLModel, table=True):
     supply_id: int = Field(foreign_key="medical_supply.id", index=True)
     quantity: int
     vendor_name: str
+    # Supplier invoice price per unit, in the clinic's currency. Null for deliveries
+    # registered before the cost was captured; never assumed to be 0.
+    unit_cost: Decimal | None = Field(default=None, ge=0, max_digits=12, decimal_places=2)
     clinic_id: int
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc), sa_type=DateTime(timezone=True)

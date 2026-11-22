@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -50,6 +51,7 @@ class MovementCreate(InputModel):
 
 class SupplyDeliveryCreate(MovementCreate):
     vendor_name: str = Field(min_length=1)
+    unit_cost: Decimal | None = Field(default=None, ge=0, max_digits=12, decimal_places=2)
 
 
 class SupplyConsumptionCreate(MovementCreate):
@@ -69,6 +71,11 @@ class MovementResponse(BaseModel):
 
 class SupplyDeliveryResponse(MovementResponse):
     vendor_name: str
+    # Plain JSON numbers (2 decimals), not Decimal strings, so the backoffice can copy
+    # total_cost (quantity × unit_cost, clinic currency) into inbound_order_created
+    # (contract 2.1.0) without parsing.
+    unit_cost: float | None = None
+    total_cost: float | None = None
 
 
 class SupplyConsumptionResponse(MovementResponse):

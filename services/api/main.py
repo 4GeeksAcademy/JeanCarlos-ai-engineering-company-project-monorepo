@@ -13,6 +13,7 @@ from .database import get_inventory_engine, open_database
 from .core.security import get_settings
 from .routes import auth, auth_password, profiles, suppliers, telemetry, users
 from .routers import inventory
+from services.reporting.router import router as reporting_router
 from .schemas.errors import ErrorResponse, ValidationErrorResponse, ValidationIssue
 from .services.email import reset_expiration_minutes
 
@@ -118,3 +119,4 @@ app.include_router(profiles.router)
 app.include_router(suppliers.router)
 app.include_router(inventory.router)
 app.include_router(telemetry.router)
+app.include_router(reporting_router)

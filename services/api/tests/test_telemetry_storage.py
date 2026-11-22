@@ -113,3 +113,20 @@ def test_missing_storage_configuration_is_503(client, monkeypatch):
         "/telemetry/events", json={"events": [envelope("frontend_route_viewed", ROUTE_VIEW)]}
     )
     assert response.status_code == 503
+
+
+def test_contract_2_1_0_adds_total_cost_and_keeps_accepting_2_0_0(store):
+    client, engine, _ = store
+    batch = [
+        envelope("inbound_order_created", {**INBOUND, "total_cost": 37.05}, schemaVersion="2.1.0"),
+        envelope("inbound_order_created", INBOUND),  # 2.0.0 tab, no cost: still valid
+        envelope("inbound_order_created", {**INBOUND, "total_cost": -1}, schemaVersion="2.1.0"),
+        envelope("inbound_order_created", INBOUND, schemaVersion="3.0.0"),
+    ]
+
+    response = client.post("/telemetry/events", json={"events": batch})
+
+    assert response.json() == {"received": 4, "stored": 2, "rejected": 2}
+    tags = sorted((row.tags for row in rows(engine)), key=lambda value: value["_schema_version"])
+    assert tags == [{**INBOUND, "_schema_version": "2.0.0"},
+                    {**INBOUND, "total_cost": 37.05, "_schema_version": "2.1.0"}]

@@ -1,6 +1,7 @@
 # Diseño — Pipeline de Desempeño de Insumos por Clínica (HealthCore)
 
-**Estado:** diseño (Parte 1 de 3). Todavía no hay código de orquestación.
+**Estado:** diseño aprobado (Parte 1) e **implementado** (Parte 2). El comando de
+ejecución y la frecuencia están en [§10, «Implementación»](#10-implementación-parte-2).
 **Pipeline:** `monthly_clinic_supply_performance`.
 **Fuentes de verdad:** BRIEFING de data pipelines de HealthCore (§1–§7), BRIEFING
 de telemetría y [`docs/telemetry/`](../../docs/telemetry/).
@@ -218,7 +219,8 @@ la fila.
 > tabla de destino del BRIEFING tiene grano clínica × mes y no tiene columna
 > `department`. La v1 guarda el total por clínica. El desglose por
 > `department` queda calculado en `data/process` y se expone como detalle
-> opcional del endpoint (§8), sin cambiar la tabla del BRIEFING.
+> opcional, sin cambiar la tabla del BRIEFING. En la v1 ese detalle se publica en
+> el snapshot de evaluación (`data/eval/monthly_clinic_supply_performance/<mes>.json`, §10).
 
 ---
 
@@ -353,6 +355,7 @@ checkpoint del mes en `pipeline_run_months`.
 | `status` | `text` (`running` / `completed` / `failed` / `skipped_locked`) | El estado final. Es lo que devuelve `GET /reporting/pipeline-runs/latest`, y separa «no corrió» de «corrió y falló». |
 | `source_events_read` | `integer` | Eventos leídos de `telemetry_events`. Si es 0 en un mes con actividad, señala un problema de captura y no un negocio parado. |
 | `events_skipped` | `jsonb` | Descartados por motivo: `{"unknown_clinic": n, "inbound_without_cost": n, "invalid_tags": n, "country_mismatch": n}`. Dice exactamente qué no entró en los números y por qué. |
+| `warnings` | `jsonb` | Avisos que no detienen la corrida: un paso opcional que falló (`inventory_reconciliation_unavailable`, `eval_snapshot_failed`), cobertura fuera de rango y corridas huérfanas cerradas. |
 | `rows_upserted` / `rows_changed` | `integer` | Filas escritas y filas cuyo valor cambió. Distingue una recarga sin cambios de una revisión de cifras publicadas. |
 | `error_stage` | `text` null (`extract` / `transform` / `validate` / `load`) | La etapa donde falló, para saber si el problema es la fuente, los datos o el destino. |
 | `error_message` | `text` null | Clase y mensaje del error, sin datos de eventos ni PII. |
@@ -372,10 +375,10 @@ checkpoint del mes en `pipeline_run_months`.
   - **El pipeline no corrió:** no hay fila en `pipeline_runs` para el periodo.
     `GET /reporting/pipeline-runs/latest` muestra la última fecha, y un mes sin
     corrida `completed` se presenta como «sin calcular», nunca como ceros.
-  - **Falla de captura:** una clínica sin **ningún** evento del mes, de ningún
-    tipo (incluidos los técnicos del reporte de ingeniería), mientras el
-    inventario sí tiene entradas o salidas suyas. Va a `clinics_without_events`
-    y produce un aviso.
+  - **Falla de captura:** una clínica sin **ningún** evento fuente del mes (de
+    los cuatro tipos) mientras el inventario sí tiene entradas o salidas suyas.
+    Va a `clinics_without_events` y produce un aviso. Los eventos técnicos no
+    llevan `clinic_id`, así que no sirven para esta comprobación.
   - **Cero actividad real:** la clínica sí tiene telemetría (otros eventos,
     navegación…) y el inventario tampoco registra movimientos. El cero es
     legítimo.
@@ -391,7 +394,9 @@ checkpoint del mes en `pipeline_run_months`.
     entre salidas en el inventario, y lo mismo con las entradas.
   - Una cobertura cercana a 1 con más volumen significa que el negocio creció.
   - Si el volumen baja y la cobertura también, se están perdiendo eventos.
-  - Una cobertura por encima de 1 indica duplicados o eventos de prueba.
+  - Una cobertura por encima de 1 indica duplicados o eventos de prueba. También
+    cuenta como fuera de rango la telemetría de una clínica sin ningún movimiento
+    en el inventario.
   - Si la cobertura sale de `[0.95, 1.05]`, la corrida termina `completed` pero
     con un aviso en `events_skipped`/`coverage`, y el mes no se marca como
     «listo para la junta».
@@ -454,11 +459,13 @@ insertan cuando el valor cambia de verdad.
 
 | Concepto de Prefect | En este pipeline |
 | --- | --- |
-| **Flow principal** | `monthly_clinic_supply_performance_flow(months: list[date] \| None = None, trigger: str = "scheduled")`. Si no recibe meses, usa el mes en curso y el anterior. |
+| **Flow principal** | `monthly_clinic_supply_performance_flow(months: list[date] \| None = None, trigger: str = "scheduled", triggered_by: str \| None = None, run_id: str \| None = None)`. Si no recibe meses, usa el mes en curso y el anterior. Sin `run_id` usa el id de la corrida de Prefect, así que un *retry* de la misma corrida salta los meses ya confirmados. |
 | **Flow opcional** | `backfill_monthly_clinic_supply_performance_flow(start_month, end_month)`: recorre el rango y llama al flow principal con `trigger="backfill"`. |
-| **Tasks** | `acquire_run_lock` → `extract_supply_events(month_start)` → `extract_inventory_counts(month_start)` → `transform_monthly_clinic_kpis(events, clinics)` → `validate_kpis(frame, inventory_counts)` → `load_monthly_clinic_supply_performance(frame, run_id)` → `record_pipeline_run(run_id, summary)` |
-| **Reintentos** | `extract_*` y `load_*` reintentan 3 veces (`retry_delay_seconds=[10, 30, 90]`). `transform` y `validate` no reintentan, porque son deterministas y un fallo ahí es un problema de datos, no transitorio. |
-| **Concurrencia** | Etiqueta `reporting-monthly-supply` con un límite de 1. |
+| **Tasks** | `acquire_run_lock` → `extract_supply_events(month_start)` → `extract_inventory_counts(month_start)` *(opcional)* → `transform_monthly_clinic_kpis(events, clinics, month_start)` → `validate_kpis(kpis, clinics, month_start, events, inventory_counts)` → `load_monthly_clinic_supply_performance(kpis, run_id, month_start)` → `export_eval_snapshot` *(opcional)*. El log lo escriben `run_log.start_run` y `run_log.finish_run` al empezar y al terminar el flow (lo que el diseño llamaba `record_pipeline_run`). |
+| **Reintentos** | `acquire_run_lock`, `extract_supply_events` y `load_*` reintentan 3 veces (`retry_delay_seconds=[10, 30, 90]`), y solo ante errores de conexión (`retry_condition_fn`). `extract_inventory_counts`, que es opcional, reintenta 2 veces cada 5 s. `transform` y `validate` no reintentan, porque son deterministas y un fallo ahí es un problema de datos, no transitorio. |
+| **Pasos opcionales** | `extract_inventory_counts` y `export_eval_snapshot` se invocan con `return_state=True`. Si fallan, el flow registra un aviso en `pipeline_runs.warnings` y la carga sigue. |
+| **Caché** | `transform_monthly_clinic_kpis` usa `cache_key_fn` (mes + conjunto de `id` de eventos + registro + hash del código) y `cache_expiration` de 1 hora. |
+| **Concurrencia** | Etiqueta `reporting-monthly-supply` con un límite de 1 (en la task de carga), además del advisory lock. |
 | **Programación** | Deployment con cron `0 5 * * *` (UTC, diario): mantiene el mes en curso al día y absorbe eventos tardíos del anterior. El primer día hábil, el mes anterior ya está calculado y revisado. |
 
 Estados relevantes de Prefect:
@@ -469,32 +476,45 @@ Estados relevantes de Prefect:
 | `Running` | Extracción, transformación o carga en curso | `running` |
 | `Retrying` | Una task de extracción o carga reintenta tras un error transitorio | Sigue en `running` |
 | `Completed` | Todos los meses confirmados | `completed`, con conteos |
+| `Cached` | La transformación reutiliza un resultado idéntico de la última hora | Sin efecto: la corrida sigue su curso |
 | `Failed` | Error no recuperable o reintentos agotados | `failed`, con `error_stage` y `error_message` |
 | `Crashed` | El proceso murió sin reportar | `running` huérfano; la siguiente corrida lo marca `failed` (§6) |
-| `Cancelled` | Cancelado a mano desde la UI de Prefect | `failed`, con `error_message = cancelled` |
+| `Cancelled` | Cancelado a mano desde la UI de Prefect | `running` huérfano, que la siguiente corrida marca `failed` |
 
-**Blocks de Prefect** (las credenciales nunca van en el código ni en el
-repositorio):
+**Blocks y variables de Prefect.** Las credenciales nunca van en el código ni en
+el repositorio. En local, cada URL se puede dar también por variable de entorno en
+`services/api/.env` (gitignored), y esa variable tiene prioridad:
 
-| Block | Tipo | Contenido |
-| --- | --- | --- |
-| `healthcore-telemetry-readonly` | `Secret` | URL de Postgres del rol `reporting_pipeline` en el pooler de Supabase (`aws-1-eu-west-2`, puerto 6543), con lectura de `telemetry_events`. |
-| `healthcore-reporting-writer` | `Secret` | URL con permiso de escritura **solo** en el esquema `reporting`. |
-| `healthcore-inventory-readonly` | `Secret` | URL de solo lectura del Postgres de inventario, para la reconciliación. |
-| `monthly-clinic-supply-config` | `JSON` | `{"late_window_months": 1, "expected_clinics": 12, "coverage_tolerance": 0.05, "clinic_registry_path": "data/raw/clinics.csv"}` |
+| Block / variable | Tipo | Variable de entorno | Contenido |
+| --- | --- | --- | --- |
+| `healthcore-reporting-pipeline` | `Secret` | `REPORTING_PIPELINE_DATABASE_URL` | Rol `reporting_pipeline` en el **session pooler** de Supabase (`aws-1-eu-west-2`, puerto 5432, porque el lock es de sesión). Lee 4 columnas de `telemetry_events` y escribe **solo** en `reporting`. |
+| `healthcore-reporting-readonly` | `Secret` | `REPORTING_DATABASE_URL` | Rol `reporting_reader` (puerto 6543), que es lo que lee `services/reporting`. |
+| `healthcore-inventory-readonly` | `Secret` | `INVENTORY_READONLY_DATABASE_URL` (o `DATABASE_URL`) | Postgres de inventario, en solo lectura, para la reconciliación. |
+| `monthly_clinic_supply_config` | `Variable` (JSON) | — | `{"late_window_months": 1, "expected_clinics": 12, "coverage_tolerance": 0.05, "clinic_registry_path": "data/raw/clinics.csv"}`. Si no existe, se usan esos valores por defecto. |
 
-### Estructura de archivos prevista
+Cambios respecto al diseño original:
+
+- Prefect 3 ya no tiene el block `JSON`, así que la configuración es una `Variable`.
+- La lectura de telemetría y la escritura en `reporting` usan **una** URL: están
+  en la misma base y las cubre un solo rol de privilegio mínimo.
+
+### Estructura de archivos
 
 ```text
 data/
-  raw/clinics.csv                               # registro de clínicas (§2, «Registro de clínicas»)
-  process/supply_kpis.py                        # transformaciones puras de Pandas (testeables sin Prefect)
+  raw/clinics.csv                 # registro de clínicas (§2, «Registro de clínicas»)
+  process/supply_kpis.py          # transformaciones puras de Pandas (testeables sin Prefect)
+  eval/monthly_clinic_supply_performance/<mes>.json   # snapshot opcional (no versionado)
   pipelines/
-    PIPELINE_DESIGN.md                          # este documento
-    monthly_clinic_supply_performance.py        # flows, tasks y funciones de consulta para services/
-    run_log.py                                  # lectura y escritura de reporting.pipeline_runs
+    PIPELINE_DESIGN.md            # este documento
+    pipeline.py                   # punto de entrada: flows, tasks, CLI y funciones para services/
+    run_log.py                    # lectura y escritura de reporting.pipeline_runs
+    connections.py                # URLs: variable de entorno o Secret block de Prefect
+    tables.py                     # tablas (SQLAlchemy Core)
+    tests/                        # KPIs puros + flow completo contra Postgres
 services/
-  reporting/                                    # router FastAPI: solo HTTP, sin lógica de ETL
+  reporting/                      # router FastAPI: solo HTTP, sin lógica de ETL
+supabase/migrations/20261122120000_reporting_monthly_clinic_supply_performance.sql
 ```
 
 ---
@@ -508,9 +528,9 @@ función importada de `data/pipelines/`. Nunca ocurre al revés.
 
 | Endpoint | Para qué | Importa de `data/pipelines/` | Respuesta |
 | --- | --- | --- | --- |
-| `GET /reporting/monthly-clinic-supply-performance?month_start=YYYY-MM-01` | Feed de KPIs para el reporte de la junta y el dashboard de la Parte 3. Sin parámetro, devuelve el último mes calculado. | `monthly_clinic_supply_performance.get_monthly_clinic_supply_performance(month_start: date \| None)`: solo lee `reporting.monthly_clinic_supply_performance` y `pipeline_run_months`. | El JSON del BRIEFING (§6) con `month_start` y `clinics[]`, más `revised` y `coverage_warnings` por mes. `clinic_id` usa el `location_id` (`us-tx-001`…). |
-| `GET /reporting/pipeline-runs/latest` | Estado de la última corrida: si se calculó, cuándo, con cuántos eventos y si falló. | `run_log.get_latest_run(pipeline_name="monthly_clinic_supply_performance")` | `run_id`, `status`, `trigger`, `started_at`, `finished_at`, `months`, `source_events_read`, `rows_changed`, `events_skipped`, `error_stage`. |
-| `POST /reporting/pipeline-runs` | Disparo manual, con body opcional `{"months": ["2026-11-01"]}` | `monthly_clinic_supply_performance.trigger_run(months, triggered_by)`: lanza el deployment de Prefect (`run_deployment(..., timeout=0)`) y no ejecuta el ETL dentro de la petición. | `202 Accepted` con `run_id` y `flow_run_id`; `409` si ya hay una corrida en curso. |
+| `GET /reporting/monthly-clinic-supply-performance?month_start=YYYY-MM-01` | Feed de KPIs para el reporte de la junta y el dashboard de la Parte 3. Sin parámetro, devuelve el último mes calculado. | `pipeline.get_monthly_clinic_supply_performance(month_start: date \| None)`: solo lee `reporting.monthly_clinic_supply_performance`, sus revisiones y `pipeline_run_months`. | El JSON del BRIEFING (§6), con `month_start` y `clinics[]`, más `computed_at`, `last_run_id`, `revised`, `coverage_checked` y `coverage_warnings`. `clinic_id` usa el `location_id` (`us-tx-001`…). Devuelve `404` si el mes no está calculado (nunca ceros) y `422` si `month_start` no es día 1. |
+| `GET /reporting/pipeline-runs/latest` | Estado de la última corrida: si se calculó, cuándo, con cuántos eventos y si falló. | `run_log.get_latest_run(pipeline_name="monthly_clinic_supply_performance")` | `run_id`, `status`, `trigger`, `started_at`, `finished_at`, `months`, `source_events_read`, `rows_upserted`, `rows_changed`, `events_skipped`, `warnings`, `error_stage`, `error_message`, `code_version`. Devuelve `404` antes de la primera corrida. |
+| `POST /reporting/pipeline-runs` | Disparo manual, con body opcional `{"months": ["2026-11-01"]}` | `pipeline.trigger_run(months, triggered_by)`. Con `REPORTING_PREFECT_DEPLOYMENT`, lanza el deployment (`run_deployment(..., timeout=0)`). Sin él (desarrollo local), ejecuta el flow en un hilo en segundo plano. En ningún caso ejecuta el ETL dentro de la petición. | `202 Accepted` con `run_id`, `flow_run_id` y `mode`. Devuelve `409` si ya hay una corrida en curso y `422` si un mes no es día 1 o es futuro. |
 
 Acceso:
 
@@ -546,3 +566,102 @@ Acceso:
   - el registro de clínicas está pendiente de confirmar;
   - la cobertura depende de que el inventario y la telemetría usen el mismo
     `clinic_id`.
+
+---
+
+## 10. Implementación (Parte 2)
+
+### Ejecución
+
+Desde la raíz del repositorio, con el entorno de la API (`pandas`, `sqlalchemy`,
+`psycopg`, `prefect>=3`):
+
+```bash
+uv pip install -r services/api/requirements.txt    # incluye prefect>=3,<4
+
+python data/pipelines/pipeline.py                     # corrida programada: mes en curso + anterior
+python data/pipelines/pipeline.py --month 2026-11-01  # un mes concreto (manual)
+python data/pipelines/pipeline.py --backfill 2026-01-01 2026-06-01
+```
+
+- **Conexiones:** `REPORTING_PIPELINE_DATABASE_URL` (obligatoria) e
+  `INVENTORY_READONLY_DATABASE_URL` o `DATABASE_URL` (opcional, para la
+  reconciliación). Se leen de `services/api/.env` o de los Secret blocks de §7.
+- **Sin servidor de Prefect configurado** (`PREFECT_API_URL` vacío), Prefect
+  levanta un servidor temporal local para la corrida.
+- **Salida:** el resumen JSON de la corrida. El código de salida es `0` si la
+  corrida termina `completed` o `skipped_locked`.
+
+### Frecuencia prevista
+
+- **Diaria a las 05:00 UTC** (`0 5 * * *`), sobre el mes en curso y el anterior.
+- El reporte de la junta es **mensual** y se lee el primer día hábil. Correr a
+  diario mantiene el mes en curso al día y absorbe los eventos tardíos del mes
+  anterior (§5). Así, ese día el mes cerrado ya está calculado y revisado, sin
+  una corrida especial.
+- **Despliegue en Prefect** (cuando exista un servidor o Prefect Cloud):
+
+  ```bash
+  prefect concurrency-limit create reporting-monthly-supply 1
+  prefect variable set monthly_clinic_supply_config '{"late_window_months": 1, "expected_clinics": 12, "coverage_tolerance": 0.05, "clinic_registry_path": "data/raw/clinics.csv"}'
+  prefect deploy data/pipelines/pipeline.py:monthly_clinic_supply_performance_flow \
+    --name daily --cron "0 5 * * *" --timezone UTC
+  ```
+
+  Con `REPORTING_PREFECT_DEPLOYMENT=monthly_clinic_supply_performance_flow/daily`,
+  `POST /reporting/pipeline-runs` dispara ese deployment en lugar de un hilo
+  local.
+
+### Requisitos del ticket en el código
+
+| Requisito | Dónde |
+| --- | --- |
+| Flows y tasks con entradas y salidas explícitas | `pipeline.py`: 2 flows y 7 tasks (§7). |
+| Fallos parciales tolerados | `extract_inventory_counts(..., return_state=True)` y `export_eval_snapshot(..., return_state=True)`: el flow comprueba `state.is_completed()`, registra el aviso y sigue con transformación y carga. |
+| Reintentos en tasks externas, justificados | `DB_RETRIES = 3`, `DB_RETRY_DELAYS = [10, 30, 90]`, con el comentario de por qué 3, y `retry_condition_fn=retry_on_transient_errors`. La reconciliación opcional usa 2 × 5 s. |
+| Caché de una hora | `transform_monthly_clinic_kpis(cache_key_fn=transform_cache_key, cache_expiration=timedelta(hours=1))`. |
+| Carga idempotente | `load_monthly_clinic_supply_performance`: una transacción por mes con `ON CONFLICT (clinic_id, month_start) DO UPDATE … WHERE … IS DISTINCT FROM`. |
+| Metadata de cada corrida | `reporting.pipeline_runs`: `started_at`, `finished_at`, `source_events_read`, `rows_upserted`, `rows_changed`, `status`, `error_stage` y `error_message`, entre otros (§6). |
+| Ejecutable como script | `if __name__ == "__main__": raise SystemExit(main())`. |
+| Endpoints en `services/reporting/` | `services/reporting/router.py` importa `get_monthly_clinic_supply_performance`, `trigger_run` y `run_log.get_latest_run` de `data/pipelines/`. |
+| Reporte técnico intacto | No se modifica `services/telemetry/analysis.py`, `GET /telemetry/report` ni el esquema de `telemetry_events`. El rol `reporting_pipeline` no tiene `INSERT`/`UPDATE` sobre `telemetry_events`. |
+
+### Extensión de costo (contrato 2.1.0)
+
+- **Contrato:** `inbound_order_created.properties.total_cost` (número ≥ 0, opcional).
+  `schemaVersion` pasa a `2.1.0` y la API sigue aceptando `2.0.0`.
+- **Inventario:** `supply_delivery.unit_cost numeric(12,2)`. `POST
+  /inventory/orders/inbound` acepta `unit_cost` y devuelve
+  `total_cost = quantity × unit_cost`.
+- **Backoffice:** el formulario de entrada pide el costo unitario en la moneda de
+  la clínica, y `createInbound()` copia `total_cost` al evento.
+
+### Verificación
+
+- **Tests:**
+  - `data/pipelines/tests/test_supply_kpis.py`: reglas de cada KPI, bordes de mes
+    en UTC, motivos de descarte, validación, cobertura y desglose por
+    departamento.
+  - `data/pipelines/tests/test_pipeline_postgres.py`: flow completo contra
+    Postgres. Dos corridas dejan la tabla idéntica; un evento tardío produce una
+    revisión; los pasos opcionales fallan sin detener la corrida; un fallo
+    crítico queda registrado con su etapa; el lock salta la corrida concurrente;
+    las corridas huérfanas se cierran y devuelven `409`. Requiere
+    `REPORTING_TEST_DATABASE_URL`.
+  - `services/api/tests/test_reporting.py`: contrato, autenticación, roles y
+    errores de los tres endpoints.
+
+- **Corrida real en Supabase** (2026-11-22, 14 eventos fuente de noviembre):
+  - **Primera corrida:** `python data/pipelines/pipeline.py` escribe 24 filas
+    (12 clínicas × octubre y noviembre).
+  - **Segunda corrida:** mismo resultado con `rows_changed = 0`, la
+    transformación en `Cached`, el mismo `computed_at` y ningún duplicado por
+    `(clinic_id, month_start)`.
+  - **Costo:** sale de las dos entradas registradas con costo unitario desde el
+    backoffice (`us-tx-001`: 62.00 USD; `uk-lon-001`: 60.00 GBP). Las 4 entradas
+    `2.0.0` previas cuentan como `inbound_without_cost`.
+  - **Riesgo de vencimiento:** 4 avisos de vencimiento del mismo lote cuentan
+    como 1.
+  - **Disparo manual:** un `POST /reporting/pipeline-runs` devuelve `202`, y un
+    segundo inmediato, `409`. `GET /reporting/pipeline-runs/latest` pasa de
+    `running` a `completed` con su `flow_run_id` de Prefect.

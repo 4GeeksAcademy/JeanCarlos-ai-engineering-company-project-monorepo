@@ -181,9 +181,15 @@ export async function createInbound(payload: InboundInput): Promise<void> {
     const fields = inventoryFields(data.supply, payload.clinic_id);
     if (fields) {
       // supplier_id stays null until inbound orders reference the supplier directory.
-      withResponseTelemetry(response, () => track("inbound_order_created", {
+      // total_cost (contract 2.1.0) comes from the API (quantity × unit_cost) and feeds the
+      // monthly supply cost KPI; it is omitted, never sent as 0, if the API did not compute it.
+      const properties: Record<string, string | number | null> = {
         ...fields, quantity: payload.quantity, supplier_id: null,
-      }));
+      };
+      if (typeof data.total_cost === "number" && Number.isFinite(data.total_cost) && data.total_cost >= 0) {
+        properties.total_cost = data.total_cost;
+      }
+      withResponseTelemetry(response, () => track("inbound_order_created", properties));
     } else {
       console.warn("Inbound telemetry skipped: product has no BRIEFING category.");
     }

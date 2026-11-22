@@ -1,7 +1,7 @@
 {
   "contract": "HealthCore Telemetry Event Catalog",
   "format": "custom-event-schema-catalog-v1",
-  "schemaVersion": "2.0.0",
+  "schemaVersion": "2.1.0",
   "envelope": {
     "required": [
       "eventId",
@@ -51,8 +51,9 @@
       },
       "schemaVersion": {
         "type": "string",
-        "const": "2.0.0",
-        "required": true
+        "enum": ["2.0.0", "2.1.0"],
+        "required": true,
+        "description": "SemVer del contrato. La API acepta 2.0.0 (eventos previos al costo) y 2.1.0."
       },
       "requestId": {
         "type": [
@@ -89,14 +90,15 @@
       "hypothesisDecision": "Necesitamos saber cuánto y qué insumo se compra, por clínica y proveedor, para consolidar compras entre clínicas y negociar mejores condiciones con proveedores.",
       "delivery": {"mode": "stream", "cadence": "Tras commit vía outbox; agregado diario por clínica, país, categoría y proveedor"},
       "privacy": {"containsSensitiveData": true, "handling": "Sin PHI. IDs operativos bajo RBAC; nunca vendor_name libre, notas ni usuario real."},
-      "allowlist": ["clinic_id", "country", "product_id", "product_category", "quantity", "supplier_id"],
+      "allowlist": ["clinic_id", "country", "product_id", "product_category", "quantity", "supplier_id", "total_cost"],
       "properties": {
         "clinic_id": {"type": "integer", "minimum": 1, "maximum": 12, "required": true, "description": "Clínica (1–12) donde ocurre el hecho de inventario.", "sensitive": true},
         "country": {"type": "string", "enum": ["US", "UK"], "required": true, "description": "País de la clínica; eje de agregación US/UK.", "sensitive": false},
         "product_id": {"type": "integer", "required": true, "description": "ID interno del insumo; nunca SKU, nombre ni lote libre.", "sensitive": true},
         "product_category": {"type": "string", "enum": ["medication", "ppe", "consumable", "equipment"], "required": true, "description": "Categoría del briefing, leída del modelo Product.", "sensitive": false},
         "quantity": {"type": "integer", "minimum": 1, "required": true, "description": "Unidades recibidas y confirmadas.", "sensitive": true},
-        "supplier_id": {"type": ["integer", "null"], "required": true, "description": "ID del proveedor del directorio; null mientras la orden solo tenga vendor_name libre (dry-gap).", "sensitive": true}
+        "supplier_id": {"type": ["integer", "null"], "required": true, "description": "ID del proveedor del directorio; null mientras la orden solo tenga vendor_name libre (dry-gap).", "sensitive": true},
+        "total_cost": {"type": "number", "minimum": 0, "required": false, "description": "Costo total de la entrada (quantity × unit_cost) en la moneda de la clínica, 2 decimales. Ausente si la entrada se registró sin costo unitario. Añadido en 2.1.0 para el KPI de costo de insumos.", "sensitive": false}
       }
     },
     {

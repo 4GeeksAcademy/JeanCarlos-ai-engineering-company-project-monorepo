@@ -4,7 +4,7 @@
 instrumentados.  
 **Ámbito:** sistema de inventario de insumos clínicos de HealthCore (BRIEFING
 de telemetría, §1–§6) y superficies existentes del backoffice/API.  
-**Versión del contrato:** `2.0.0` (cambio incompatible respecto a `1.0.0`:
+**Versión del contrato:** `2.1.0` (aditiva sobre `2.0.0`, ver [«Cambio aditivo 2.1.0»](#cambio-aditivo-210)). `2.0.0` fue un cambio incompatible respecto a `1.0.0`:
 renombrado de eventos obligatorios y nuevos campos mínimos; ver
 [Migración desde 1.0.0](#migración-desde-100)).
 
@@ -277,3 +277,12 @@ string.
 La captura del backoffice, el contrato generado y la validación de la API
 (`schemaVersion: "2.0.0"`) ya están migrados. El estado de cada evento
 obligatorio está en [event-capture.md](./event-capture.md#obligatorios-del-briefing).
+
+## Cambio aditivo 2.1.0
+
+| Cambio | Detalle |
+| --- | --- |
+| `inbound_order_created.total_cost` | `number`, `minimum 0`, opcional. Es `quantity × unit_cost` en la moneda de la clínica, calculado por la API. Alimenta el KPI de costo de insumos del pipeline de negocio ([`data/pipelines/PIPELINE_DESIGN.md`](../../data/pipelines/PIPELINE_DESIGN.md)). |
+| `schemaVersion` | El backoffice envía `2.1.0`. La API acepta `2.0.0` y `2.1.0`, para no rechazar las pestañas abiertas antes del cambio. |
+| Eventos `2.0.0` ya guardados | No tienen `total_cost`. El pipeline los cuenta como `inbound_without_cost` y nunca los toma como costo 0. |
+

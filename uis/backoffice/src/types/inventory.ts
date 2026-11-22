@@ -32,14 +32,15 @@ type Movement = {
   supply: Supply;
 };
 
-export type InboundOrder = Movement & { vendor_name: string };
+export type InboundOrder = Movement & { vendor_name: string; unit_cost?: number | null; total_cost?: number | null };
 export type OutboundOrder = Movement & {
   consumption_type: "clinical_use" | "expiry_waste";
   department: Department | null;
 };
 export type Orders = { inbound: InboundOrder[]; outbound: OutboundOrder[] };
 export type MovementInput = { supply_id: number; quantity: number; clinic_id: number };
-export type InboundInput = MovementInput & { vendor_name: string };
+// unit_cost: supplier invoice price per unit, in the clinic currency (USD for clinics 1–9, GBP for 10–12).
+export type InboundInput = MovementInput & { vendor_name: string; unit_cost: number };
 export type OutboundInput = MovementInput & {
   consumption_type: OutboundOrder["consumption_type"];
   department: Department;

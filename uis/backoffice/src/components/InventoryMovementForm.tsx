@@ -19,6 +19,7 @@ export default function InventoryMovementForm({
   const [vendor, setVendor] = useState("");
   const [consumptionType, setConsumptionType] = useState<"clinical_use" | "expiry_waste">("clinical_use");
   const [department, setDepartment] = useState<Department | "">("");
+  const [unitCost, setUnitCost] = useState("");
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -53,10 +54,13 @@ export default function InventoryMovementForm({
     event.preventDefault();
     const amount = Number(quantity);
     const clinic = Number(clinicId);
+    const cost = Number(unitCost);
+    // Up to 2 decimals, compared as text: 12.34 * 100 is not exactly 1234 in floating point.
+    const validCost = /^\d{1,10}(\.\d{1,2})?$/.test(unitCost.trim()) && Number.isFinite(cost);
     if (!selectedProduct || !Number.isInteger(amount) || amount < 1 || amount > 2147483647 ||
-      !Number.isInteger(clinic) || clinic < 1 || clinic > 12 || (direction === "inbound" && !vendor.trim()) ||
+      !Number.isInteger(clinic) || clinic < 1 || clinic > 12 || (direction === "inbound" && (!vendor.trim() || !validCost)) ||
       (direction === "outbound" && !department)) {
-      setError("Comprueba el producto, la cantidad, la clínica, el departamento y los demás campos obligatorios.");
+      setError("Comprueba el producto, la cantidad, la clínica, el costo unitario (hasta 2 decimales), el departamento y los demás campos obligatorios.");
       telemetryFlow.invalid();
       return;
     }
@@ -68,7 +72,7 @@ export default function InventoryMovementForm({
       const movement = { supply_id: selectedProduct.id, quantity: amount, clinic_id: clinic };
       let success = "Entrada registrada.";
       if (direction === "inbound") {
-        await createInbound({ ...movement, vendor_name: vendor.trim() });
+        await createInbound({ ...movement, vendor_name: vendor.trim(), unit_cost: cost });
       } else if (department) {
         const { thresholdCrossed } = await createOutbound({ ...movement, consumption_type: consumptionType, department });
         success = thresholdCrossed
@@ -77,6 +81,7 @@ export default function InventoryMovementForm({
       }
       telemetryFlow.completed();
       setQuantity("");
+      setUnitCost("");
       setMessage(success);
       try {
         setProducts(await listProducts());
@@ -131,7 +136,13 @@ export default function InventoryMovementForm({
             <label>Cantidad<input type="number" min="1" max="2147483647" step="1" required value={quantity} onChange={(event) => setQuantity(event.target.value)} /></label>
             <label>ID de clínica<input type="number" min="1" max="12" step="1" required value={clinicId} onChange={(event) => setClinicId(event.target.value)} /></label>
             {direction === "inbound" ? (
-              <label>Proveedor<input required value={vendor} onChange={(event) => setVendor(event.target.value)} /></label>
+              <>
+                <label>Proveedor<input required value={vendor} onChange={(event) => setVendor(event.target.value)} /></label>
+                <label>
+                  Costo unitario ({Number(clinicId) >= 10 ? "GBP" : "USD"}, moneda de la clínica)
+                  <input type="number" min="0" step="0.01" inputMode="decimal" required value={unitCost} onChange={(event) => setUnitCost(event.target.value)} />
+                </label>
+              </>
             ) : (
               <label>
                 Tipo de consumo

@@ -135,3 +135,22 @@ def test_expiring_lists_clinic_stock_inside_the_window(inventory):
     ]
     with Session(engine) as session:
         assert session.get(MedicalSupply, soon["id"]).expiry_date == today + timedelta(days=20)
+
+
+def test_inbound_total_cost_feeds_the_cost_kpi(inventory):
+    """inbound_order_created.total_cost (contract 2.1.0) = quantity × unit_cost, as a JSON number."""
+    client, headers, _ = inventory
+    product = create_product(client, headers, sku="COST-1")
+    base = {"supply_id": product["id"], "quantity": 3, "clinic_id": 10, "vendor_name": "Vendor"}
+
+    priced = client.post("/inventory/orders/inbound", headers=headers, json={**base, "unit_cost": 12.35})
+    assert priced.status_code == 201, priced.text
+    assert (priced.json()["unit_cost"], priced.json()["total_cost"]) == (12.35, 37.05)
+
+    unpriced = client.post("/inventory/orders/inbound", headers=headers, json=base)
+    assert unpriced.status_code == 201
+    assert unpriced.json()["total_cost"] is None  # never reported as a 0 cost
+
+    for invalid in (-1, 1.234):
+        response = client.post("/inventory/orders/inbound", headers=headers, json={**base, "unit_cost": invalid})
+        assert response.status_code == 422

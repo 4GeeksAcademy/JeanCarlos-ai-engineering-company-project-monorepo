@@ -2,7 +2,7 @@
 
 ## Alcance implementado
 
-Contrato: [event-schemas.json](./event-schemas.json), versión `2.0.0`.
+Contrato: [event-schemas.json](./event-schemas.json), versión `2.1.0` (aditiva sobre `2.0.0`: `total_cost` en `inbound_order_created`; ver [telemetry-plan.md](./telemetry-plan.md#cambio-aditivo-210)).
 Diseño: [telemetry-plan.md](./telemetry-plan.md).
 
 Se instrumentaron **21 de 25 eventos**, incluidos **los 5 obligatorios** del

@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -48,8 +49,13 @@ def supply_summary(supply: MedicalSupply) -> SupplySummary:
 
 
 def delivery_response(delivery: SupplyDelivery, supply: MedicalSupply) -> SupplyDeliveryResponse:
+    total_cost = (
+        (delivery.unit_cost * delivery.quantity).quantize(Decimal("0.01"))
+        if delivery.unit_cost is not None
+        else None
+    )
     return SupplyDeliveryResponse.model_validate(
-        {**delivery.model_dump(), "supply": supply_summary(supply)}
+        {**delivery.model_dump(), "total_cost": total_cost, "supply": supply_summary(supply)}
     )
 
 
