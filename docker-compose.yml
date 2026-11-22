@@ -26,17 +26,103 @@ services:
   api:
     build:
       context: ./services
+      additional_contexts:
+        pipelines: ./data
     init: true
     env_file:
       - ${COMPOSE_ENV_FILE:-.env}
     environment:
       SUPPLIERS_DB_PATH: /data/suppliers.json
       TELEMETRY_ENDPOINT: ${TELEMETRY_ENDPOINT:-http://api:8000/telemetry/events}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
       - ./services/api:/app/services/api
+      - ./services/telemetry:/app/services/telemetry
+      - ./services/reporting:/app/services/reporting
+      - ./data:/app/data
       - api_data:/data
+    networks:
+      - healthcore
+
+  # Ticket DEV-55: broker and result backend of the Celery task queue.
+  redis:
+    image: redis:7.4-alpine
+    # appendonly: queued messages survive a Redis restart. noeviction: Redis never drops
+    # keys (messages, results) under memory pressure; it rejects writes instead.
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - healthcore
+
+  # Celery worker: separate process and container from the API. Stopping the API does
+  # not stop it, and queued messages wait in Redis. A warm shutdown (SIGTERM) lets the
+  # running task finish within stop_grace_period; unacked messages return to the queue.
+  worker:
+    build:
+      context: ./services
+      additional_contexts:
+        pipelines: ./data
+    command: ["celery", "-A", "services.celery_app", "worker", "-Q", "reporting", "--concurrency", "2", "--loglevel", "INFO", "-n", "reporting@%h"]
+    init: true
+    env_file:
+      - ${COMPOSE_ENV_FILE:-.env}
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    stop_grace_period: 120s
+    restart: unless-stopped
+    networks:
+      - healthcore
+
+  # Flower: monitoring UI of the queue (development), http://localhost:5555
+  flower:
+    build:
+      context: ./services
+      additional_contexts:
+        pipelines: ./data
+    command: ["celery", "-A", "services.celery_app", "flower", "--port=5555", "--persistent=True", "--db=/data/flower.db", "--state_save_interval=10000"]
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "127.0.0.1:5555:5555"
+    volumes:
+      - flower_data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - healthcore
+
+  # Ticket DEV-53: nightly telemetry job, outside the API process (see scripts/nightly_export.crontab).
+  scheduler:
+    build:
+      context: ./services
+      dockerfile: scheduler.Dockerfile
+      additional_contexts:
+        pipelines: ./data
+        scripts: ./scripts
+    init: true
+    env_file:
+      - ${COMPOSE_ENV_FILE:-.env}
+    volumes:
+      # CSV backups land in the repository's data/raw (gitignored).
+      - ./data/raw:/app/data/raw
+    restart: unless-stopped
     networks:
       - healthcore
 
@@ -50,3 +136,5 @@ volumes:
   backoffice_node_modules:
   backoffice_next:
   api_data:
+  redis_data:
+  flower_data:

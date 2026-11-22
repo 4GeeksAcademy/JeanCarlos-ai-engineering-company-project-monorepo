@@ -1,0 +1,13 @@
+clinic_id,location_id,country,currency,region
+1,us-tx-001,US,USD,Texas
+2,us-tx-002,US,USD,Texas
+3,us-tx-003,US,USD,Texas
+4,us-fl-001,US,USD,Florida
+5,us-fl-002,US,USD,Florida
+6,us-fl-003,US,USD,Florida
+7,us-ga-001,US,USD,Georgia
+8,us-ga-002,US,USD,Georgia
+9,us-ga-003,US,USD,Georgia
+10,uk-lon-001,UK,GBP,London
+11,uk-lon-002,UK,GBP,London
+12,uk-man-001,UK,GBP,Manchester
