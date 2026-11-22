@@ -13,11 +13,22 @@ from .database import get_inventory_engine, open_database
 from .core.security import get_settings
 from .routes import auth, auth_password, profiles, suppliers, telemetry, users
 from .routers import inventory
+from services.reporting.router import router as reporting_router
 from .schemas.errors import ErrorResponse, ValidationErrorResponse, ValidationIssue
 from .services.email import reset_expiration_minutes
 
 logger = logging.getLogger(__name__)
 timing_logger = logging.getLogger("api.timing")
+
+# Uvicorn only configures its own loggers; without a handler the INFO records of
+# "api.*" (timing, telemetry batches) fall back to the root WARNING level and are lost.
+_api_logger = logging.getLogger("api")
+if not _api_logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("%(levelname)s:     %(name)s %(message)s"))
+    _api_logger.addHandler(_handler)
+    _api_logger.setLevel(logging.INFO)
+    _api_logger.propagate = False
 
 
 @asynccontextmanager
@@ -108,3 +119,4 @@ app.include_router(profiles.router)
 app.include_router(suppliers.router)
 app.include_router(inventory.router)
 app.include_router(telemetry.router)
+app.include_router(reporting_router)
