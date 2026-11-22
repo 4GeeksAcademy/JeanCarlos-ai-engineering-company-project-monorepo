@@ -1,0 +1,31 @@
+name: Python tests (sales forecast)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "scripts/**.py"
+      - "tests/**"
+      - "data/raw/healthcore_sales.csv"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/python-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - name: Install locked dependencies
+        run: uv sync --locked
+      - name: Temporal CV and forecast tests
+        run: uv run pytest tests/pipelines/test_temporal_cv.py tests/pipelines/test_sales_forecast.py -v

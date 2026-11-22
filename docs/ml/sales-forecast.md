@@ -187,3 +187,7 @@ también podría referirse al test K² de D'Agostino-Pearson, reporto los dos.
   se acumula con el horizonte, como en un plan real.
 - 20 de los 24 meses reales caen dentro. Los 4 que quedan fuera son enero, febrero y
   octubre de 2024 y febrero de 2025.
+
+## Evaluación técnica (staging)
+
+La evaluación formal está en [`data/eval/evaluation_report.md`](../../data/eval/evaluation_report.md). Incluye la validación cruzada temporal, la curva de aprendizaje, la elección de MAE o RMSE y la acción correctiva propuesta.
