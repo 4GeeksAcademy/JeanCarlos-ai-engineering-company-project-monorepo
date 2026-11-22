@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -16,12 +16,22 @@ class SupplyFields(BaseModel):
     country: Literal["US", "UK"]
 
 
+ProductCategory = Literal["medication", "ppe", "consumable", "equipment"]
+Department = Literal["primary_care", "general_consultation", "specialty_care", "chronic_care"]
+
+
 class ProductCreate(SupplyFields):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    product_category: ProductCategory
+    expiry_date: date | None = None
 
 
 class SupplySummary(SupplyFields):
     id: int
+    # Null only for supplies created before the BRIEFING category existed.
+    product_category: ProductCategory | None
+    expiry_date: date | None
 
 
 class ProductResponse(SupplySummary):
@@ -44,6 +54,7 @@ class SupplyDeliveryCreate(MovementCreate):
 
 class SupplyConsumptionCreate(MovementCreate):
     consumption_type: Literal["clinical_use", "expiry_waste"]
+    department: Department
 
 
 class MovementResponse(BaseModel):
@@ -62,6 +73,26 @@ class SupplyDeliveryResponse(MovementResponse):
 
 class SupplyConsumptionResponse(MovementResponse):
     consumption_type: Literal["clinical_use", "expiry_waste"]
+    department: Department | None
+
+
+class StockThresholdCrossing(BaseModel):
+    """Present only when this outbound order took the clinic below its configured minimum."""
+
+    clinic_stock: int
+    min_stock_threshold: int
+
+
+class SupplyConsumptionCreated(SupplyConsumptionResponse):
+    stock_threshold: StockThresholdCrossing | None
+
+
+class ExpiringSupply(BaseModel):
+    supply: SupplySummary
+    clinic_id: int
+    quantity: int
+    expiry_date: date
+    days_until_expiry: int
 
 
 class OrdersResponse(BaseModel):
