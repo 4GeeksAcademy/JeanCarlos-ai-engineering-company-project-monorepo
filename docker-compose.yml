@@ -61,6 +61,25 @@ services:
     networks:
       - healthcore
 
+  # OAuth 2.1 / OIDC authorization server of the HealthCore MCP server (mcps/healthcore_mcp).
+  # Realm `healthcore` (scopes incidents:read, incidents:write, inventory:read and one client per
+  # permission level) is imported from the repository; client secrets and the admin password come
+  # from the gitignored env file created by mcps/healthcore_mcp/scripts/init_dev_secrets.py.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.1
+    command: ["start-dev", "--import-realm", "--http-port=8080", "--health-enabled=true"]
+    env_file:
+      - path: ${MCP_ENV_FILE:-./mcps/healthcore_mcp/.env}
+        required: true
+    environment:
+      KC_HOSTNAME: http://localhost:8081
+    ports:
+      - "127.0.0.1:8081:8080"
+    volumes:
+      - ./mcps/healthcore_mcp/keycloak/healthcore-realm.json:/opt/keycloak/data/import/healthcore-realm.json:ro
+    networks:
+      - healthcore
+
   # Ticket DEV-55: broker and result backend of the Celery task queue.
   redis:
     image: redis:7.4-alpine

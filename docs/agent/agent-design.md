@@ -395,3 +395,44 @@ que acepta conexiones y nunca responde (`timeout`) o a un puerto cerrado (`down`
 AGENT_EVAL_USERNAME=... AGENT_EVAL_PASSWORD=... python -m services.agent.record_evals   # con la API levantada
 python -m pytest tests/pipelines/test_agent_evals.py
 ```
+
+## 9. Migración a MCP: las tools ya no llaman a las APIs
+
+Desde esta rama, `lookup_tickets` y `lookup_stock` **no llaman al Incidents Manager ni al
+inventario por HTTP directo**. Las tools se cargan del servidor MCP
+[`mcps/healthcore_mcp`](../../mcps/healthcore_mcp/README.md) con `langchain-mcp-adapters` y se
+llaman como cliente MCP:
+
+| Nodo del grafo | Antes (parte 2) | Ahora |
+| --- | --- | --- |
+| `lookup_tickets` | `GET /api/incidents/{id}` o `GET /api/incidents?…` con el JWT del coordinador | Tool MCP `get_incident` o `list_incidents` |
+| `lookup_stock` | `GET /inventory/products` con el JWT del coordinador | Tool MCP `query_inventory(operation="get")` |
+
+- **Cliente MCP.** `services/agent/tools.py` crea `MultiServerMCPClient({"healthcore":
+  {"transport": "streamable_http", "url": MCP_SERVER_URL, "headers": {"Authorization":
+  "Bearer …"}}})`, descubre las tools (`get_tools()`) y las invoca con un `ToolCall`.
+  - **Datos tipados.** El agente lee el resultado de `artifact.structured_content`.
+  - **Errores.** Los toma del código JSON del servidor: `NOT_FOUND` da `not_found`, y el resto
+    `unavailable`.
+- **Credencial.** El agente es el cliente OAuth `healthcore-agent` (client credentials, con el
+  token en caché hasta 30 s antes de expirar). Solo tiene `incidents:read` e `inventory:read`:
+  aunque tuviera un bug, no podría crear ni cambiar tickets, porque Keycloak no le emite
+  `incidents:write` y el servidor devuelve `INSUFFICIENT_SCOPE`.
+- **Lo que se eliminó** de la parte 2:
+  - la llamada HTTP directa (`_get`, `AGENT_TOOLS_API_URL`);
+  - el reenvío del token del coordinador (`tool_credentials`);
+  - la búsqueda de productos, que ahora vive en el servidor MCP.
+
+  El test `test_the_agent_has_no_direct_path_to_the_incidents_manager` falla si algún módulo
+  del agente vuelve a referenciar `/api/incidents`.
+- **Timeout:** 4 s para toda la consulta (token, discovery y llamada).
+- **Fallbacks.** El servidor MCP caído o colgado (`MCP_UNREACHABLE`, `TIMEOUT`), un ticket
+  inexistente o un scope rechazado llevan a los mismos nodos de fallback.
+- **Enrutamiento intacto.** Las 16 rutas de los evals son idénticas a las de la parte 2. Un
+  eval nuevo exige que todo dato de tickets o stock venga de una tool MCP (`endpoint`
+  `MCP get_incident`, `MCP list_incidents` o `MCP query_inventory`).
+- **Resultado:** 101 evals en verde.
+- **Exports reales por la API:**
+  - [`trace-mcp-ticket-tool.json`](evidence/trace-mcp-ticket-tool.json), con `MCP get_incident` en 268 ms;
+  - [`trace-mcp-stock-tool.json`](evidence/trace-mcp-stock-tool.json);
+  - [`trace-mcp-rag.json`](evidence/trace-mcp-rag.json).

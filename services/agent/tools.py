@@ -1,64 +1,47 @@
-"""Read-only tools of the agent: live operational data, not knowledge.
+"""Tools of the agent: live operational data read through the HealthCore MCP server.
 
-Each tool has one responsibility, a typed input/output contract and an explicit timeout:
+The agent no longer calls the Incidents Manager (or the inventory) directly. Both lookups load
+their tools from the MCP server (mcps/healthcore_mcp) with langchain-mcp-adapters and call them
+as an MCP client:
 
-- lookup_tickets: the centralized incident manager (GET /api/incidents/{id} or
-  GET /api/incidents?status=&category=&origin=&branch=). Tickets change state all the time,
-  so they are read live instead of being indexed in the RAG.
-- lookup_stock: the inventory manager (GET /inventory/products), current stock per product.
+- lookup_tickets → MCP tools get_incident (by id) or list_incidents (filters);
+- lookup_stock → MCP tool query_inventory(operation="get").
 
-Both call the real HealthCore API over HTTP (AGENT_TOOLS_API_URL, default
-http://127.0.0.1:8000) with only GET requests, never POST/PATCH/DELETE. The incident and
-inventory APIs require a Bearer token: the tools forward the token of the coordinator who
-asked (same as the backoffice → API calls), taken from a context variable set by the
-endpoint. The token never enters the graph state, the checkpoints or the trace.
+Authentication: the agent is the OAuth client `healthcore-agent` (client credentials grant
+against the authorization server of the MCP server). Its tokens only carry incidents:read and
+inventory:read, so even a bug in the agent cannot create or change tickets.
 
-Failures never raise into the graph: a timeout, a connection error, a 5xx, a 404 or a
-missing credential come back as a result with status unavailable / not_found, and the graph
-routes to its fallback node.
+Each lookup has an explicit timeout (TOOL_TIMEOUT_SECONDS = 4) covering token, discovery and
+call. Failures never raise into the graph: they come back as unavailable / not_found and the
+graph routes to its fallback node. The typed contracts below are unchanged from Part 2.
 """
 
 from __future__ import annotations
 
-import contextlib
-import contextvars
+import asyncio
+import json
 import os
-import re
+import threading
 import time
-import unicodedata
-from collections.abc import Iterator
-from datetime import datetime
-from typing import Literal
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Any, Literal
 
 import httpx
+from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from packages.shared.incidents import BRANCHES, CATEGORIES, ORIGINS, STATUSES
 
-TOOL_TIMEOUT_SECONDS = 4.0  # per HTTP call: connect + read; the graph never hangs longer
+TOOL_TIMEOUT_SECONDS = 4.0  # whole MCP lookup: OAuth token + tool discovery + call
 MAX_TICKETS = 5
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 IncidentStatus = Literal[STATUSES]  # type: ignore[valid-type]
 IncidentCategory = Literal[CATEGORIES]  # type: ignore[valid-type]
 IncidentOrigin = Literal[ORIGINS]  # type: ignore[valid-type]
 IncidentBranch = Literal[BRANCHES]  # type: ignore[valid-type]
 LookupStatus = Literal["ok", "not_found", "unavailable"]
-
-_credentials: contextvars.ContextVar[str | None] = contextvars.ContextVar("agent_tool_credentials", default=None)
-
-
-@contextlib.contextmanager
-def tool_credentials(token: str | None) -> Iterator[None]:
-    """Make the caller's Bearer token available to the tools for the duration of a run."""
-    reset = _credentials.set(token)
-    try:
-        yield
-    finally:
-        _credentials.reset(reset)
-
-
-def api_base_url() -> str:
-    return os.environ.get("AGENT_TOOLS_API_URL", "http://127.0.0.1:8000").rstrip("/")
 
 
 def tool_timeout() -> float:
@@ -87,8 +70,8 @@ class TicketQuery(BaseModel):
 
 
 class Ticket(BaseModel):
-    """Fields of IncidentResponse the agent may repeat (the description is left out: it can
-    carry free text from patients)."""
+    """Fields of the ticket the agent may repeat (the description is left out: it can carry
+    free text from patients)."""
 
     id: int
     title: str
@@ -106,7 +89,7 @@ class TicketLookupResult(BaseModel):
     tickets: list[Ticket] = []
     total: int = 0  # tickets matching the filters (the list keeps the MAX_TICKETS newest)
     error: str | None = None
-    endpoint: str
+    endpoint: str  # the MCP tool that answered, e.g. "MCP get_incident"
     duration_ms: float
 
 
@@ -137,104 +120,137 @@ class StockLookupResult(BaseModel):
     duration_ms: float
 
 
-# ---------------------------------------------------------------- HTTP (GET only)
+# ---------------------------------------------------------------- MCP client
 
 
-class _ToolUnavailable(Exception):
-    pass
+class McpCallFailed(Exception):
+    """The MCP lookup could not be completed; `code` is the server's error code or a transport reason."""
+
+    def __init__(self, code: str, message: str = ""):
+        super().__init__(f"{code}: {message}" if message else code)
+        self.code = code
 
 
-def _get(path: str, params: dict[str, str] | None = None) -> httpx.Response:
-    token = _credentials.get()
-    if not token:
-        raise _ToolUnavailable("no credentials for the API")
+def _settings() -> dict[str, str]:
+    load_dotenv(REPO_ROOT / "services" / "api" / ".env")
+    load_dotenv(REPO_ROOT / "mcps" / "healthcore_mcp" / ".env")
+    issuer = os.environ.get("MCP_OAUTH_ISSUER", "http://localhost:8081/realms/healthcore").rstrip("/")
+    return {
+        "server_url": os.environ.get("MCP_SERVER_URL", "http://127.0.0.1:8765/mcp"),
+        "token_url": os.environ.get("MCP_OAUTH_TOKEN_URL", f"{issuer}/protocol/openid-connect/token"),
+        "client_id": os.environ.get("AGENT_MCP_CLIENT_ID", "healthcore-agent"),
+        "client_secret": os.environ.get("AGENT_MCP_CLIENT_SECRET") or os.environ.get("MCP_AGENT_CLIENT_SECRET", ""),
+    }
+
+
+class _TokenCache:
+    """OAuth client credentials token of the agent, renewed 30 s before it expires."""
+
+    def __init__(self) -> None:
+        self._token: str | None = None
+        self._expires = 0.0
+        self._lock = threading.Lock()
+
+    async def get(self, settings: dict[str, str]) -> str:
+        with self._lock:
+            if self._token and time.monotonic() < self._expires:
+                return self._token
+        if not settings["client_secret"]:
+            raise McpCallFailed("OAUTH_NOT_CONFIGURED", "AGENT_MCP_CLIENT_SECRET is not set")
+        async with httpx.AsyncClient(timeout=tool_timeout()) as client:
+            response = await client.post(settings["token_url"], data={
+                "grant_type": "client_credentials", "client_id": settings["client_id"],
+                "client_secret": settings["client_secret"]})
+        if response.status_code != 200:
+            raise McpCallFailed("OAUTH_TOKEN_REJECTED", f"HTTP {response.status_code}")
+        body = response.json()
+        with self._lock:
+            self._token = body["access_token"]
+            self._expires = time.monotonic() + max(int(body.get("expires_in", 60)) - 30, 10)
+            return self._token
+
+
+TOKENS = _TokenCache()
+
+
+async def _call(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    from langchain_core.messages import ToolCall
+    from langchain_mcp_adapters.client import MultiServerMCPClient
+
+    settings = _settings()
+    token = await TOKENS.get(settings)
+    client = MultiServerMCPClient({"healthcore": {
+        "transport": "streamable_http", "url": settings["server_url"],
+        "headers": {"Authorization": f"Bearer {token}"},
+        "timeout": timedelta(seconds=tool_timeout()), "sse_read_timeout": timedelta(seconds=tool_timeout()),
+    }})
+    tools = {tool.name: tool for tool in await client.get_tools()}
+    if name not in tools:
+        raise McpCallFailed("UNKNOWN_TOOL", name)
+    message = await tools[name].ainvoke(ToolCall(name=name, args=arguments, id=f"agent-{name}", type="tool_call"))
+    if message.status == "error":
+        text = message.content[0]["text"] if isinstance(message.content, list) else str(message.content)
+        try:
+            error = json.loads(text)
+        except ValueError:
+            error = {"code": "TOOL_ERROR", "message": text[:200]}
+        raise McpCallFailed(error.get("code", "TOOL_ERROR"), error.get("message", ""))
+    return (message.artifact or {}).get("structured_content") or {}
+
+
+def call_mcp_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    """Call one tool of the HealthCore MCP server; raises McpCallFailed, never hangs past the timeout."""
     try:
-        with httpx.Client(base_url=api_base_url(), timeout=httpx.Timeout(tool_timeout())) as client:
-            response = client.get(path, params=params, headers={"Authorization": f"Bearer {token}"})
-    except httpx.TimeoutException as error:
-        raise _ToolUnavailable(f"timeout after {tool_timeout():g} s") from error
-    except httpx.HTTPError as error:
-        raise _ToolUnavailable(f"{type(error).__name__}") from error
-    if response.status_code in (401, 403):
-        raise _ToolUnavailable(f"HTTP {response.status_code} (credentials rejected)")
-    if response.status_code >= 500:
-        raise _ToolUnavailable(f"HTTP {response.status_code}")
-    return response
+        return asyncio.run(asyncio.wait_for(_call(name, arguments), timeout=tool_timeout()))
+    except McpCallFailed:
+        raise
+    except (TimeoutError, asyncio.TimeoutError) as error:
+        raise McpCallFailed("TIMEOUT", f"timeout after {tool_timeout():g} s") from error
+    except BaseException as error:  # connection refused, TLS, protocol: ExceptionGroup from anyio
+        if isinstance(error, (KeyboardInterrupt, SystemExit)):
+            raise
+        raise McpCallFailed("MCP_UNREACHABLE", type(error).__name__) from error
+
+
+# ---------------------------------------------------------------- lookups used by the graph
 
 
 def lookup_tickets(query: TicketQuery) -> TicketLookupResult:
-    """Read tickets from the incident manager. Never writes."""
     start = time.perf_counter()
     if query.ticket_id is not None:
-        path, params = f"/api/incidents/{query.ticket_id}", None
+        name, arguments = "get_incident", {"incident_id": query.ticket_id}
     else:
-        path = "/api/incidents"
-        params = {key: value for key, value in query.model_dump(exclude={"ticket_id"}).items() if value}
-    endpoint = f"GET {path}" + (f"?{'&'.join(f'{k}={v}' for k, v in params.items())}" if params else "")
+        name = "list_incidents"
+        arguments = {**query.model_dump(exclude={"ticket_id"}, exclude_none=True), "limit": MAX_TICKETS}
 
     def result(status: LookupStatus, **fields) -> TicketLookupResult:
-        return TicketLookupResult(status=status, query=query, endpoint=endpoint,
+        return TicketLookupResult(status=status, query=query, endpoint=f"MCP {name}",
                                   duration_ms=round((time.perf_counter() - start) * 1000, 1), **fields)
 
     try:
-        response = _get(path, params)
-        if response.status_code == 404:
-            return result("not_found", error="ticket not found")
-        if response.status_code != 200:
-            return result("unavailable", error=f"HTTP {response.status_code}")
-        body = response.json()
-        tickets = [Ticket.model_validate(item) for item in (body if isinstance(body, list) else [body])]
-    except _ToolUnavailable as error:
-        return result("unavailable", error=str(error))
-    except ValueError as error:  # malformed JSON or a response outside the contract
-        return result("unavailable", error=f"invalid response: {type(error).__name__}")
+        data = call_mcp_tool(name, arguments)
+    except McpCallFailed as failure:
+        return result("not_found" if failure.code == "NOT_FOUND" else "unavailable", error=str(failure))
+    if name == "get_incident":
+        return result("ok", tickets=[Ticket.model_validate(data)], total=1)
+    tickets = [Ticket.model_validate(item) for item in data.get("incidents", [])]
     if not tickets:
         return result("not_found", error="no tickets match the filters")
-    return result("ok", tickets=tickets[:MAX_TICKETS], total=len(tickets))
-
-
-_STOPWORDS = {"de", "del", "la", "las", "el", "los", "para", "con", "en", "un", "una", "y", "o"}
-
-
-def _tokens(text: str) -> set[str]:
-    text = unicodedata.normalize("NFKD", text.lower())
-    text = "".join(ch for ch in text if not unicodedata.combining(ch))
-    words = re.findall(r"[a-z0-9]+", text)
-    return {re.sub(r"(es|s)$", "", w) if len(w) > 4 else w for w in words if w not in _STOPWORDS}
-
-
-def match_products(product: str, catalog: list[ProductStock]) -> list[ProductStock]:
-    """Products whose SKU equals the query, or whose name contains every query word
-    (accents, case and plurals ignored)."""
-    wanted = product.strip().upper()
-    exact = [p for p in catalog if p.sku.upper() == wanted]
-    if exact:
-        return exact
-    query_tokens = _tokens(product)
-    if not query_tokens:
-        return []
-    return [p for p in catalog if query_tokens <= _tokens(p.name)]
+    return result("ok", tickets=tickets, total=data.get("total", len(tickets)))
 
 
 def lookup_stock(query: StockQuery) -> StockLookupResult:
-    """Current stock of a product from the inventory manager. Never writes."""
     start = time.perf_counter()
-    endpoint = "GET /inventory/products"
 
     def result(status: LookupStatus, **fields) -> StockLookupResult:
-        return StockLookupResult(status=status, query=query, endpoint=endpoint,
+        return StockLookupResult(status=status, query=query, endpoint="MCP query_inventory",
                                  duration_ms=round((time.perf_counter() - start) * 1000, 1), **fields)
 
     try:
-        response = _get("/inventory/products")
-        if response.status_code != 200:
-            return result("unavailable", error=f"HTTP {response.status_code}")
-        catalog = [ProductStock.model_validate(item) for item in response.json()]
-    except _ToolUnavailable as error:
-        return result("unavailable", error=str(error))
-    except ValueError as error:
-        return result("unavailable", error=f"invalid response: {type(error).__name__}")
-    products = match_products(query.product, catalog)
+        data = call_mcp_tool("query_inventory", {"operation": "get", "product": query.product})
+    except McpCallFailed as failure:
+        return result("unavailable", error=str(failure))
+    products = [ProductStock.model_validate(item) for item in data.get("products", [])]
     if not products:
         return result("not_found", error="no product matches")
     return result("ok", products=products)

@@ -108,6 +108,8 @@ def test_failed_or_empty_tool_routes_to_its_fallback_and_answers_honestly(case_i
     assert result["status"] == expect["tool_status"]
     if "tool_error" in expect:
         assert result["error"] == expect["tool_error"]
+    if "tool_error_prefix" in expect:
+        assert result["error"].startswith(expect["tool_error_prefix"])
     fallback = "ticket_fallback" if "lookup_tickets" in nodes_run(trace) else "stock_fallback"
     assert fallback in nodes_run(trace) and trace["status"] == "answered"  # the run did not break
     assert not any(label in trace["answer"] for label in STATUS_LABELS.values())  # no invented status
@@ -116,7 +118,7 @@ def test_failed_or_empty_tool_routes_to_its_fallback_and_answers_honestly(case_i
 
 def test_the_timeout_is_the_explicit_four_seconds():
     result = tool_result(TRACES["ticket-timeout"])
-    assert result["error"] == "timeout after 4 s" and 3900 <= result["duration_ms"] < 6000
+    assert result["error"] == "TIMEOUT: timeout after 4 s" and 3900 <= result["duration_ms"] < 6000
 
 
 # ---------------------------------------------------------------- trace invariants (Part 1)
@@ -177,11 +179,11 @@ def test_tool_answers_repeat_exactly_what_the_service_returned(case_id):
             assert f"#{ticket['id']}" in answer and STATUS_LABELS[ticket["status"]] in answer
         if result["query"].get("ticket_id") is None:
             assert f"Hay {result['total']} ticket" in answer
-        assert f"Fuente: gestor de incidentes ({result['endpoint']})" in answer
+        assert f"Fuente: gestor de incidentes vía servidor MCP ({result['endpoint']})" in answer
     else:
         for product in result["products"]:
             assert f"{product['name']} (SKU {product['sku']}" in answer and f": {product['current_stock']} " in answer
-        assert "Fuente: inventario (GET /inventory/products)" in answer
+        assert "Fuente: inventario vía servidor MCP (MCP query_inventory)" in answer
 
 
 @pytest.mark.parametrize("case_id", by(lambda e: "answer_starts_with_any" in e and "generate_answer" not in e["route"]))
@@ -207,3 +209,10 @@ def test_mixed_question_sends_only_the_policy_part_to_the_rag(case_id):
     plan = step_output(TRACES[case_id], "plan_sources")["plan"]
     assert plan["knowledge_question"] and plan["ticket"]
     assert str(plan["ticket"].get("ticket_id")) not in plan["knowledge_question"]
+
+
+@pytest.mark.parametrize("case_id", by(lambda e: e.get("sources", "").startswith(("incidents", "inventory"))))
+def test_tickets_and_stock_are_only_read_through_the_mcp_server(case_id):
+    """Migration criterion: every tool lookup in the trace was answered by an MCP tool."""
+    result = tool_result(TRACES[case_id])
+    assert result["endpoint"] in {"MCP get_incident", "MCP list_incidents", "MCP query_inventory"}

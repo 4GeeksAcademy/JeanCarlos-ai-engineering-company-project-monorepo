@@ -1,8 +1,8 @@
 """HTTP entry point of the agent: only invokes the compiled graph (services.agent.runner).
 
 - POST /agent/query: runs the graph; answers {"answer", "run_id"}. Lives next to the RAG
-  endpoint POST /knowledge/query, which keeps working unchanged. The caller's Bearer token
-  is handed to the read-only tools (incident manager, inventory) for this run only.
+  endpoint POST /knowledge/query, which keeps working unchanged. Tickets and stock are read
+  through the HealthCore MCP server (services/agent/tools.py), never from the APIs directly.
 - GET /agent/runs/{run_id}/trace: the persisted trace and checkpoints of a run (admins
   only: it contains retrieved sections and scores, which coordinators never see).
 
@@ -17,7 +17,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, Path
 from fastapi.responses import JSONResponse
 
-from services.api.core.dependencies import AuthenticatedUser, oauth2_scheme, require_admin
+from services.api.core.dependencies import AuthenticatedUser, require_admin
 
 from .runner import AgentRejected, AgentRunError, get_runtime
 from .schemas import AgentAnswer, AgentQuestion
@@ -29,11 +29,9 @@ RUN_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 @router.post("/query", response_model=AgentAnswer,
              responses={422: {"description": "Question rejected"}, 503: {"description": "Agent unavailable"}})
-def agent_query(body: AgentQuestion, _user: AuthenticatedUser,
-                token: Annotated[str, Depends(oauth2_scheme)]) -> Any:
+def agent_query(body: AgentQuestion, _user: AuthenticatedUser) -> Any:
     try:
-        # The tools read the incident and inventory APIs with the coordinator's own token.
-        result = get_runtime().run(body.question, credentials=token)
+        result = get_runtime().run(body.question)
     except AgentRejected as rejected:
         return JSONResponse(status_code=422, content={"detail": str(rejected), "run_id": rejected.run_id})
     except AgentRunError as error:

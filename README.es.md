@@ -122,6 +122,10 @@ Endpoints: `POST /agent/query` y `GET /agent/runs/{run_id}/trace` (administrador
 
 El agente decide solo si una pregunta necesita la base de conocimiento, el gestor de incidentes (`GET /api/incidents`) o el inventario (`GET /inventory/products`): tools de solo lectura con contrato tipado, timeout de 4 s y fallback honesto. Diseño: [`docs/agent/agent-design.md`](docs/agent/agent-design.md) §8.
 
+## Servidor MCP con OAuth (`mcps/healthcore_mcp`)
+
+Expone los tickets del Incidents Manager (consultar, crear y cambiar de estado vía `PATCH /api/incidents/{id}/status`) y el inventario en solo lectura a cualquier cliente MCP autorizado: Streamable HTTP, OAuth 2.1 con MCP Auth (Keycloak en local), scopes por tool y auditoría de cada invocación. El agente LangGraph lo consume como cliente MCP. Detalle: [`mcps/healthcore_mcp/README.md`](mcps/healthcore_mcp/README.md).
+
 ## Guía de carpetas — qué va en cada una
 
 Lee el `README.md` enlazado dentro de cada carpeta antes de empezar a programar ahí.

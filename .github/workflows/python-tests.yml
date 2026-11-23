@@ -1,4 +1,4 @@
-name: Python tests (sales forecast, RAG, agent)
+name: Python tests (sales forecast, RAG, agent, MCP server)
 
 on:
   push:
@@ -11,6 +11,7 @@ on:
       - "data/pipelines/rag.py"
       - "docs/company-knowledge-base/**"
       - "services/agent/**"
+      - "mcps/**"
       - "packages/shared/incidents/**"
       - "data/eval/agent-eval-cases.json"
       - "data/eval/agent_eval_traces.json"
@@ -38,3 +39,5 @@ jobs:
         run: uv run python -m pytest tests/pipelines/test_temporal_cv.py tests/pipelines/test_sales_forecast.py tests/pipelines/test_rag.py -v
       - name: LangGraph agent tests and evals (evals read the recorded traces)
         run: uv run python -m pytest tests/pipelines/test_agent_graph.py tests/pipelines/test_agent_tools.py tests/pipelines/test_agent_evals.py -v
+      - name: HealthCore MCP server (real server, test OAuth server, stand-in API)
+        run: uv run python -m pytest tests/mcps -v

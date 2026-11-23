@@ -121,6 +121,10 @@ Endpoints: `POST /agent/query` and `GET /agent/runs/{run_id}/trace` (admins).
 
 The agent decides on its own whether a question needs the knowledge base, the incident manager (`GET /api/incidents`) or the inventory (`GET /inventory/products`): read-only tools with a typed contract, a 4 s timeout and an honest fallback. Design: [`docs/agent/agent-design.md`](docs/agent/agent-design.md) §8.
 
+## MCP server with OAuth (`mcps/healthcore_mcp`)
+
+Exposes Incidents Manager tickets (read, create and change status through `PATCH /api/incidents/{id}/status`) and the inventory, read only, to any authorized MCP client: Streamable HTTP, OAuth 2.1 with MCP Auth (Keycloak locally), per-tool scopes and an audit line per invocation. The LangGraph agent consumes it as an MCP client. Details: [`mcps/healthcore_mcp/README.md`](mcps/healthcore_mcp/README.md).
+
 ## Current status
 
 The Talent Pipeline Tracker is a runnable Next.js app. Other monorepo folders remain available for the wider course project.

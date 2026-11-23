@@ -24,7 +24,6 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from data.process.rag import REPO_ROOT
 
 from .graph import compile_agent
-from .tools import tool_credentials
 from .tracing import TraceStore
 
 
@@ -77,27 +76,23 @@ class AgentRuntime:
         self.tracer.finish_run(run_id, "failed", error=f"{failed or '?'}: {type(error).__name__}: {error}")
         return AgentRunError(run_id, failed, error)
 
-    def run(self, question: str, run_id: str | None = None, credentials: str | None = None) -> AgentResult:
-        """`credentials`: Bearer token the tools forward to the incident and inventory APIs.
-        It lives only in a context variable for this call, never in the state or the trace."""
+    def run(self, question: str, run_id: str | None = None) -> AgentResult:
         run_id = run_id or str(uuid.uuid4())
         self.tracer.start_run(run_id, question)
         try:
-            with tool_credentials(credentials):
-                state = self.graph.invoke({"question": question}, self.config(run_id))
+            state = self.graph.invoke({"question": question}, self.config(run_id))
         except Exception as error:
             raise self._failed(run_id, error) from error
         return self._finish(run_id, state)
 
-    def resume(self, run_id: str, credentials: str | None = None) -> AgentResult:
+    def resume(self, run_id: str) -> AgentResult:
         """Continue a failed run from its last checkpoint: completed nodes are not run again."""
         snapshot = self.graph.get_state(self.config(run_id))
         if not snapshot.values:
             raise KeyError(run_id)
         self.tracer.start_run(run_id, snapshot.values.get("question", ""))
         try:
-            with tool_credentials(credentials):
-                state = self.graph.invoke(None, self.config(run_id)) if snapshot.next else snapshot.values
+            state = self.graph.invoke(None, self.config(run_id)) if snapshot.next else snapshot.values
         except Exception as error:
             raise self._failed(run_id, error) from error
         return self._finish(run_id, state)
@@ -134,5 +129,5 @@ def get_runtime() -> AgentRuntime:
         return _runtime
 
 
-def run_agent(question: str, credentials: str | None = None) -> AgentResult:
-    return get_runtime().run(question, credentials=credentials)
+def run_agent(question: str) -> AgentResult:
+    return get_runtime().run(question)

@@ -81,27 +81,9 @@ def test_the_rag_endpoint_still_works_next_to_the_agent(client, headers, monkeyp
     assert client.post("/knowledge/query", json={"question": QUESTION}, headers=headers).json() == {"answer": "respuesta RAG"}
 
 
-def test_the_ticket_tool_reads_with_the_callers_token_and_never_stores_it(client, headers, admin_headers, monkeypatch):
-    seen = []
-
-    def lookup(query):
-        seen.append(tools._credentials.get())
-        return tools.TicketLookupResult(status="unavailable", query=query, endpoint="GET /api/incidents/2",
-                                        duration_ms=4000, error="timeout after 4 s")
-
-    monkeypatch.setattr(tools, "lookup_tickets", lookup)
-    response = client.post("/agent/query", json={"question": "¿En qué estado está el ticket 2?"}, headers=headers)
-
-    assert response.status_code == 200
-    assert response.json()["answer"].startswith("No pude confirmar el estado del ticket #2 ahora mismo")
-    token = headers["Authorization"].removeprefix("Bearer ")
-    assert seen == [token]
-    trace = client.get(f"/agent/runs/{response.json()['run_id']}/trace", headers=admin_headers)
-    assert trace.json()["sources"] == "incidents" and token not in trace.text
-
-
 def test_the_agent_does_not_hold_the_user_database_lock_while_it_runs(client, headers, monkeypatch):
-    """The tools call back into this API, which must be able to authenticate them."""
+    """The MCP server calls back into this API (service account) while the agent waits for it;
+    that login must not be blocked by the coordinator's request."""
     lock_free = []
 
     def lookup(query):
@@ -109,7 +91,7 @@ def test_the_agent_does_not_hold_the_user_database_lock_while_it_runs(client, he
         lock_free.append(acquired)
         if acquired:
             client.app.state.database_lock.release()
-        return tools.TicketLookupResult(status="not_found", query=query, endpoint="GET /api/incidents/2", duration_ms=1)
+        return tools.TicketLookupResult(status="not_found", query=query, endpoint="MCP get_incident", duration_ms=1)
 
     monkeypatch.setattr(tools, "lookup_tickets", lookup)
     assert client.post("/agent/query", json={"question": "¿En qué estado está el ticket 2?"}, headers=headers).status_code == 200

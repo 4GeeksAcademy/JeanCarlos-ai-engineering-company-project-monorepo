@@ -25,3 +25,7 @@ data/agent_state/
 
 # Node
 node_modules/
+
+# MCP server: local OAuth client secrets and service-account password (generated, never committed)
+mcps/healthcore_mcp/.env
+mcps/healthcore_mcp/logs/

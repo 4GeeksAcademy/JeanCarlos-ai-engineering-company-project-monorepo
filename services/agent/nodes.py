@@ -3,9 +3,10 @@
 - RAG (Part 1): retrieve_context calls retrieve() and generate_answer calls
   generate_answer(question, context) from data/pipelines/rag.py with the chunks that
   retrieve_context already produced. No node calls the monolithic query().
-- Tools (Part 2): plan_sources decides the sources; lookup_tickets and lookup_stock read
-  the live incident and inventory services (services/agent/tools.py); ticket_fallback and
-  stock_fallback answer honestly when a tool fails; compose_answer joins the parts.
+- Tools: plan_sources decides the sources; lookup_tickets and lookup_stock read the live
+  Incidents Manager and inventory through the HealthCore MCP server (services/agent/tools.py,
+  MCP client via langchain-mcp-adapters); ticket_fallback and stock_fallback answer honestly
+  when a tool fails; compose_answer joins the parts.
 """
 
 from __future__ import annotations
@@ -102,7 +103,7 @@ def ticket_fallback(state: AgentState) -> AgentState:
     else:
         text = ((f"No pude confirmar el estado del ticket #{ticket_id} ahora mismo" if ticket_id else
                  "No pude consultar los tickets ahora mismo") +
-                ": el gestor de incidentes no respondió. Inténtalo de nuevo en unos minutos o revísalo en "
+                ": el gestor de incidentes no respondió a través del servidor MCP. Inténtalo de nuevo en unos minutos o revísalo en "
                 "la sección Incidentes del backoffice.")
     return {"tool_fallbacks": [text]}
 
@@ -168,14 +169,14 @@ def format_tickets(result: dict) -> str:
                  for t in tickets]
         shown = f"; estos son los {len(tickets)} más recientes" if result["total"] > len(tickets) else ""
         body = f"Hay {result['total']} ticket{'s' if result['total'] != 1 else ''} con esos criterios{shown}:\n" + "\n".join(lines)
-    return f"{body}\n\nFuente: gestor de incidentes ({result['endpoint']}), consultado en vivo el {checked}."
+    return f"{body}\n\nFuente: gestor de incidentes vía servidor MCP ({result['endpoint']}), consultado en vivo el {checked}."
 
 
 def format_stock(result: dict) -> str:
     checked = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     lines = [f"- {p['name']} (SKU {p['sku']}, {COUNTRY_LABELS[p['country']]}): {p['current_stock']} "
              f"{UNIT_LABELS.get(p['unit'], p['unit'])} en stock en la red." for p in result["products"]]
-    return "Stock actual:\n" + "\n".join(lines) + f"\n\nFuente: inventario ({result['endpoint']}), consultado en vivo el {checked}."
+    return "Stock actual:\n" + "\n".join(lines) + f"\n\nFuente: inventario vía servidor MCP ({result['endpoint']}), consultado en vivo el {checked}."
 
 
 def compose_answer(state: AgentState) -> AgentState:

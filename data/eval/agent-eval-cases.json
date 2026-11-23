@@ -1,5 +1,5 @@
 {
-  "description": "Evals of the LangGraph agent (services/agent). `python -m services.agent.record_evals` runs every case once against the real sources (knowledge base in Qdrant + 4Geeks gateway, incident manager and inventory APIs) and stores the traces in data/eval/agent_eval_traces.json; tests/pipelines/test_agent_evals.py checks the criteria against those traces, without calling the models or the services again. `fault` injects a failure of the incident API for that case only: `timeout` (a server that accepts but never answers) or `down` (nothing listening).",
+  "description": "Evals of the LangGraph agent (services/agent). `python -m services.agent.record_evals` runs every case once against the real sources (knowledge base in Qdrant + 4Geeks gateway, Incidents Manager and inventory through the HealthCore MCP server) and stores the traces in data/eval/agent_eval_traces.json; tests/pipelines/test_agent_evals.py checks the criteria against those traces, without calling the models or the services again. `fault` injects a failure of the MCP server for that case only: `timeout` (an endpoint that accepts but never answers) or `down` (nothing listening).",
   "cases": [
     {
       "id": "cancel-12h",
@@ -198,7 +198,8 @@
         "tool_status": "not_found",
         "answer_starts_with_any": [
           "No encontré el ticket #99999"
-        ]
+        ],
+        "tool_error_prefix": "NOT_FOUND"
       }
     },
     {
@@ -215,7 +216,7 @@
         ],
         "sources": "incidents",
         "tool_status": "unavailable",
-        "tool_error": "timeout after 4 s",
+        "tool_error": "TIMEOUT: timeout after 4 s",
         "answer_starts_with_any": [
           "No pude confirmar el estado del ticket #2 ahora mismo"
         ]
@@ -235,10 +236,10 @@
         ],
         "sources": "incidents",
         "tool_status": "unavailable",
-        "tool_error": "ConnectError",
         "answer_starts_with_any": [
           "No pude confirmar el estado del ticket #92 ahora mismo"
-        ]
+        ],
+        "tool_error_prefix": "MCP_UNREACHABLE"
       }
     },
     {

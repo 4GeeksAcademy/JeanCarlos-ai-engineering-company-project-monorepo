@@ -40,20 +40,20 @@ def sources(monkeypatch):
     def lookup_tickets(query):
         calls.append(("tickets", query.ticket_id))
         if query.ticket_id == 404:
-            return tools.TicketLookupResult(status="not_found", query=query, endpoint="GET /api/incidents/404",
+            return tools.TicketLookupResult(status="not_found", query=query, endpoint="MCP get_incident",
                                             duration_ms=3, error="ticket not found")
         if query.ticket_id == 503:
-            return tools.TicketLookupResult(status="unavailable", query=query, endpoint="GET /api/incidents/503",
+            return tools.TicketLookupResult(status="unavailable", query=query, endpoint="MCP get_incident",
                                             duration_ms=4000, error="timeout after 4 s")
-        return tools.TicketLookupResult(status="ok", query=query, endpoint=f"GET /api/incidents/{query.ticket_id}",
+        return tools.TicketLookupResult(status="ok", query=query, endpoint="MCP get_incident",
                                         duration_ms=12, tickets=[tools.Ticket.model_validate(TICKET)], total=1)
 
     def lookup_stock(query):
         calls.append(("stock", query.product))
         if "desfibrilador" in query.product:
-            return tools.StockLookupResult(status="not_found", query=query, endpoint="GET /inventory/products",
+            return tools.StockLookupResult(status="not_found", query=query, endpoint="MCP query_inventory",
                                            duration_ms=8, error="no product matches")
-        return tools.StockLookupResult(status="ok", query=query, endpoint="GET /inventory/products", duration_ms=9,
+        return tools.StockLookupResult(status="ok", query=query, endpoint="MCP query_inventory", duration_ms=9,
                                        products=[tools.ProductStock.model_validate(PRODUCT)])
 
     monkeypatch.setattr(rag, "retrieve", retrieve)
@@ -95,7 +95,7 @@ def test_ticket_question_uses_only_the_incident_tool(runtime, sources):
     assert runtime.trace(result.run_id)["sources"] == "incidents"
     assert sources == [("tickets", 2)]  # no retrieval, no generation model
     assert "El ticket #2" in result.answer and "En progreso" not in result.answer and "Abierto" in result.answer
-    assert "Fuente: gestor de incidentes (GET /api/incidents/2)" in result.answer
+    assert "Fuente: gestor de incidentes vía servidor MCP (MCP get_incident)" in result.answer
 
 
 def test_stock_question_uses_only_the_inventory_tool(runtime, sources):
