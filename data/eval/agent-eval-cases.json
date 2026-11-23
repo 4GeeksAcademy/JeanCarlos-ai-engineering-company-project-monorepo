@@ -7,10 +7,12 @@
       "expect": {
         "route": [
           "receive_question",
+          "recall_memories",
           "plan_sources",
           "retrieve_context",
           "generate_answer",
-          "compose_answer"
+          "compose_answer",
+          "self_evaluate"
         ],
         "retrieved_top3": "appointment-policy#1",
         "answer_contains_all": [
@@ -28,10 +30,12 @@
       "expect": {
         "route": [
           "receive_question",
+          "recall_memories",
           "plan_sources",
           "retrieve_context",
           "generate_answer",
-          "compose_answer"
+          "compose_answer",
+          "self_evaluate"
         ],
         "retrieved_top3": "appointment-policy#1",
         "answer_contains_any": [
@@ -54,10 +58,12 @@
       "expect": {
         "route": [
           "receive_question",
+          "recall_memories",
           "plan_sources",
           "retrieve_context",
           "generate_answer",
-          "compose_answer"
+          "compose_answer",
+          "self_evaluate"
         ],
         "retrieved_top3": "insurance-coverage#0",
         "answer_contains_all": [
@@ -76,10 +82,12 @@
       "expect": {
         "route": [
           "receive_question",
+          "recall_memories",
           "plan_sources",
           "retrieve_context",
           "generate_answer",
-          "compose_answer"
+          "compose_answer",
+          "self_evaluate"
         ],
         "retrieved_top3": "new-patient-checklist#1",
         "answer_contains_all": [
@@ -95,10 +103,12 @@
       "expect": {
         "route": [
           "receive_question",
+          "recall_memories",
           "plan_sources",
           "retrieve_context",
           "generate_answer",
-          "compose_answer"
+          "compose_answer",
+          "self_evaluate"
         ],
         "retrieved_top3": "referral-process#2",
         "answer_contains_all": [
@@ -113,10 +123,12 @@
       "expect": {
         "route": [
           "receive_question",
+          "recall_memories",
           "plan_sources",
           "retrieve_context",
           "generate_answer",
-          "compose_answer"
+          "compose_answer",
+          "self_evaluate"
         ],
         "retrieved_top3": "insurance-coverage#0",
         "answer_contains_all": [
@@ -135,10 +147,12 @@
       "expect": {
         "route": [
           "receive_question",
+          "recall_memories",
           "plan_sources",
           "retrieve_context",
           "answer_no_information",
-          "compose_answer"
+          "compose_answer",
+          "self_evaluate"
         ],
         "answer_equals_no_information": true,
         "sources": "knowledge_base"
@@ -161,9 +175,11 @@
       "expect": {
         "route": [
           "receive_question",
+          "recall_memories",
           "plan_sources",
           "lookup_tickets",
-          "compose_answer"
+          "compose_answer",
+          "self_evaluate"
         ],
         "sources": "incidents",
         "answer_reports_tool_data": true
@@ -175,9 +191,11 @@
       "expect": {
         "route": [
           "receive_question",
+          "recall_memories",
           "plan_sources",
           "lookup_tickets",
-          "compose_answer"
+          "compose_answer",
+          "self_evaluate"
         ],
         "sources": "incidents",
         "answer_reports_tool_data": true
@@ -189,10 +207,12 @@
       "expect": {
         "route": [
           "receive_question",
+          "recall_memories",
           "plan_sources",
           "lookup_tickets",
           "ticket_fallback",
-          "compose_answer"
+          "compose_answer",
+          "self_evaluate"
         ],
         "sources": "incidents",
         "tool_status": "not_found",
@@ -209,10 +229,12 @@
       "expect": {
         "route": [
           "receive_question",
+          "recall_memories",
           "plan_sources",
           "lookup_tickets",
           "ticket_fallback",
-          "compose_answer"
+          "compose_answer",
+          "self_evaluate"
         ],
         "sources": "incidents",
         "tool_status": "unavailable",
@@ -229,10 +251,12 @@
       "expect": {
         "route": [
           "receive_question",
+          "recall_memories",
           "plan_sources",
           "lookup_tickets",
           "ticket_fallback",
-          "compose_answer"
+          "compose_answer",
+          "self_evaluate"
         ],
         "sources": "incidents",
         "tool_status": "unavailable",
@@ -248,9 +272,11 @@
       "expect": {
         "route": [
           "receive_question",
+          "recall_memories",
           "plan_sources",
           "lookup_stock",
-          "compose_answer"
+          "compose_answer",
+          "self_evaluate"
         ],
         "sources": "inventory",
         "answer_reports_tool_data": true
@@ -262,10 +288,12 @@
       "expect": {
         "route": [
           "receive_question",
+          "recall_memories",
           "plan_sources",
           "lookup_stock",
           "stock_fallback",
-          "compose_answer"
+          "compose_answer",
+          "self_evaluate"
         ],
         "sources": "inventory",
         "tool_status": "not_found",
@@ -280,11 +308,13 @@
       "expect": {
         "route": [
           "receive_question",
+          "recall_memories",
           "plan_sources",
           "lookup_tickets",
           "retrieve_context",
           "generate_answer",
-          "compose_answer"
+          "compose_answer",
+          "self_evaluate"
         ],
         "sources": "incidents > knowledge_base",
         "answer_reports_tool_data": true,

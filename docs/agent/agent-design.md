@@ -436,3 +436,11 @@ llaman como cliente MCP:
   - [`trace-mcp-ticket-tool.json`](evidence/trace-mcp-ticket-tool.json), con `MCP get_incident` en 268 ms;
   - [`trace-mcp-stock-tool.json`](evidence/trace-mcp-stock-tool.json);
   - [`trace-mcp-rag.json`](evidence/trace-mcp-rag.json).
+
+## 10. Memoria (Hito 8, parte 1)
+
+El grafo suma cuatro nodos: `refuse_phi`, `resolve_pending_proposal`, `recall_memories` y
+`self_evaluate`. Con ellos, el agente propone recordar lo que el usuario le enseña y solo lo
+guarda con su aprobación explícita. Diseño completo, decisiones y evidencia:
+[`memory/memory-design.md`](memory/memory-design.md).
+

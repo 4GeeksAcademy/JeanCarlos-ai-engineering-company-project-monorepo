@@ -126,6 +126,10 @@ El agente decide solo si una pregunta necesita la base de conocimiento, el gesto
 
 Expone los tickets del Incidents Manager (consultar, crear y cambiar de estado vía `PATCH /api/incidents/{id}/status`) y el inventario en solo lectura a cualquier cliente MCP autorizado: Streamable HTTP, OAuth 2.1 con MCP Auth (Keycloak en local), scopes por tool y auditoría de cada invocación. El agente LangGraph lo consume como cliente MCP. Detalle: [`mcps/healthcore_mcp/README.md`](mcps/healthcore_mcp/README.md).
 
+## Memoria del agente (Hito 8, parte 1)
+
+El agente propone en la misma conversación recordar correcciones operativas, patrones de incidentes y preferencias del staff; solo guarda lo que el usuario aprueba explícitamente, nunca PHI (HIPAA + UK GDPR), con registro auditable y limpieza automática. Diseño y evidencia: [`docs/agent/memory/memory-design.md`](docs/agent/memory/memory-design.md).
+
 ## Guía de carpetas — qué va en cada una
 
 Lee el `README.md` enlazado dentro de cada carpeta antes de empezar a programar ahí.

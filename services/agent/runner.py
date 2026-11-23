@@ -48,6 +48,8 @@ class AgentResult:
     run_id: str
     status: str
     answer: str
+    conversation_id: str | None = None
+    memory: dict[str, Any] | None = None  # pending proposal / decision of this turn
 
 
 class AgentRuntime:
@@ -68,7 +70,25 @@ class AgentRuntime:
             self.tracer.finish_run(run_id, "rejected", error=state.get("error"))
             raise AgentRejected(run_id, state.get("error") or "La pregunta no es válida.")
         self.tracer.finish_run(run_id, "answered", answer=state.get("answer"))
-        return AgentResult(run_id, "answered", state["answer"])
+        proposal = state.get("memory_proposal") or {}
+        memory = {"proposal": ({"id": proposal["proposal_id"], "kind": proposal["kind"], "content": proposal["content"]}
+                               if proposal.get("outcome") == "proposed" else None),
+                  "blocked_phi": proposal.get("outcome") == "blocked_phi" or state.get("status") == "phi_refused",
+                  "decision": ({k: state["memory_decision"].get(k) for k in ("proposal_id", "status", "content")}
+                               if state.get("memory_decision") else None)}
+        return AgentResult(run_id, "answered", state["answer"], state.get("conversation_id"), memory)
+
+    @staticmethod
+    def screen(question: str) -> tuple[str, list[str]]:
+        """PHI guard BEFORE the graph: a message with patient information never reaches the
+        state, the checkpoints or the trace; the graph only sees a placeholder and refuses."""
+        from .memory.phi_guard import find_phi
+
+        findings = find_phi(question)
+        if not findings:
+            return question, []
+        categories = sorted({f.category for f in findings})
+        return f"[mensaje redactado: posible PHI ({', '.join(categories)})]", categories
 
     def _failed(self, run_id: str, error: BaseException) -> AgentRunError:
         trace = self.tracer.get_trace(run_id) or {"steps": []}
@@ -76,11 +96,23 @@ class AgentRuntime:
         self.tracer.finish_run(run_id, "failed", error=f"{failed or '?'}: {type(error).__name__}: {error}")
         return AgentRunError(run_id, failed, error)
 
-    def run(self, question: str, run_id: str | None = None) -> AgentResult:
+    def run(self, question: str, run_id: str | None = None, *, conversation_id: str | None = None,
+            actor: str | None = None) -> AgentResult:
+        """`conversation_id` groups turns (a memory proposal is answered in the next turn);
+        `actor` is the authenticated staff member, recorded as who approved a memory."""
+        from .memory.store import get_store
+
         run_id = run_id or str(uuid.uuid4())
-        self.tracer.start_run(run_id, question)
+        conversation_id = conversation_id or str(uuid.uuid4())
+        safe_question, phi = self.screen(question)
+        pending = get_store().pending(conversation_id)
+        inputs = {"question": safe_question, "conversation_id": conversation_id, "actor": actor or "unknown",
+                  "phi_categories": phi,
+                  "pending_proposal": ({"id": pending["id"], "kind": pending["kind"], "content": pending["content"]}
+                                       if pending else None)}
+        self.tracer.start_run(run_id, safe_question)
         try:
-            state = self.graph.invoke({"question": question}, self.config(run_id))
+            state = self.graph.invoke(inputs, self.config(run_id))
         except Exception as error:
             raise self._failed(run_id, error) from error
         return self._finish(run_id, state)
@@ -129,5 +161,5 @@ def get_runtime() -> AgentRuntime:
         return _runtime
 
 
-def run_agent(question: str) -> AgentResult:
-    return get_runtime().run(question)
+def run_agent(question: str, *, conversation_id: str | None = None, actor: str | None = None) -> AgentResult:
+    return get_runtime().run(question, conversation_id=conversation_id, actor=actor)

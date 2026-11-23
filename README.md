@@ -125,6 +125,10 @@ The agent decides on its own whether a question needs the knowledge base, the in
 
 Exposes Incidents Manager tickets (read, create and change status through `PATCH /api/incidents/{id}/status`) and the inventory, read only, to any authorized MCP client: Streamable HTTP, OAuth 2.1 with MCP Auth (Keycloak locally), per-tool scopes and an audit line per invocation. The LangGraph agent consumes it as an MCP client. Details: [`mcps/healthcore_mcp/README.md`](mcps/healthcore_mcp/README.md).
 
+## Agent memory (Milestone 8, part 1)
+
+The agent proposes, in the same conversation, to remember operational corrections, incident patterns and staff preferences; it only stores what the user explicitly approves, never PHI (HIPAA + UK GDPR), with an auditable log and automatic cleanup. Design and evidence: [`docs/agent/memory/memory-design.md`](docs/agent/memory/memory-design.md).
+
 ## Current status
 
 The Talent Pipeline Tracker is a runnable Next.js app. Other monorepo folders remain available for the wider course project.

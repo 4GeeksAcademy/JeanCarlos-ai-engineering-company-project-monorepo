@@ -79,8 +79,8 @@ def route(runtime, run_id):
 def test_policy_question_uses_only_the_knowledge_base(runtime, sources):
     result = runtime.run("  ¿Cobran por cancelar   con 12 horas?  ")
 
-    assert route(runtime, result.run_id) == ["receive_question", "plan_sources", "retrieve_context",
-                                             "generate_answer", "compose_answer"]
+    assert route(runtime, result.run_id) == ["receive_question", "recall_memories", "plan_sources", "retrieve_context",
+                                             "generate_answer", "compose_answer", "self_evaluate"]
     assert runtime.trace(result.run_id)["sources"] == "knowledge_base"
     assert result.answer.startswith("Si cancela con más de 24 horas")
     # retrieve once; generation receives exactly the chunks retrieve produced
@@ -91,7 +91,7 @@ def test_policy_question_uses_only_the_knowledge_base(runtime, sources):
 def test_ticket_question_uses_only_the_incident_tool(runtime, sources):
     result = runtime.run("¿En qué estado está el ticket 2?")
 
-    assert route(runtime, result.run_id) == ["receive_question", "plan_sources", "lookup_tickets", "compose_answer"]
+    assert route(runtime, result.run_id) == ["receive_question", "recall_memories", "plan_sources", "lookup_tickets", "compose_answer", "self_evaluate"]
     assert runtime.trace(result.run_id)["sources"] == "incidents"
     assert sources == [("tickets", 2)]  # no retrieval, no generation model
     assert "El ticket #2" in result.answer and "En progreso" not in result.answer and "Abierto" in result.answer
@@ -100,7 +100,7 @@ def test_ticket_question_uses_only_the_incident_tool(runtime, sources):
 
 def test_stock_question_uses_only_the_inventory_tool(runtime, sources):
     result = runtime.run("¿Tenemos stock de guantes de nitrilo?")
-    assert route(runtime, result.run_id) == ["receive_question", "plan_sources", "lookup_stock", "compose_answer"]
+    assert route(runtime, result.run_id) == ["receive_question", "recall_memories", "plan_sources", "lookup_stock", "compose_answer", "self_evaluate"]
     assert runtime.trace(result.run_id)["sources"] == "inventory"
     assert "102 cajas" in result.answer
 
@@ -108,8 +108,8 @@ def test_stock_question_uses_only_the_inventory_tool(runtime, sources):
 def test_mixed_question_uses_the_tool_and_then_the_knowledge_base(runtime, sources):
     result = runtime.run("¿En qué estado está el ticket 2 y qué dice la política de cancelación?")
 
-    assert route(runtime, result.run_id) == ["receive_question", "plan_sources", "lookup_tickets",
-                                             "retrieve_context", "generate_answer", "compose_answer"]
+    assert route(runtime, result.run_id) == ["receive_question", "recall_memories", "plan_sources", "lookup_tickets",
+                                             "retrieve_context", "generate_answer", "compose_answer", "self_evaluate"]
     assert runtime.trace(result.run_id)["sources"] == "incidents > knowledge_base"
     ticket_part, rag_part = result.answer.split("\n\n", 2)[0], result.answer
     assert ticket_part.startswith("El ticket #2") and "Si cancela con más de 24 horas" in rag_part
@@ -118,7 +118,7 @@ def test_mixed_question_uses_the_tool_and_then_the_knowledge_base(runtime, sourc
 def test_no_context_routes_to_the_honest_answer_without_calling_the_model(runtime, sources):
     result = runtime.run("¿Cuál es la receta de la paella?")
     assert result.answer == nodes.NO_INFORMATION_ANSWER
-    assert route(runtime, result.run_id)[2:] == ["retrieve_context", "answer_no_information", "compose_answer"]
+    assert route(runtime, result.run_id)[3:] == ["retrieve_context", "answer_no_information", "compose_answer", "self_evaluate"]
     assert [call[0] for call in sources] == ["retrieve"]
 
 
@@ -132,8 +132,8 @@ def test_no_context_routes_to_the_honest_answer_without_calling_the_model(runtim
 def test_ticket_failures_route_to_the_fallback_and_never_invent_a_status(runtime, sources, ticket_id, expected):
     result = runtime.run(f"¿En qué estado está el ticket {ticket_id}?")
 
-    assert route(runtime, result.run_id) == ["receive_question", "plan_sources", "lookup_tickets",
-                                             "ticket_fallback", "compose_answer"]
+    assert route(runtime, result.run_id) == ["receive_question", "recall_memories", "plan_sources", "lookup_tickets",
+                                             "ticket_fallback", "compose_answer", "self_evaluate"]
     assert result.answer.startswith(expected)
     assert not any(label in result.answer for label in nodes.STATUS_LABELS.values())
     assert runtime.trace(result.run_id)["status"] == "answered"  # the run did not break
@@ -141,14 +141,14 @@ def test_ticket_failures_route_to_the_fallback_and_never_invent_a_status(runtime
 
 def test_stock_fallback_for_a_product_that_is_not_in_the_inventory(runtime, sources):
     result = runtime.run("¿Hay stock de desfibriladores?")
-    assert route(runtime, result.run_id)[2:] == ["lookup_stock", "stock_fallback", "compose_answer"]
+    assert route(runtime, result.run_id)[3:] == ["lookup_stock", "stock_fallback", "compose_answer", "self_evaluate"]
     assert "No encontré «desfibriladores» en el inventario" in result.answer
 
 
 def test_a_failed_tool_does_not_stop_the_knowledge_base_part(runtime, sources):
     result = runtime.run("¿En qué estado está el ticket 503 y qué dice la política de cancelación?")
-    assert route(runtime, result.run_id)[2:] == ["lookup_tickets", "ticket_fallback", "retrieve_context",
-                                                 "generate_answer", "compose_answer"]
+    assert route(runtime, result.run_id)[3:] == ["lookup_tickets", "ticket_fallback", "retrieve_context",
+                                                 "generate_answer", "compose_answer", "self_evaluate"]
     assert result.answer.startswith("No pude confirmar el estado del ticket #503")
     assert "Si cancela con más de 24 horas" in result.answer
 
@@ -297,10 +297,10 @@ def test_compile_fails_when_a_node_is_missing():
 def test_a_checkpoint_is_written_after_every_node(runtime, sources):
     result = runtime.run("¿En qué estado está el ticket 2 y qué dice la política de cancelación?")
     checkpoints = runtime.checkpoint_history(result.run_id)
-    assert [c["next"] for c in checkpoints] == [["__start__"], ["receive_question"], ["plan_sources"],
-                                                ["lookup_tickets"], ["retrieve_context"], ["generate_answer"],
-                                                ["compose_answer"], []]
-    assert "ticket_result" in checkpoints[4]["state_keys"]
+    assert [c["next"] for c in checkpoints] == [["__start__"], ["receive_question"], ["recall_memories"],
+                                                ["plan_sources"], ["lookup_tickets"], ["retrieve_context"],
+                                                ["generate_answer"], ["compose_answer"], ["self_evaluate"], []]
+    assert "ticket_result" in checkpoints[5]["state_keys"]
 
 
 def test_failed_run_is_traced_and_resumes_from_its_last_checkpoint(tmp_path, sources, monkeypatch):
@@ -333,7 +333,7 @@ def test_trace_is_persisted_and_shows_the_tool_output(tmp_path, sources):
     run_id = AgentRuntime(database).run("¿En qué estado está el ticket 2?").run_id
 
     trace = AgentRuntime(database).trace(run_id)  # another process, same file
-    plan_step, tool_step = trace["steps"][1], trace["steps"][2]
+    plan_step, tool_step = trace["steps"][2], trace["steps"][3]
     assert plan_step["output"]["plan"]["ticket"]["ticket_id"] == 2 and plan_step["output"]["plan"]["planner"] == "rules"
     assert tool_step["node"] == "lookup_tickets"
     assert tool_step["output"]["ticket_result"]["status"] == "ok"

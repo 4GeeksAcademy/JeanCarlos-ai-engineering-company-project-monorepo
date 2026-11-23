@@ -107,4 +107,4 @@ tests/pipelines/test_agent_evals.py::test_tickets_and_stock_are_only_read_throug
 tests/pipelines/test_agent_evals.py::test_tickets_and_stock_are_only_read_through_the_mcp_server[ticket-status] PASSED [ 99%]
 tests/pipelines/test_agent_evals.py::test_tickets_and_stock_are_only_read_through_the_mcp_server[ticket-timeout] PASSED [100%]
 
-============================= 101 passed in 0.06s ==============================
+============================= 101 passed in 0.22s ==============================

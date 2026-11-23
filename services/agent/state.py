@@ -1,15 +1,15 @@
 """State that travels between the nodes of the agent graph.
 
-Minimal on purpose: only what a node needs to decide the next step. No conversation
-history: every question is answered on its own (the RAG has no memory), so carrying
-previous turns would only grow the checkpoints and risk mixing one patient's context into
-another coordinator's question. Tool credentials are never part of the state.
+Minimal on purpose: only what a node needs to decide the next step. Still no conversation
+history: what the agent learns across conversations lives in the explicit memory store
+(services/agent/memory), read by recall_memories and written only after an approved proposal,
+never by appending turns to the state or the prompt. Tool credentials and PHI never enter.
 """
 
 import operator
 from typing import Annotated, Any, Literal, TypedDict
 
-Status = Literal["received", "rejected", "planned", "retrieved", "no_context", "answered"]
+Status = Literal["received", "rejected", "phi_refused", "decided", "planned", "retrieved", "no_context", "answered"]
 
 
 class RetrievedChunk(TypedDict, total=False):
@@ -25,7 +25,14 @@ class RetrievedChunk(TypedDict, total=False):
 
 
 class AgentState(TypedDict, total=False):
-    question: str  # input; normalized by receive_question
+    question: str  # input; normalized by receive_question (already PHI-screened by the runner)
+    conversation_id: str  # input: memory proposals live per conversation
+    actor: str  # input: authenticated staff user (who approves a memory)
+    phi_categories: list[str]  # input: PHI found by the runner's guard (the text never enters)
+    pending_proposal: dict[str, Any] | None  # input: the open memory proposal of this conversation
+    memory_decision: dict[str, Any]  # resolve_pending_proposal: label, status, content, memory id
+    memories: list[dict[str, Any]]  # recall_memories: approved memories relevant to the question
+    memory_proposal: dict[str, Any]  # self_evaluate: proposed / blocked_phi / none
     status: Status  # what the last node concluded
     error: str  # why the question was rejected
     plan: dict[str, Any]  # SourcePlan: which sources the question needs (plan_sources)

@@ -1,14 +1,17 @@
 """The agent graph: nodes, conditional edges, structural validation and compilation.
 
     START → receive_question ─ invalid → reject_question → END
-                             └ valid → plan_sources → (sources the plan needs, in this order)
+                             ├ PHI in the message → refuse_phi → END
+                             ├ pending memory proposal → resolve_pending_proposal ─┬ rest of message → recall_memories
+                             │                                                    └ nothing else → compose_answer
+                             └ valid → recall_memories → plan_sources → (sources the plan needs, in this order)
         lookup_tickets ─ ok ─────────────┐   (incident manager, live)
                        └ failed → ticket_fallback ┤
         lookup_stock ─── ok ─────────────┤   (inventory, live)
                        └ failed → stock_fallback ─┤
         retrieve_context ─ chunks → generate_answer ───────┤   (knowledge base, RAG)
                          └ none → answer_no_information ────┤
-                                                       compose_answer → END
+                                                       compose_answer → self_evaluate → END
 
 Every source node is followed by the same decision (next_source): the next source the plan
 needs that has not run yet, or compose_answer. A question can use the RAG, a tool, or both.
@@ -44,7 +47,18 @@ class GraphStructureError(ValueError):
 
 
 def route_after_receive(state: AgentState) -> str:
-    return "plan_sources" if state.get("status") == "received" else "reject_question"
+    if state.get("status") != "received":
+        return "reject_question"
+    if state.get("phi_categories"):
+        return "refuse_phi"
+    if state.get("pending_proposal"):
+        return "resolve_pending_proposal"  # the reply to the open proposal is evaluated first
+    return "recall_memories"
+
+
+def route_after_decision(state: AgentState) -> str:
+    """After closing the proposal: continue with the rest of the message, or just acknowledge."""
+    return "recall_memories" if state.get("question") else "compose_answer"
 
 
 def next_source(state: AgentState) -> str:
@@ -69,12 +83,15 @@ def route_after_stock(state: AgentState) -> str:
 
 
 def route_after_retrieve(state: AgentState) -> str:
-    return "generate_answer" if state.get("context") else "answer_no_information"
+    return "generate_answer" if state.get("context") or state.get("memories") else "answer_no_information"
 
 
 NODES: dict[str, NodeFn] = {
     "receive_question": nodes.receive_question,
     "reject_question": nodes.reject_question,
+    "refuse_phi": nodes.refuse_phi,
+    "resolve_pending_proposal": nodes.resolve_pending_proposal,
+    "recall_memories": nodes.recall_memories,
     "plan_sources": nodes.plan_sources,
     "lookup_tickets": nodes.lookup_tickets,
     "ticket_fallback": nodes.ticket_fallback,
@@ -84,6 +101,7 @@ NODES: dict[str, NodeFn] = {
     "generate_answer": nodes.generate_answer,
     "answer_no_information": nodes.answer_no_information,
     "compose_answer": nodes.compose_answer,
+    "self_evaluate": nodes.self_evaluate,
 }
 
 # Where each source node may go next (path maps of the conditional edges).
@@ -129,7 +147,10 @@ def build_graph(tracer: TraceStore | None = None, node_fns: dict[str, NodeFn] | 
         graph.add_node(name, traced(name, fn, tracer))
     graph.add_edge(START, "receive_question")
     graph.add_conditional_edges("receive_question", route_after_receive,
-                                {"plan_sources": "plan_sources", "reject_question": "reject_question"})
+                                {n: n for n in ["reject_question", "refuse_phi", "resolve_pending_proposal", "recall_memories"]})
+    graph.add_conditional_edges("resolve_pending_proposal", route_after_decision,
+                                {"recall_memories": "recall_memories", "compose_answer": "compose_answer"})
+    graph.add_edge("recall_memories", "plan_sources")
     graph.add_conditional_edges("plan_sources", next_source, {n: n for n in _AFTER_PLAN})
     graph.add_conditional_edges("lookup_tickets", route_after_tickets,
                                 {n: n for n in ["ticket_fallback", *_AFTER_TICKETS]})
@@ -141,7 +162,9 @@ def build_graph(tracer: TraceStore | None = None, node_fns: dict[str, NodeFn] | 
     graph.add_edge("generate_answer", "compose_answer")
     graph.add_edge("answer_no_information", "compose_answer")
     graph.add_edge("reject_question", END)
-    graph.add_edge("compose_answer", END)
+    graph.add_edge("refuse_phi", END)
+    graph.add_edge("compose_answer", "self_evaluate")
+    graph.add_edge("self_evaluate", END)
     return graph
 
 

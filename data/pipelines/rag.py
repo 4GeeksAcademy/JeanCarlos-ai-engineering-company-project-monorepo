@@ -34,6 +34,7 @@ DOCUMENT_TITLES = {
     "appointment-policy": "Política de Citas y Cancelaciones",
     "referral-process": "Proceso de Referencia Interna",
     "new-patient-checklist": "Checklist para Pacientes Nuevos",
+    "agent-memory": "Memoria del agente",  # approved operational facts (agent only, never the knowledge base)
 }
 NO_CONTEXT = "NO SE ENCONTRÓ INFORMACIÓN RELEVANTE EN LA BASE DE CONOCIMIENTO."
 
@@ -64,7 +65,11 @@ cobra cargo por no-show; se registra el incidente en su historial. Sigue la pol�
 clínica). Si la pregunta los incluye, responde sobre la política en general.
 8. Escribe en español, en un tono profesional y cercano, de 2 a 6 frases o una lista corta si hay \
 pasos, sin preámbulos ("Claro, aquí tienes…"). Dirígete al coordinador; puede leerle la respuesta al paciente.
-9. Termina con una línea "Fuente:" con el documento y la sección usados, en el formato \
+9. Los bloques "Memoria del agente" son correcciones operativas aprobadas por el staff (horarios, \
+protocolos locales, patrones de incidentes, preferencias). Úsalos para esa clínica o persona, pero no \
+reemplazan una política documentada: si contradicen un documento, prevalece el documento y menciona la \
+discrepancia.
+10. Termina con una línea "Fuente:" con el documento y la sección usados, en el formato \
 "Documento — Sección" de los encabezados del CONTEXTO (sin corchetes; varias separadas por "; "). \
 Si no usaste ninguno, escribe "Fuente: ninguna"."""
 

@@ -1,4 +1,4 @@
-name: Python tests (sales forecast, RAG, agent, MCP server)
+name: Python tests (sales forecast, RAG, agent, memory, MCP server)
 
 on:
   push:
@@ -25,6 +25,6 @@ jobs:
       - name: Temporal CV, forecast and RAG tests (Qdrant and the LLM are stubbed)
         run: uv run python -m pytest tests/pipelines/test_temporal_cv.py tests/pipelines/test_sales_forecast.py tests/pipelines/test_rag.py -v
       - name: LangGraph agent tests and evals (evals read the recorded traces)
-        run: uv run python -m pytest tests/pipelines/test_agent_graph.py tests/pipelines/test_agent_tools.py tests/pipelines/test_agent_evals.py -v
+        run: uv run python -m pytest tests/pipelines/test_agent_graph.py tests/pipelines/test_agent_tools.py tests/pipelines/test_agent_evals.py tests/pipelines/test_agent_memory.py tests/pipelines/test_agent_memory_evidence.py -v
       - name: HealthCore MCP server (real server, test OAuth server, stand-in API)
         run: uv run python -m pytest tests/mcps -v

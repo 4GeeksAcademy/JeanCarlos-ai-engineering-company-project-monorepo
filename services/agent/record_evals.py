@@ -25,6 +25,7 @@ import os
 import socket
 import sys
 import threading
+from pathlib import Path
 from collections.abc import Iterator
 from datetime import datetime, timezone
 
@@ -78,6 +79,12 @@ def mcp_server_fault(kind: str | None) -> Iterator[None]:
 
 
 def main() -> int:
+    import tempfile
+
+    from .memory import store as memory_store
+
+    # A fresh, empty agent memory: the eval answers must not depend on what was learned before.
+    memory_store._store = memory_store.MemoryStore(Path(tempfile.mkdtemp(prefix="agent-evals-")) / "agent_memory.sqlite")
     runtime = AgentRuntime(state_database().with_name("evals.sqlite"))
     cases = json.loads(CASES.read_text(encoding="utf-8"))["cases"]
     traces = []

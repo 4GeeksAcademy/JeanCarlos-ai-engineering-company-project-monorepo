@@ -17,6 +17,9 @@ CHUNK = {"source_document": "appointment-policy", "chunk_index": 1, "section": "
 
 @pytest.fixture(autouse=True)
 def agent(monkeypatch, tmp_path):
+    from tests.memory_fixtures import isolate_memory
+
+    isolate_memory(monkeypatch, tmp_path)
     monkeypatch.setattr(runner, "_runtime", AgentRuntime(tmp_path / "agent.sqlite"))
     monkeypatch.setattr(rag, "retrieve", lambda question: [CHUNK] if "cancel" in question.lower() else [])
     monkeypatch.setattr(rag, "generate_answer", lambda question, context: "Sí, 50 USD (o 40 GBP).\nFuente: X")
@@ -38,7 +41,9 @@ def test_answers_with_the_generated_text_and_the_run_id(client, headers):
 
     assert response.status_code == 200
     body = response.json()
-    assert set(body) == {"answer", "run_id"} and body["answer"] == "Sí, 50 USD (o 40 GBP).\nFuente: X"
+    assert set(body) == {"answer", "run_id", "conversation_id", "memory"}
+    assert body["answer"] == "Sí, 50 USD (o 40 GBP).\nFuente: X"
+    assert body["memory"] == {"proposal": None, "decision": None, "blocked_phi": False}
 
 
 def test_empty_question_is_a_clear_422_from_the_graph(client, headers):
@@ -65,7 +70,7 @@ def test_trace_is_queryable_by_admins_only(client, headers, admin_headers):
 
     assert client.get(f"/agent/runs/{run_id}/trace", headers=headers).status_code == 403
     trace = client.get(f"/agent/runs/{run_id}/trace", headers=admin_headers).json()
-    assert trace["route"] == "receive_question > plan_sources > retrieve_context > generate_answer > compose_answer"
+    assert trace["route"] == "receive_question > recall_memories > plan_sources > retrieve_context > generate_answer > compose_answer > self_evaluate"
     assert trace["sources"] == "knowledge_base"
     assert trace["checkpoints"][-1]["next"] == []
     assert client.get("/agent/runs/00000000-0000-0000-0000-000000000000/trace", headers=admin_headers).status_code == 404
