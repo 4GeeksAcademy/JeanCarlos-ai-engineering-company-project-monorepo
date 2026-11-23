@@ -55,6 +55,72 @@ ai-engineering-company-project-monorepo/
 
 ---
 
+## Background worker (Celery, ticket DEV-55)
+
+Heavy operations run in a **Celery worker**, a separate process from the FastAPI API, with
+Redis as broker and result backend. The API only enqueues and answers `202` with a
+`task_id`; `GET /tasks/{task_id}` reports `pending`, `started`, `retry`, `success` or
+`failure`. Details: [`docs/operations/async-tasks.md`](./docs/operations/async-tasks.md).
+
+**Start** (Redis, worker and Flower; credentials from `services/api/.env`):
+
+```bash
+COMPOSE_ENV_FILE=services/api/.env docker compose up -d redis worker flower
+open http://localhost:5555                       # Flower: queues, tasks, retries
+```
+
+Without Docker (Redis already on `localhost:6379`):
+
+```bash
+export REDIS_URL=redis://localhost:6379/0
+celery -A services.celery_app worker -Q reporting --loglevel INFO      # worker
+celery -A services.celery_app flower --port=5555                       # Flower
+```
+
+The API must use the same `REDIS_URL`.
+
+**Stop:**
+
+```bash
+docker compose stop worker      # warm shutdown: finishes running tasks (up to 120 s)
+docker compose down             # everything; queued messages stay in the redis_data volume
+```
+
+Without Docker, `Ctrl-C` once does a warm shutdown, and twice a cold one. Unacked tasks
+go back to the queue (`task_acks_late`).
+
+Stopping the API stops neither the worker nor the queued messages. Stopping the worker
+leaves the messages waiting in Redis until a worker starts again.
+
+---
+
+## RAG knowledge base (Milestone 7)
+
+Assistant for patient coordinators: answers questions about insurance, appointments, referrals and new patients only from the documents in `docs/company-knowledge-base/`. Full design: [`docs/rag/rag-design.md`](docs/rag/rag-design.md).
+
+```bash
+docker compose up -d qdrant        # Qdrant on localhost:6333
+python -m data.process.rag         # indexes the documents into the healthcore_knowledge collection
+python data/eval/evaluate_rag_retrieval.py   # Recall@3
+```
+
+Needs `LLM_API_URL`, `LLM_API_KEY`, `EMBEDDING_MODEL` and `GENERATION_MODEL` (different models, from the 4Geeks gateway) in `services/api/.env`. Endpoint: `POST /knowledge/query`; UI: "Asistente" in the backoffice (`/knowledge`).
+
+## LangGraph support agent (part 1)
+
+The RAG flow as an explicit graph (`services/agent/`): minimal state, nodes `receive_question → retrieve_context → generate_answer` (or `answer_no_information` / `reject_question`), SQLite checkpoints and a queryable trace of every run. Design: [`docs/agent/agent-design.md`](docs/agent/agent-design.md).
+
+```bash
+python -m services.agent.record_evals              # records one live run per eval case
+python -m pytest tests/pipelines/test_agent_evals.py   # evals against the recorded traces
+```
+
+Endpoints: `POST /agent/query` and `GET /agent/runs/{run_id}/trace` (admins).
+
+## Agent with tools beyond the RAG (part 2)
+
+The agent decides on its own whether a question needs the knowledge base, the incident manager (`GET /api/incidents`) or the inventory (`GET /inventory/products`): read-only tools with a typed contract, a 4 s timeout and an honest fallback. Design: [`docs/agent/agent-design.md`](docs/agent/agent-design.md) §8.
+
 ## Current status
 
 The Talent Pipeline Tracker is a runnable Next.js app. Other monorepo folders remain available for the wider course project.
