@@ -176,18 +176,64 @@ python mcps/healthcore_mcp/scripts/get_token.py healthcore-ops   # token para pr
 | `MCP_ALLOWED_HOSTS` | Opcional: limita los `Host` aceptados (protección contra DNS rebinding). Por defecto se acepta cualquiera |
 | `MCP_HOST`, `MCP_PORT` | `127.0.0.1`, `8765` |
 
-### Probar desde MCP Playground (Codespaces)
+### Probar desde MCP Playground en GitHub Codespaces (para la revisión)
 
-1. En Codespaces, reenvía el puerto 8765 con visibilidad **Public**.
-2. Arranca el servidor con `MCP_RESOURCE_URL=https://<codespace>-8765.app.github.dev/mcp`, para
-   que los metadatos anuncien la URL pública. Si quieres limitar los hosts aceptados, añade
-   `MCP_ALLOWED_HOSTS=<codespace>-8765.app.github.dev`.
-3. En MCP Playground, pega la URL reenviada (`…/mcp`), con transporte Streamable HTTP, y la
-   cabecera `Authorization: Bearer <token de get_token.py>`.
-4. Prueba un flujo completo por tool, más un intento de escritura de inventario, que debe dar
-   `INVENTORY_READ_ONLY`.
+**Un solo comando** en la terminal del Codespace, desde la raíz del repositorio:
 
-Sin la cabecera, Playground recibe `401` con la URL de los metadatos del recurso.
+```bash
+bash mcps/healthcore_mcp/scripts/codespaces_demo.sh up
+```
+
+El script levanta todo dentro del Codespace; el estado y los logs quedan en `.mcp-demo/`, que
+no se versiona:
+
+1. instala `uv` si falta y ejecuta `uv sync`;
+2. genera secretos aleatorios (`mcps/healthcore_mcp/.env` y `.mcp-demo/demo.env`);
+3. arranca Postgres y carga los datos del repositorio: **94 tickets** de
+   `data/raw/incidents-healthcore.csv` y **10 productos** de `services/api/seed_inventory.py`;
+4. arranca la API de HealthCore (`:8000`) con un usuario de demo y la cuenta de servicio
+   `mcp-service`;
+5. arranca **Keycloak** (`:8081`) con el realm `healthcore` y el **servidor MCP** (`:8765`),
+   anunciando la URL pública `https://$CODESPACE_NAME-8765.app.github.dev/mcp` en sus
+   Protected Resource Metadata;
+6. hace **público** el puerto 8765 (`gh codespace ports visibility 8765:public`). Si el token
+   del Codespace no tiene permiso, ve a la pestaña **PORTS**, clic derecho en 8765, **Port
+   Visibility** y **Public**;
+7. imprime la URL y un token del cliente `healthcore-ops`.
+
+**En MCP Playground:**
+
+| Campo | Valor |
+| --- | --- |
+| Server URL | La que imprime el script (`https://…-8765.app.github.dev/mcp`). `localhost` no sirve desde el sitio |
+| Transport | Streamable HTTP |
+| Header | `Authorization: Bearer <token>`. Los tokens duran 15 min; para uno nuevo: `bash mcps/healthcore_mcp/scripts/codespaces_demo.sh token` |
+
+**Flujos para comprobar, uno por tool:**
+
+| Prueba | Resultado esperado |
+| --- | --- |
+| Conectar **sin** la cabecera | `401` con `WWW-Authenticate: … resource_metadata="…/.well-known/oauth-protected-resource/mcp"` |
+| `tools/list` | 5 tools con descripción, scope requerido, `inputSchema`/`outputSchema` y anotaciones; recurso `healthcore://incidents/catalog` |
+| `get_incident {"incident_id": 2}` | Ticket #2, `open` |
+| `list_incidents {"status": "open", "branch": "london_west"}` | 4 tickets |
+| `create_incident {"title": "…", "description": "…", "category": "it_system", "origin": "internal", "branch": "central"}` | Ticket nuevo en `open` |
+| `update_incident_status` del ticket nuevo: `in_progress`, después `resolved` | Cambia de estado (vía `PATCH /api/incidents/{id}/status`) |
+| `update_incident_status` a `open` sobre un ticket `resolved` | `INVALID_STATUS_TRANSITION` |
+| `query_inventory {"operation": "get", "product": "guantes"}` | Guantes de nitrilo (caja de 100) con su `current_stock` |
+| **`query_inventory {"operation": "update", "sku": "HCR-PPE-001"}`** | **`INVENTORY_READ_ONLY`**: el stock no cambia |
+| `create_incident` con el token de `bash … token healthcore-inventory-reader` | `INSUFFICIENT_SCOPE` (`required_scope: incidents:write`) |
+| `create_incident` con `"category": "nope"` | `VALIDATION_ERROR` con el campo `category` |
+
+**Auditoría:** cada llamada queda en `.mcp-demo/tool-invocations.jsonl`, con el cliente, la
+tool y el resultado.
+
+**Para terminar:** `bash mcps/healthcore_mcp/scripts/codespaces_demo.sh down`.
+
+**Sobre el token.** El servidor de autorización (Keycloak) sigue siendo privado, dentro del
+Codespace. Playground no necesita alcanzarlo, porque el token se obtiene en la terminal (client
+credentials) y se pega como cabecera. En un despliegue real, Keycloak sería público y un
+cliente MCP completo haría el flujo OAuth a partir de los metadatos del recurso.
 
 ## Migración del agente
 
