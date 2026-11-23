@@ -11,6 +11,7 @@ on:
       - "data/pipelines/rag.py"
       - "docs/company-knowledge-base/**"
       - "services/agent/**"
+      - "packages/shared/incidents/**"
       - "data/eval/agent-eval-cases.json"
       - "data/eval/agent_eval_traces.json"
       - "data/raw/healthcore_sales.csv"
@@ -36,4 +37,4 @@ jobs:
       - name: Temporal CV, forecast and RAG tests (Qdrant and the LLM are stubbed)
         run: uv run python -m pytest tests/pipelines/test_temporal_cv.py tests/pipelines/test_sales_forecast.py tests/pipelines/test_rag.py -v
       - name: LangGraph agent tests and evals (evals read the recorded traces)
-        run: uv run python -m pytest tests/pipelines/test_agent_graph.py tests/pipelines/test_agent_evals.py -v
+        run: uv run python -m pytest tests/pipelines/test_agent_graph.py tests/pipelines/test_agent_tools.py tests/pipelines/test_agent_evals.py -v

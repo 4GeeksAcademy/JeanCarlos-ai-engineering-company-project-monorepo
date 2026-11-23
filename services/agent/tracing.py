@@ -3,7 +3,8 @@
 
 Two tables in the agent state database (same file as the LangGraph checkpoints):
 
-- agent_runs: one row per run (question, final status, route, answer, error, timings).
+- agent_runs: one row per run (question, final status, route, sources used in order,
+  answer, error, timings).
 - agent_trace_steps: one row per executed node, in order (node, status, duration and what
   the node produced; retrieved chunks are summarized to document/section/score).
 """
@@ -18,6 +19,8 @@ from pathlib import Path
 from typing import Any
 
 MAX_TEXT = 4000
+# Which source each node consults: the trace says whether a run used the RAG, a tool or both.
+SOURCE_OF_NODE = {"lookup_tickets": "incidents", "lookup_stock": "inventory", "retrieve_context": "knowledge_base"}
 
 SCHEMA = """
 create table if not exists agent_runs (
@@ -25,6 +28,7 @@ create table if not exists agent_runs (
     question text not null,
     status text not null,              -- running | answered | rejected | failed
     route text,                        -- nodes executed, joined with ' > '
+    sources text,                      -- sources consulted, in order: incidents > inventory > knowledge_base
     answer text,
     error text,
     started_at text not null,
@@ -75,6 +79,9 @@ class TraceStore:
         self._lock = threading.Lock()
         with self._lock, self._conn:
             self._conn.executescript(SCHEMA)
+            columns = {row[1] for row in self._conn.execute("pragma table_info(agent_runs)")}
+            if "sources" not in columns:  # databases created by Part 1
+                self._conn.execute("alter table agent_runs add column sources text")
 
     def start_run(self, run_id: str, question: str) -> None:
         with self._lock, self._conn:
@@ -100,11 +107,15 @@ class TraceStore:
 
     def finish_run(self, run_id: str, status: str, *, answer: str | None = None, error: str | None = None) -> None:
         with self._lock, self._conn:
+            executed = [row[0] for row in self._conn.execute(
+                "select node from agent_trace_steps where run_id = ? and status = 'ok' order by step", (run_id,))]
             route = " > ".join(row[0] for row in self._conn.execute(
                 "select node from agent_trace_steps where run_id = ? order by step", (run_id,)))
+            sources = " > ".join(SOURCE_OF_NODE[node] for node in executed if node in SOURCE_OF_NODE)
             self._conn.execute(
-                "update agent_runs set status = ?, route = ?, answer = ?, error = ?, finished_at = ? where run_id = ?",
-                (status, route, (answer or "")[:MAX_TEXT] or None, error, _now(), run_id),
+                "update agent_runs set status = ?, route = ?, sources = ?, answer = ?, error = ?, finished_at = ? "
+                "where run_id = ?",
+                (status, route, sources or None, (answer or "")[:MAX_TEXT] or None, error, _now(), run_id),
             )
 
     def get_trace(self, run_id: str) -> dict[str, Any] | None:

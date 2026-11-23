@@ -117,6 +117,10 @@ python -m pytest tests/pipelines/test_agent_evals.py   # evals against the recor
 
 Endpoints: `POST /agent/query` and `GET /agent/runs/{run_id}/trace` (admins).
 
+## Agent with tools beyond the RAG (part 2)
+
+The agent decides on its own whether a question needs the knowledge base, the incident manager (`GET /api/incidents`) or the inventory (`GET /inventory/products`): read-only tools with a typed contract, a 4 s timeout and an honest fallback. Design: [`docs/agent/agent-design.md`](docs/agent/agent-design.md) §8.
+
 ## Current status
 
 The Talent Pipeline Tracker is a runnable Next.js app. Other monorepo folders remain available for the wider course project.

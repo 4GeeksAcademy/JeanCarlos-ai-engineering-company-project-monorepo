@@ -1,7 +1,17 @@
 """The agent graph: nodes, conditional edges, structural validation and compilation.
 
-    START → receive_question ─┬─ valid ──→ retrieve_context ─┬─ chunks ───→ generate_answer ──────→ END
-                              └─ invalid → reject_question → END └─ no chunks → answer_no_information → END
+    START → receive_question ─ invalid → reject_question → END
+                             └ valid → plan_sources → (sources the plan needs, in this order)
+        lookup_tickets ─ ok ─────────────┐   (incident manager, live)
+                       └ failed → ticket_fallback ┤
+        lookup_stock ─── ok ─────────────┤   (inventory, live)
+                       └ failed → stock_fallback ─┤
+        retrieve_context ─ chunks → generate_answer ───────┤   (knowledge base, RAG)
+                         └ none → answer_no_information ────┤
+                                                       compose_answer → END
+
+Every source node is followed by the same decision (next_source): the next source the plan
+needs that has not run yet, or compose_answer. A question can use the RAG, a tool, or both.
 
 The graph is compiled (and validated) before any execution: compile_agent() raises
 GraphStructureError on an unreachable node, a node with no way to END, a conditional route
@@ -34,7 +44,28 @@ class GraphStructureError(ValueError):
 
 
 def route_after_receive(state: AgentState) -> str:
-    return "retrieve_context" if state.get("status") == "received" else "reject_question"
+    return "plan_sources" if state.get("status") == "received" else "reject_question"
+
+
+def next_source(state: AgentState) -> str:
+    """Next source the plan needs and that has not been consulted yet: tools first (live
+    data), then the knowledge base; compose_answer when nothing is left."""
+    plan = state.get("plan") or {}
+    if plan.get("ticket") and "ticket_result" not in state:
+        return "lookup_tickets"
+    if plan.get("inventory") and "stock_result" not in state:
+        return "lookup_stock"
+    if plan.get("knowledge_base") and "context" not in state:
+        return "retrieve_context"
+    return "compose_answer"
+
+
+def route_after_tickets(state: AgentState) -> str:
+    return next_source(state) if state["ticket_result"]["status"] == "ok" else "ticket_fallback"
+
+
+def route_after_stock(state: AgentState) -> str:
+    return next_source(state) if state["stock_result"]["status"] == "ok" else "stock_fallback"
 
 
 def route_after_retrieve(state: AgentState) -> str:
@@ -44,10 +75,21 @@ def route_after_retrieve(state: AgentState) -> str:
 NODES: dict[str, NodeFn] = {
     "receive_question": nodes.receive_question,
     "reject_question": nodes.reject_question,
+    "plan_sources": nodes.plan_sources,
+    "lookup_tickets": nodes.lookup_tickets,
+    "ticket_fallback": nodes.ticket_fallback,
+    "lookup_stock": nodes.lookup_stock,
+    "stock_fallback": nodes.stock_fallback,
     "retrieve_context": nodes.retrieve_context,
     "generate_answer": nodes.generate_answer,
     "answer_no_information": nodes.answer_no_information,
+    "compose_answer": nodes.compose_answer,
 }
+
+# Where each source node may go next (path maps of the conditional edges).
+_AFTER_PLAN = ["lookup_tickets", "lookup_stock", "retrieve_context", "compose_answer"]
+_AFTER_TICKETS = ["lookup_stock", "retrieve_context", "compose_answer"]
+_AFTER_STOCK = ["retrieve_context", "compose_answer"]
 
 
 # ---------------------------------------------------------------- tracing
@@ -87,12 +129,19 @@ def build_graph(tracer: TraceStore | None = None, node_fns: dict[str, NodeFn] | 
         graph.add_node(name, traced(name, fn, tracer))
     graph.add_edge(START, "receive_question")
     graph.add_conditional_edges("receive_question", route_after_receive,
-                                {"retrieve_context": "retrieve_context", "reject_question": "reject_question"})
+                                {"plan_sources": "plan_sources", "reject_question": "reject_question"})
+    graph.add_conditional_edges("plan_sources", next_source, {n: n for n in _AFTER_PLAN})
+    graph.add_conditional_edges("lookup_tickets", route_after_tickets,
+                                {n: n for n in ["ticket_fallback", *_AFTER_TICKETS]})
+    graph.add_conditional_edges("ticket_fallback", next_source, {n: n for n in _AFTER_TICKETS})
+    graph.add_conditional_edges("lookup_stock", route_after_stock, {n: n for n in ["stock_fallback", *_AFTER_STOCK]})
+    graph.add_conditional_edges("stock_fallback", next_source, {n: n for n in _AFTER_STOCK})
     graph.add_conditional_edges("retrieve_context", route_after_retrieve,
                                 {"generate_answer": "generate_answer", "answer_no_information": "answer_no_information"})
+    graph.add_edge("generate_answer", "compose_answer")
+    graph.add_edge("answer_no_information", "compose_answer")
     graph.add_edge("reject_question", END)
-    graph.add_edge("generate_answer", END)
-    graph.add_edge("answer_no_information", END)
+    graph.add_edge("compose_answer", END)
     return graph
 
 

@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException
 
 from data.pipelines.rag import query
 
-from ..core.dependencies import CurrentUser
+from ..core.dependencies import AuthenticatedUser
 from ..schemas.knowledge import KnowledgeAnswer, KnowledgeQuery
 
 router = APIRouter(prefix="/knowledge", tags=["knowledge"])
@@ -19,7 +19,7 @@ logger = logging.getLogger("api.knowledge")
 
 
 @router.post("/query", response_model=KnowledgeAnswer, responses={503: {"description": "Knowledge base unavailable"}})
-def knowledge_query(body: KnowledgeQuery, _user: CurrentUser) -> KnowledgeAnswer:
+def knowledge_query(body: KnowledgeQuery, _user: AuthenticatedUser) -> KnowledgeAnswer:
     try:
         answer = query(body.question)
     except Exception as error:  # Qdrant, model gateway or configuration: never an empty answer

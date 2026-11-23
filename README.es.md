@@ -118,6 +118,10 @@ python -m pytest tests/pipelines/test_agent_evals.py   # evals contra las trazas
 
 Endpoints: `POST /agent/query` y `GET /agent/runs/{run_id}/trace` (administradores).
 
+## Agente con tools fuera del RAG (parte 2)
+
+El agente decide solo si una pregunta necesita la base de conocimiento, el gestor de incidentes (`GET /api/incidents`) o el inventario (`GET /inventory/products`): tools de solo lectura con contrato tipado, timeout de 4 s y fallback honesto. Diseño: [`docs/agent/agent-design.md`](docs/agent/agent-design.md) §8.
+
 ## Guía de carpetas — qué va en cada una
 
 Lee el `README.md` enlazado dentro de cada carpeta antes de empezar a programar ahí.

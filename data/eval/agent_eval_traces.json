@@ -1,22 +1,24 @@
 {
-  "recorded_at": "2026-11-22T17:40:57+00:00",
+  "recorded_at": "2026-11-23T09:22:54+00:00",
   "traces": [
     {
       "case_id": "cancel-12h",
-      "run_id": "37466317-bb9f-48cd-ae05-554ba31d6372",
+      "fault": null,
+      "run_id": "266ee509-31dd-4926-892a-a3adbec2ba60",
       "question": "¿Cobran cargo por cancelación con 12 horas de anticipación?",
       "status": "answered",
-      "route": "receive_question > retrieve_context > generate_answer",
-      "answer": "Sí, se aplica el cargo por cancelación con menos de 24 horas de anticipación. Para pacientes de pago privado, el cargo es de 50 USD (o 40 GBP en Reino Unido). Si el paciente tiene Medicare o Medicaid, no se le cobra, pero se registra el incidente en su historial.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación",
+      "route": "receive_question > plan_sources > retrieve_context > generate_answer > compose_answer",
+      "answer": "Sí, se aplica cargo. Cancelar con menos de 24 horas de anticipación equivale a 50 USD (o 40 GBP en Reino Unido) para pacientes de pago privado. Los pacientes con Medicare o Medicaid no pagan este cargo, pero se registra el incidente en su historial.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación",
       "error": null,
-      "started_at": "2026-11-22T17:40:29.250+00:00",
-      "finished_at": "2026-11-22T17:40:38.259+00:00",
+      "started_at": "2026-11-23T09:22:09.319+00:00",
+      "finished_at": "2026-11-23T09:22:15.404+00:00",
+      "sources": "knowledge_base",
       "steps": [
         {
           "step": 1,
           "node": "receive_question",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:29.252+00:00",
+          "started_at": "2026-11-23T09:22:09.322+00:00",
           "duration_ms": 0.0,
           "error": null,
           "output": {
@@ -26,10 +28,29 @@
         },
         {
           "step": 2,
+          "node": "plan_sources",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:09.324+00:00",
+          "duration_ms": 4682.05,
+          "error": null,
+          "output": {
+            "plan": {
+              "knowledge_base": true,
+              "knowledge_question": null,
+              "ticket": null,
+              "inventory": null,
+              "planner": "model",
+              "note": null
+            },
+            "status": "planned"
+          }
+        },
+        {
+          "step": 3,
           "node": "retrieve_context",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:29.254+00:00",
-          "duration_ms": 1103.48,
+          "started_at": "2026-11-23T09:22:14.008+00:00",
+          "duration_ms": 573.82,
           "error": null,
           "output": {
             "context": [
@@ -62,14 +83,25 @@
           }
         },
         {
-          "step": 3,
+          "step": 4,
           "node": "generate_answer",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:30.358+00:00",
-          "duration_ms": 7898.28,
+          "started_at": "2026-11-23T09:22:14.582+00:00",
+          "duration_ms": 818.56,
           "error": null,
           "output": {
-            "answer": "Sí, se aplica el cargo por cancelación con menos de 24 horas de anticipación. Para pacientes de pago privado, el cargo es de 50 USD (o 40 GBP en Reino Unido). Si el paciente tiene Medicare o Medicaid, no se le cobra, pero se registra el incidente en su historial.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación",
+            "rag_answer": "Sí, se aplica cargo. Cancelar con menos de 24 horas de anticipación equivale a 50 USD (o 40 GBP en Reino Unido) para pacientes de pago privado. Los pacientes con Medicare o Medicaid no pagan este cargo, pero se registra el incidente en su historial.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación"
+          }
+        },
+        {
+          "step": 5,
+          "node": "compose_answer",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:15.402+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "answer": "Sí, se aplica cargo. Cancelar con menos de 24 horas de anticipación equivale a 50 USD (o 40 GBP en Reino Unido) para pacientes de pago privado. Los pacientes con Medicare o Medicaid no pagan este cargo, pero se registra el incidente en su historial.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación",
             "status": "answered"
           }
         }
@@ -77,79 +109,120 @@
       "checkpoints": [
         {
           "step": -1,
-          "checkpoint_id": "1f1e69bc-f01e-6614-bfff-cd2527e8e990",
+          "checkpoint_id": "1f1e71f5-bac4-6996-bfff-658346c60880",
           "next": [
             "__start__"
           ],
           "status": null,
-          "state_keys": []
+          "state_keys": [
+            "tool_fallbacks"
+          ]
         },
         {
           "step": 0,
-          "checkpoint_id": "1f1e69bc-f01f-65e6-8000-e27d9b48fb51",
+          "checkpoint_id": "1f1e71f5-bac5-68e6-8000-8995f62ee29c",
           "next": [
             "receive_question"
           ],
           "status": null,
           "state_keys": [
-            "question"
+            "question",
+            "tool_fallbacks"
           ]
         },
         {
           "step": 1,
-          "checkpoint_id": "1f1e69bc-f023-6f7e-8001-cdca38f0518f",
+          "checkpoint_id": "1f1e71f5-baca-6f12-8001-131ebe51aae3",
           "next": [
-            "retrieve_context"
+            "plan_sources"
           ],
           "status": "received",
           "state_keys": [
             "question",
-            "status"
+            "status",
+            "tool_fallbacks"
           ]
         },
         {
           "step": 2,
-          "checkpoint_id": "1f1e69bc-faab-63e8-8002-5386ca791bed",
+          "checkpoint_id": "1f1e71f5-e775-67c4-8002-1140ca825406",
+          "next": [
+            "retrieve_context"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e71f5-ecf0-6794-8003-12e48f4c703b",
           "next": [
             "generate_answer"
           ],
           "status": "retrieved",
           "state_keys": [
             "context",
+            "plan",
             "question",
-            "status"
+            "status",
+            "tool_fallbacks"
           ]
         },
         {
-          "step": 3,
-          "checkpoint_id": "1f1e69bd-4600-6e92-8003-4712620406ca",
+          "step": 4,
+          "checkpoint_id": "1f1e71f5-f4c0-6bea-8004-e9e6ab5e54f0",
+          "next": [
+            "compose_answer"
+          ],
+          "status": "retrieved",
+          "state_keys": [
+            "context",
+            "plan",
+            "question",
+            "rag_answer",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 5,
+          "checkpoint_id": "1f1e71f5-f4c5-671c-8005-16c29c7bb954",
           "next": [],
           "status": "answered",
           "state_keys": [
             "answer",
             "context",
+            "plan",
             "question",
-            "status"
+            "rag_answer",
+            "status",
+            "tool_fallbacks"
           ]
         }
       ]
     },
     {
       "case_id": "medicare-no-show",
-      "run_id": "65520d6f-da58-419c-a9c2-976e4d002cee",
+      "fault": null,
+      "run_id": "698d0fe6-7466-420d-99ea-24afba182f88",
       "question": "¿A un paciente de Medicare se le cobra si no se presenta a la cita?",
       "status": "answered",
-      "route": "receive_question > retrieve_context > generate_answer",
-      "answer": "No, a los pacientes de Medicare no se les cobra el cargo por no-show. Según la regulación, se registra el incidente en su historial, pero no hay penalización económica.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación",
+      "route": "receive_question > plan_sources > retrieve_context > generate_answer > compose_answer",
+      "answer": "No, a los pacientes de Medicare no se les cobra el cargo por no-show. Según la política, se registra el incidente en su historial, pero no hay penalización económica.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación",
       "error": null,
-      "started_at": "2026-11-22T17:40:38.260+00:00",
-      "finished_at": "2026-11-22T17:40:39.899+00:00",
+      "started_at": "2026-11-23T09:22:15.405+00:00",
+      "finished_at": "2026-11-23T09:22:18.831+00:00",
+      "sources": "knowledge_base",
       "steps": [
         {
           "step": 1,
           "node": "receive_question",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:38.262+00:00",
+          "started_at": "2026-11-23T09:22:15.407+00:00",
           "duration_ms": 0.01,
           "error": null,
           "output": {
@@ -159,10 +232,29 @@
         },
         {
           "step": 2,
+          "node": "plan_sources",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:15.408+00:00",
+          "duration_ms": 1356.95,
+          "error": null,
+          "output": {
+            "plan": {
+              "knowledge_base": true,
+              "knowledge_question": null,
+              "ticket": null,
+              "inventory": null,
+              "planner": "model",
+              "note": null
+            },
+            "status": "planned"
+          }
+        },
+        {
+          "step": 3,
           "node": "retrieve_context",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:38.264+00:00",
-          "duration_ms": 372.05,
+          "started_at": "2026-11-23T09:22:16.767+00:00",
+          "duration_ms": 349.59,
           "error": null,
           "output": {
             "context": [
@@ -201,14 +293,25 @@
           }
         },
         {
-          "step": 3,
+          "step": 4,
           "node": "generate_answer",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:38.637+00:00",
-          "duration_ms": 1259.32,
+          "started_at": "2026-11-23T09:22:17.117+00:00",
+          "duration_ms": 1710.4,
           "error": null,
           "output": {
-            "answer": "No, a los pacientes de Medicare no se les cobra el cargo por no-show. Según la regulación, se registra el incidente en su historial, pero no hay penalización económica.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación",
+            "rag_answer": "No, a los pacientes de Medicare no se les cobra el cargo por no-show. Según la política, se registra el incidente en su historial, pero no hay penalización económica.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación"
+          }
+        },
+        {
+          "step": 5,
+          "node": "compose_answer",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:18.828+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "answer": "No, a los pacientes de Medicare no se les cobra el cargo por no-show. Según la política, se registra el incidente en su historial, pero no hay penalización económica.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación",
             "status": "answered"
           }
         }
@@ -216,79 +319,120 @@
       "checkpoints": [
         {
           "step": -1,
-          "checkpoint_id": "1f1e69bd-4608-6d7c-bfff-54c53d77befa",
+          "checkpoint_id": "1f1e71f5-f4cc-6580-bfff-0ebef636303b",
           "next": [
             "__start__"
           ],
           "status": null,
-          "state_keys": []
+          "state_keys": [
+            "tool_fallbacks"
+          ]
         },
         {
           "step": 0,
-          "checkpoint_id": "1f1e69bd-460a-67a8-8000-6efff2c0884f",
+          "checkpoint_id": "1f1e71f5-f4cd-6750-8000-7d661e6d72f5",
           "next": [
             "receive_question"
           ],
           "status": null,
           "state_keys": [
-            "question"
+            "question",
+            "tool_fallbacks"
           ]
         },
         {
           "step": 1,
-          "checkpoint_id": "1f1e69bd-460f-6ba4-8001-07bae9cdd84d",
+          "checkpoint_id": "1f1e71f5-f4d1-6ada-8001-91e40d4199a2",
           "next": [
-            "retrieve_context"
+            "plan_sources"
           ],
           "status": "received",
           "state_keys": [
             "question",
-            "status"
+            "status",
+            "tool_fallbacks"
           ]
         },
         {
           "step": 2,
-          "checkpoint_id": "1f1e69bd-499e-6c0c-8002-1bd3f53c1ba9",
+          "checkpoint_id": "1f1e71f6-01c5-6192-8002-74d59db3f0cc",
+          "next": [
+            "retrieve_context"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e71f6-051d-629a-8003-845a73314731",
           "next": [
             "generate_answer"
           ],
           "status": "retrieved",
           "state_keys": [
             "context",
+            "plan",
             "question",
-            "status"
+            "status",
+            "tool_fallbacks"
           ]
         },
         {
-          "step": 3,
-          "checkpoint_id": "1f1e69bd-55a4-6740-8003-a5e14c55369a",
+          "step": 4,
+          "checkpoint_id": "1f1e71f6-156f-60d0-8004-ad48d65e6141",
+          "next": [
+            "compose_answer"
+          ],
+          "status": "retrieved",
+          "state_keys": [
+            "context",
+            "plan",
+            "question",
+            "rag_answer",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 5,
+          "checkpoint_id": "1f1e71f6-1574-6cb0-8005-369708d97038",
           "next": [],
           "status": "answered",
           "state_keys": [
             "answer",
             "context",
+            "plan",
             "question",
-            "status"
+            "rag_answer",
+            "status",
+            "tool_fallbacks"
           ]
         }
       ]
     },
     {
       "case_id": "medicaid-georgia",
-      "run_id": "8d77b21a-ec48-44d3-af66-cfcb04d9a57f",
+      "fault": null,
+      "run_id": "dc8c9779-7c78-424c-bb82-dfd061dd4486",
       "question": "¿Aceptan Medicaid en la clínica de Georgia?",
       "status": "answered",
-      "route": "receive_question > retrieve_context > generate_answer",
+      "route": "receive_question > plan_sources > retrieve_context > generate_answer > compose_answer",
       "answer": "No, actualmente Medicaid no se acepta en las clínicas de Georgia. Solo está disponible en las clínicas de Texas y Florida.\n\nFuente: Cobertura de Seguros Aceptados — Estados Unidos (Texas, Florida, Georgia)",
       "error": null,
-      "started_at": "2026-11-22T17:40:39.900+00:00",
-      "finished_at": "2026-11-22T17:40:45.119+00:00",
+      "started_at": "2026-11-23T09:22:18.832+00:00",
+      "finished_at": "2026-11-23T09:22:21.425+00:00",
+      "sources": "knowledge_base",
       "steps": [
         {
           "step": 1,
           "node": "receive_question",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:39.902+00:00",
+          "started_at": "2026-11-23T09:22:18.834+00:00",
           "duration_ms": 0.0,
           "error": null,
           "output": {
@@ -298,10 +442,29 @@
         },
         {
           "step": 2,
+          "node": "plan_sources",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:18.836+00:00",
+          "duration_ms": 1259.64,
+          "error": null,
+          "output": {
+            "plan": {
+              "knowledge_base": true,
+              "knowledge_question": null,
+              "ticket": null,
+              "inventory": null,
+              "planner": "model",
+              "note": null
+            },
+            "status": "planned"
+          }
+        },
+        {
+          "step": 3,
           "node": "retrieve_context",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:39.904+00:00",
-          "duration_ms": 379.93,
+          "started_at": "2026-11-23T09:22:20.097+00:00",
+          "duration_ms": 290.33,
           "error": null,
           "output": {
             "context": [
@@ -316,11 +479,22 @@
           }
         },
         {
-          "step": 3,
+          "step": 4,
           "node": "generate_answer",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:40.284+00:00",
-          "duration_ms": 4833.32,
+          "started_at": "2026-11-23T09:22:20.388+00:00",
+          "duration_ms": 1033.16,
+          "error": null,
+          "output": {
+            "rag_answer": "No, actualmente Medicaid no se acepta en las clínicas de Georgia. Solo está disponible en las clínicas de Texas y Florida.\n\nFuente: Cobertura de Seguros Aceptados — Estados Unidos (Texas, Florida, Georgia)"
+          }
+        },
+        {
+          "step": 5,
+          "node": "compose_answer",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:21.422+00:00",
+          "duration_ms": 0.0,
           "error": null,
           "output": {
             "answer": "No, actualmente Medicaid no se acepta en las clínicas de Georgia. Solo está disponible en las clínicas de Texas y Florida.\n\nFuente: Cobertura de Seguros Aceptados — Estados Unidos (Texas, Florida, Georgia)",
@@ -331,80 +505,121 @@
       "checkpoints": [
         {
           "step": -1,
-          "checkpoint_id": "1f1e69bd-55ac-6f30-bfff-69b0e84fef95",
+          "checkpoint_id": "1f1e71f6-157a-6ca0-bfff-3e17a2779310",
           "next": [
             "__start__"
           ],
           "status": null,
-          "state_keys": []
+          "state_keys": [
+            "tool_fallbacks"
+          ]
         },
         {
           "step": 0,
-          "checkpoint_id": "1f1e69bd-55ae-6308-8000-bb3b4847f646",
+          "checkpoint_id": "1f1e71f6-157b-6ea2-8000-ab626cda76f0",
           "next": [
             "receive_question"
           ],
           "status": null,
           "state_keys": [
-            "question"
+            "question",
+            "tool_fallbacks"
           ]
         },
         {
           "step": 1,
-          "checkpoint_id": "1f1e69bd-55b3-6272-8001-2dd283e0a0b7",
+          "checkpoint_id": "1f1e71f6-1582-605e-8001-1e46fb2a7560",
           "next": [
-            "retrieve_context"
+            "plan_sources"
           ],
           "status": "received",
           "state_keys": [
             "question",
-            "status"
+            "status",
+            "tool_fallbacks"
           ]
         },
         {
           "step": 2,
-          "checkpoint_id": "1f1e69bd-5954-6c5a-8002-87ab44e8b236",
+          "checkpoint_id": "1f1e71f6-2187-6aa2-8002-0cffe819f5a0",
+          "next": [
+            "retrieve_context"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e71f6-244f-694c-8003-a0dea891ee07",
           "next": [
             "generate_answer"
           ],
           "status": "retrieved",
           "state_keys": [
             "context",
+            "plan",
             "question",
-            "status"
+            "status",
+            "tool_fallbacks"
           ]
         },
         {
-          "step": 3,
-          "checkpoint_id": "1f1e69bd-876f-6662-8003-d29084a432a7",
+          "step": 4,
+          "checkpoint_id": "1f1e71f6-2e2c-61cc-8004-57721862094f",
+          "next": [
+            "compose_answer"
+          ],
+          "status": "retrieved",
+          "state_keys": [
+            "context",
+            "plan",
+            "question",
+            "rag_answer",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 5,
+          "checkpoint_id": "1f1e71f6-2e31-69b0-8005-3c36ca67832b",
           "next": [],
           "status": "answered",
           "state_keys": [
             "answer",
             "context",
+            "plan",
             "question",
-            "status"
+            "rag_answer",
+            "status",
+            "tool_fallbacks"
           ]
         }
       ]
     },
     {
       "case_id": "first-visit",
-      "run_id": "ac1f0d07-ff7d-46b3-a1c9-5a886b276485",
+      "fault": null,
+      "run_id": "efd36fb6-ea28-4f98-bd70-092a8e011148",
       "question": "¿Qué debo traer a mi primera cita?",
       "status": "answered",
-      "route": "receive_question > retrieve_context > generate_answer",
+      "route": "receive_question > plan_sources > retrieve_context > generate_answer > compose_answer",
       "answer": "Para su primera cita, debe traer un documento de identidad válido, su tarjeta de seguro (si aplica) y, si el motivo de consulta lo amerita, una lista de sus medicamentos actuales. Además, recuerde que antes de la cita debe completar el formulario de historial médico, disponible en el portal o en papel en recepción.\n\nFuente: Checklist para Pacientes Nuevos — Documentos que el paciente debe traer el día de la cita; Checklist para Pacientes Nuevos — Todo paciente nuevo debe completar antes de su primera cita",
       "error": null,
-      "started_at": "2026-11-22T17:40:45.120+00:00",
-      "finished_at": "2026-11-22T17:40:47.169+00:00",
+      "started_at": "2026-11-23T09:22:21.426+00:00",
+      "finished_at": "2026-11-23T09:22:25.066+00:00",
+      "sources": "knowledge_base",
       "steps": [
         {
           "step": 1,
           "node": "receive_question",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:45.122+00:00",
-          "duration_ms": 0.0,
+          "started_at": "2026-11-23T09:22:21.427+00:00",
+          "duration_ms": 0.01,
           "error": null,
           "output": {
             "question": "¿Qué debo traer a mi primera cita?",
@@ -413,10 +628,29 @@
         },
         {
           "step": 2,
+          "node": "plan_sources",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:21.427+00:00",
+          "duration_ms": 1154.58,
+          "error": null,
+          "output": {
+            "plan": {
+              "knowledge_base": true,
+              "knowledge_question": null,
+              "ticket": null,
+              "inventory": null,
+              "planner": "model",
+              "note": null
+            },
+            "status": "planned"
+          }
+        },
+        {
+          "step": 3,
           "node": "retrieve_context",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:45.124+00:00",
-          "duration_ms": 387.47,
+          "started_at": "2026-11-23T09:22:22.583+00:00",
+          "duration_ms": 435.63,
           "error": null,
           "output": {
             "context": [
@@ -443,11 +677,22 @@
           }
         },
         {
-          "step": 3,
+          "step": 4,
           "node": "generate_answer",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:45.512+00:00",
-          "duration_ms": 1654.66,
+          "started_at": "2026-11-23T09:22:23.021+00:00",
+          "duration_ms": 2040.25,
+          "error": null,
+          "output": {
+            "rag_answer": "Para su primera cita, debe traer un documento de identidad válido, su tarjeta de seguro (si aplica) y, si el motivo de consulta lo amerita, una lista de sus medicamentos actuales. Además, recuerde que antes de la cita debe completar el formulario de historial médico, disponible en el portal o en papel en recepción.\n\nFuente: Checklist para Pacientes Nuevos — Documentos que el paciente debe traer el día de la cita; Checklist para Pacientes Nuevos — Todo paciente nuevo debe completar antes de su primera cita"
+          }
+        },
+        {
+          "step": 5,
+          "node": "compose_answer",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:25.062+00:00",
+          "duration_ms": 0.0,
           "error": null,
           "output": {
             "answer": "Para su primera cita, debe traer un documento de identidad válido, su tarjeta de seguro (si aplica) y, si el motivo de consulta lo amerita, una lista de sus medicamentos actuales. Además, recuerde que antes de la cita debe completar el formulario de historial médico, disponible en el portal o en papel en recepción.\n\nFuente: Checklist para Pacientes Nuevos — Documentos que el paciente debe traer el día de la cita; Checklist para Pacientes Nuevos — Todo paciente nuevo debe completar antes de su primera cita",
@@ -458,79 +703,120 @@
       "checkpoints": [
         {
           "step": -1,
-          "checkpoint_id": "1f1e69bd-8774-6c34-bfff-3be35c3ea22d",
+          "checkpoint_id": "1f1e71f6-2e36-682a-bfff-0d30df758b9c",
           "next": [
             "__start__"
           ],
           "status": null,
-          "state_keys": []
+          "state_keys": [
+            "tool_fallbacks"
+          ]
         },
         {
           "step": 0,
-          "checkpoint_id": "1f1e69bd-8776-6804-8000-a2d89fc4fe2f",
+          "checkpoint_id": "1f1e71f6-2e37-6720-8000-ae7309e314c1",
           "next": [
             "receive_question"
           ],
           "status": null,
           "state_keys": [
-            "question"
+            "question",
+            "tool_fallbacks"
           ]
         },
         {
           "step": 1,
-          "checkpoint_id": "1f1e69bd-877b-6610-8001-a2f1187bfb99",
+          "checkpoint_id": "1f1e71f6-2e38-6ddc-8001-4d425a5c70e4",
           "next": [
-            "retrieve_context"
+            "plan_sources"
           ],
           "status": "received",
           "state_keys": [
             "question",
-            "status"
+            "status",
+            "tool_fallbacks"
           ]
         },
         {
           "step": 2,
-          "checkpoint_id": "1f1e69bd-8b30-6468-8002-69c199e8e600",
+          "checkpoint_id": "1f1e71f6-393e-67d6-8002-663df4636785",
+          "next": [
+            "retrieve_context"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e71f6-3d69-663a-8003-95622fa3f54d",
           "next": [
             "generate_answer"
           ],
           "status": "retrieved",
           "state_keys": [
             "context",
+            "plan",
             "question",
-            "status"
+            "status",
+            "tool_fallbacks"
           ]
         },
         {
-          "step": 3,
-          "checkpoint_id": "1f1e69bd-9afb-6c30-8003-b78d46e62845",
+          "step": 4,
+          "checkpoint_id": "1f1e71f6-50e2-6266-8004-858d4b12f637",
+          "next": [
+            "compose_answer"
+          ],
+          "status": "retrieved",
+          "state_keys": [
+            "context",
+            "plan",
+            "question",
+            "rag_answer",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 5,
+          "checkpoint_id": "1f1e71f6-50e8-6b52-8005-a67024d128b5",
           "next": [],
           "status": "answered",
           "state_keys": [
             "answer",
             "context",
+            "plan",
             "question",
-            "status"
+            "rag_answer",
+            "status",
+            "tool_fallbacks"
           ]
         }
       ]
     },
     {
       "case_id": "referral-escalation",
-      "run_id": "43f85eed-c44e-4f5f-a0dc-f414c266459b",
+      "fault": null,
+      "run_id": "fa1c8e76-768e-4a6f-bbe0-c27f1755da20",
       "question": "Pasaron 6 días hábiles y el paciente no tiene opciones de cita con el especialista, ¿qué hago?",
       "status": "answered",
-      "route": "receive_question > retrieve_context > generate_answer",
-      "answer": "Según la política, si el paciente no ha recibido opciones de cita después de 5 días hábiles desde la creación de la referencia, debes escalar el caso directamente a Marcus Reid, Director de Operaciones Clínicas. Como ya han pasado 6 días, es el momento de realizar ese escalamiento para que se gestione la cita.\n\nFuente: Proceso de Referencia Interna — Proceso de Referencia Interna",
+      "route": "receive_question > plan_sources > retrieve_context > generate_answer > compose_answer",
+      "answer": "Escala el caso directamente a Marcus Reid, Director de Operaciones Clínicas, ya que han pasado más de 5 días hábiles sin que el paciente reciba opciones de cita.\n\nFuente: Proceso de Referencia Interna — Proceso de Referencia Interna",
       "error": null,
-      "started_at": "2026-11-22T17:40:47.171+00:00",
-      "finished_at": "2026-11-22T17:40:52.084+00:00",
+      "started_at": "2026-11-23T09:22:25.068+00:00",
+      "finished_at": "2026-11-23T09:22:30.168+00:00",
+      "sources": "knowledge_base",
       "steps": [
         {
           "step": 1,
           "node": "receive_question",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:47.172+00:00",
+          "started_at": "2026-11-23T09:22:25.070+00:00",
           "duration_ms": 0.01,
           "error": null,
           "output": {
@@ -540,10 +826,29 @@
         },
         {
           "step": 2,
+          "node": "plan_sources",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:25.071+00:00",
+          "duration_ms": 2695.35,
+          "error": null,
+          "output": {
+            "plan": {
+              "knowledge_base": true,
+              "knowledge_question": null,
+              "ticket": null,
+              "inventory": null,
+              "planner": "model",
+              "note": null
+            },
+            "status": "planned"
+          }
+        },
+        {
+          "step": 3,
           "node": "retrieve_context",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:47.174+00:00",
-          "duration_ms": 312.16,
+          "started_at": "2026-11-23T09:22:27.768+00:00",
+          "duration_ms": 311.84,
           "error": null,
           "output": {
             "context": [
@@ -582,14 +887,25 @@
           }
         },
         {
-          "step": 3,
+          "step": 4,
           "node": "generate_answer",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:47.488+00:00",
-          "duration_ms": 4593.38,
+          "started_at": "2026-11-23T09:22:28.081+00:00",
+          "duration_ms": 2083.43,
           "error": null,
           "output": {
-            "answer": "Según la política, si el paciente no ha recibido opciones de cita después de 5 días hábiles desde la creación de la referencia, debes escalar el caso directamente a Marcus Reid, Director de Operaciones Clínicas. Como ya han pasado 6 días, es el momento de realizar ese escalamiento para que se gestione la cita.\n\nFuente: Proceso de Referencia Interna — Proceso de Referencia Interna",
+            "rag_answer": "Escala el caso directamente a Marcus Reid, Director de Operaciones Clínicas, ya que han pasado más de 5 días hábiles sin que el paciente reciba opciones de cita.\n\nFuente: Proceso de Referencia Interna — Proceso de Referencia Interna"
+          }
+        },
+        {
+          "step": 5,
+          "node": "compose_answer",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:30.166+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "answer": "Escala el caso directamente a Marcus Reid, Director de Operaciones Clínicas, ya que han pasado más de 5 días hábiles sin que el paciente reciba opciones de cita.\n\nFuente: Proceso de Referencia Interna — Proceso de Referencia Interna",
             "status": "answered"
           }
         }
@@ -597,79 +913,120 @@
       "checkpoints": [
         {
           "step": -1,
-          "checkpoint_id": "1f1e69bd-9b03-68c2-bfff-a40f4ad4ac1b",
+          "checkpoint_id": "1f1e71f6-50f3-6278-bfff-c1e3584a3c81",
           "next": [
             "__start__"
           ],
           "status": null,
-          "state_keys": []
+          "state_keys": [
+            "tool_fallbacks"
+          ]
         },
         {
           "step": 0,
-          "checkpoint_id": "1f1e69bd-9b05-637a-8000-f49cd212c384",
+          "checkpoint_id": "1f1e71f6-50f4-6e84-8000-4e7819abf4bb",
           "next": [
             "receive_question"
           ],
           "status": null,
           "state_keys": [
-            "question"
+            "question",
+            "tool_fallbacks"
           ]
         },
         {
           "step": 1,
-          "checkpoint_id": "1f1e69bd-9b0a-632a-8001-648e18ccb3ee",
+          "checkpoint_id": "1f1e71f6-50f8-6264-8001-8b6d986dbd37",
           "next": [
-            "retrieve_context"
+            "plan_sources"
           ],
           "status": "received",
           "state_keys": [
             "question",
-            "status"
+            "status",
+            "tool_fallbacks"
           ]
         },
         {
           "step": 2,
-          "checkpoint_id": "1f1e69bd-9e07-6ac8-8002-b1ecb4e8a508",
+          "checkpoint_id": "1f1e71f6-6aaf-6fea-8002-0c43db65532a",
+          "next": [
+            "retrieve_context"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e71f6-6dac-6ebe-8003-06c47d2ec1e0",
           "next": [
             "generate_answer"
           ],
           "status": "retrieved",
           "state_keys": [
             "context",
+            "plan",
             "question",
-            "status"
+            "status",
+            "tool_fallbacks"
           ]
         },
         {
-          "step": 3,
-          "checkpoint_id": "1f1e69bd-c9d9-68a4-8003-6846278ffd29",
+          "step": 4,
+          "checkpoint_id": "1f1e71f6-818d-6e60-8004-3c5e781187f5",
+          "next": [
+            "compose_answer"
+          ],
+          "status": "retrieved",
+          "state_keys": [
+            "context",
+            "plan",
+            "question",
+            "rag_answer",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 5,
+          "checkpoint_id": "1f1e71f6-8193-62ac-8005-7a6ec3c65b30",
           "next": [],
           "status": "answered",
           "state_keys": [
             "answer",
             "context",
+            "plan",
             "question",
-            "status"
+            "rag_answer",
+            "status",
+            "tool_fallbacks"
           ]
         }
       ]
     },
     {
       "case_id": "unlisted-insurance",
-      "run_id": "9b85799d-ca48-4ed6-87b9-70ea18291065",
+      "fault": null,
+      "run_id": "ad04de12-4d56-4587-bf52-6da5cc04e405",
       "question": "¿Aceptan el seguro Humana en Texas?",
       "status": "answered",
-      "route": "receive_question > retrieve_context > generate_answer",
-      "answer": "Humana no aparece en la lista de seguros comerciales aceptados en Texas. Para confirmar si es posible aceptarlo, debe verificarlo con el equipo de facturación (Tom Callahan) antes de dar una respuesta al paciente.\n\nFuente: Cobertura de Seguros Aceptados — Estados Unidos (Texas, Florida, Georgia); Cobertura de Seguros Aceptados — Cobertura de Seguros Aceptados",
+      "route": "receive_question > plan_sources > retrieve_context > generate_answer > compose_answer",
+      "answer": "Humana no aparece en la lista de seguros comerciales aceptados en Estados Unidos. Para confirmar si es posible aceptarlo en Texas, debe verificarlo directamente con el equipo de facturación (Tom Callahan) antes de dar cualquier respuesta al paciente.\n\nFuente: Cobertura de Seguros Aceptados — Estados Unidos (Texas, Florida, Georgia); Cobertura de Seguros Aceptados — Cobertura de Seguros Aceptados",
       "error": null,
-      "started_at": "2026-11-22T17:40:52.085+00:00",
-      "finished_at": "2026-11-22T17:40:56.795+00:00",
+      "started_at": "2026-11-23T09:22:30.169+00:00",
+      "finished_at": "2026-11-23T09:22:34.063+00:00",
+      "sources": "knowledge_base",
       "steps": [
         {
           "step": 1,
           "node": "receive_question",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:52.086+00:00",
+          "started_at": "2026-11-23T09:22:30.170+00:00",
           "duration_ms": 0.0,
           "error": null,
           "output": {
@@ -679,10 +1036,29 @@
         },
         {
           "step": 2,
+          "node": "plan_sources",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:30.172+00:00",
+          "duration_ms": 1031.69,
+          "error": null,
+          "output": {
+            "plan": {
+              "knowledge_base": true,
+              "knowledge_question": null,
+              "ticket": null,
+              "inventory": null,
+              "planner": "model",
+              "note": null
+            },
+            "status": "planned"
+          }
+        },
+        {
+          "step": 3,
           "node": "retrieve_context",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:52.088+00:00",
-          "duration_ms": 344.67,
+          "started_at": "2026-11-23T09:22:31.205+00:00",
+          "duration_ms": 415.45,
           "error": null,
           "output": {
             "context": [
@@ -709,14 +1085,25 @@
           }
         },
         {
-          "step": 3,
+          "step": 4,
           "node": "generate_answer",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:52.434+00:00",
-          "duration_ms": 4358.73,
+          "started_at": "2026-11-23T09:22:31.622+00:00",
+          "duration_ms": 2436.0,
           "error": null,
           "output": {
-            "answer": "Humana no aparece en la lista de seguros comerciales aceptados en Texas. Para confirmar si es posible aceptarlo, debe verificarlo con el equipo de facturación (Tom Callahan) antes de dar una respuesta al paciente.\n\nFuente: Cobertura de Seguros Aceptados — Estados Unidos (Texas, Florida, Georgia); Cobertura de Seguros Aceptados — Cobertura de Seguros Aceptados",
+            "rag_answer": "Humana no aparece en la lista de seguros comerciales aceptados en Estados Unidos. Para confirmar si es posible aceptarlo en Texas, debe verificarlo directamente con el equipo de facturación (Tom Callahan) antes de dar cualquier respuesta al paciente.\n\nFuente: Cobertura de Seguros Aceptados — Estados Unidos (Texas, Florida, Georgia); Cobertura de Seguros Aceptados — Cobertura de Seguros Aceptados"
+          }
+        },
+        {
+          "step": 5,
+          "node": "compose_answer",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:34.060+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "answer": "Humana no aparece en la lista de seguros comerciales aceptados en Estados Unidos. Para confirmar si es posible aceptarlo en Texas, debe verificarlo directamente con el equipo de facturación (Tom Callahan) antes de dar cualquier respuesta al paciente.\n\nFuente: Cobertura de Seguros Aceptados — Estados Unidos (Texas, Florida, Georgia); Cobertura de Seguros Aceptados — Cobertura de Seguros Aceptados",
             "status": "answered"
           }
         }
@@ -724,79 +1111,120 @@
       "checkpoints": [
         {
           "step": -1,
-          "checkpoint_id": "1f1e69bd-c9e0-653c-bfff-23257c70c20a",
+          "checkpoint_id": "1f1e71f6-8198-675c-bfff-87487930040e",
           "next": [
             "__start__"
           ],
           "status": null,
-          "state_keys": []
+          "state_keys": [
+            "tool_fallbacks"
+          ]
         },
         {
           "step": 0,
-          "checkpoint_id": "1f1e69bd-c9e1-6888-8000-ec562293af06",
+          "checkpoint_id": "1f1e71f6-8199-67ba-8000-2b36e2856a7a",
           "next": [
             "receive_question"
           ],
           "status": null,
           "state_keys": [
-            "question"
+            "question",
+            "tool_fallbacks"
           ]
         },
         {
           "step": 1,
-          "checkpoint_id": "1f1e69bd-c9e6-6d06-8001-a8ec03a44262",
+          "checkpoint_id": "1f1e71f6-819e-6a8a-8001-899954caad38",
           "next": [
-            "retrieve_context"
+            "plan_sources"
           ],
           "status": "received",
           "state_keys": [
             "question",
-            "status"
+            "status",
+            "tool_fallbacks"
           ]
         },
         {
           "step": 2,
-          "checkpoint_id": "1f1e69bd-cd32-624e-8002-0dc905ef172a",
+          "checkpoint_id": "1f1e71f6-8b78-627c-8002-9a29acd831c1",
+          "next": [
+            "retrieve_context"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e71f6-8f71-6cb6-8003-727a2e33e464",
           "next": [
             "generate_answer"
           ],
           "status": "retrieved",
           "state_keys": [
             "context",
+            "plan",
             "question",
-            "status"
+            "status",
+            "tool_fallbacks"
           ]
         },
         {
-          "step": 3,
-          "checkpoint_id": "1f1e69bd-f6c6-6d58-8003-4ee375f998c9",
+          "step": 4,
+          "checkpoint_id": "1f1e71f6-a6b1-6188-8004-7ed61c198067",
+          "next": [
+            "compose_answer"
+          ],
+          "status": "retrieved",
+          "state_keys": [
+            "context",
+            "plan",
+            "question",
+            "rag_answer",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 5,
+          "checkpoint_id": "1f1e71f6-a6b7-6d30-8005-7eedb2e13fd7",
           "next": [],
           "status": "answered",
           "state_keys": [
             "answer",
             "context",
+            "plan",
             "question",
-            "status"
+            "rag_answer",
+            "status",
+            "tool_fallbacks"
           ]
         }
       ]
     },
     {
       "case_id": "off-topic",
-      "run_id": "a3dbed58-7284-4f0f-bd60-eef32d6605d8",
+      "fault": null,
+      "run_id": "aae7806a-5f3d-4f1a-9429-27a3fc39db90",
       "question": "¿Cuál es la receta de la paella valenciana?",
       "status": "answered",
-      "route": "receive_question > retrieve_context > answer_no_information",
+      "route": "receive_question > plan_sources > retrieve_context > answer_no_information > compose_answer",
       "answer": "No tengo información sobre eso en la base de conocimiento de HealthCore (seguros aceptados, citas y cancelaciones, referencias internas y checklist de pacientes nuevos). Para no darte un dato incorrecto, consúltalo con la supervisión de Patient Experience (Priya Nair); si es sobre seguros, coberturas o precios, verifícalo con facturación (Tom Callahan).\n\nFuente: ninguna",
       "error": null,
-      "started_at": "2026-11-22T17:40:56.796+00:00",
-      "finished_at": "2026-11-22T17:40:57.129+00:00",
+      "started_at": "2026-11-23T09:22:34.065+00:00",
+      "finished_at": "2026-11-23T09:22:35.615+00:00",
+      "sources": "knowledge_base",
       "steps": [
         {
           "step": 1,
           "node": "receive_question",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:56.797+00:00",
+          "started_at": "2026-11-23T09:22:34.066+00:00",
           "duration_ms": 0.01,
           "error": null,
           "output": {
@@ -806,10 +1234,29 @@
         },
         {
           "step": 2,
+          "node": "plan_sources",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:34.069+00:00",
+          "duration_ms": 1146.69,
+          "error": null,
+          "output": {
+            "plan": {
+              "knowledge_base": true,
+              "knowledge_question": null,
+              "ticket": null,
+              "inventory": null,
+              "planner": "model",
+              "note": null
+            },
+            "status": "planned"
+          }
+        },
+        {
+          "step": 3,
           "node": "retrieve_context",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:56.799+00:00",
-          "duration_ms": 326.17,
+          "started_at": "2026-11-23T09:22:35.217+00:00",
+          "duration_ms": 394.52,
           "error": null,
           "output": {
             "context": [],
@@ -817,10 +1264,21 @@
           }
         },
         {
-          "step": 3,
+          "step": 4,
           "node": "answer_no_information",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:57.127+00:00",
+          "started_at": "2026-11-23T09:22:35.613+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "rag_answer": "No tengo información sobre eso en la base de conocimiento de HealthCore (seguros aceptados, citas y cancelaciones, referencias internas y checklist de pacientes nuevos). Para no darte un dato incorrecto, consúltalo con la supervisión de Patient Experience (Priya Nair); si es sobre seguros, coberturas o precios, verifícalo con facturación (Tom Callahan).\n\nFuente: ninguna"
+          }
+        },
+        {
+          "step": 5,
+          "node": "compose_answer",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:35.613+00:00",
           "duration_ms": 0.0,
           "error": null,
           "output": {
@@ -832,79 +1290,120 @@
       "checkpoints": [
         {
           "step": -1,
-          "checkpoint_id": "1f1e69bd-f6cd-6536-bfff-5527c887eabd",
+          "checkpoint_id": "1f1e71f6-a6c0-60e8-bfff-86fa62618cb5",
           "next": [
             "__start__"
           ],
           "status": null,
-          "state_keys": []
+          "state_keys": [
+            "tool_fallbacks"
+          ]
         },
         {
           "step": 0,
-          "checkpoint_id": "1f1e69bd-f6ce-692c-8000-db04b2db9f38",
+          "checkpoint_id": "1f1e71f6-a6c1-6538-8000-8b8353897d5a",
           "next": [
             "receive_question"
           ],
           "status": null,
           "state_keys": [
-            "question"
+            "question",
+            "tool_fallbacks"
           ]
         },
         {
           "step": 1,
-          "checkpoint_id": "1f1e69bd-f6d3-6c24-8001-c16ae32e9dfa",
+          "checkpoint_id": "1f1e71f6-a6c6-6fe2-8001-392e37f361ad",
           "next": [
-            "retrieve_context"
+            "plan_sources"
           ],
           "status": "received",
           "state_keys": [
             "question",
-            "status"
+            "status",
+            "tool_fallbacks"
           ]
         },
         {
           "step": 2,
-          "checkpoint_id": "1f1e69bd-f9f2-6f7c-8002-5ae9d6238621",
+          "checkpoint_id": "1f1e71f6-b1ba-67c8-8002-a1cd511c3e55",
+          "next": [
+            "retrieve_context"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e71f6-b580-611e-8003-68c7492b7cfe",
           "next": [
             "answer_no_information"
           ],
           "status": "no_context",
           "state_keys": [
             "context",
+            "plan",
             "question",
-            "status"
+            "status",
+            "tool_fallbacks"
           ]
         },
         {
-          "step": 3,
-          "checkpoint_id": "1f1e69bd-f9f7-6e96-8003-9ecd26c860be",
+          "step": 4,
+          "checkpoint_id": "1f1e71f6-b581-6730-8004-3dce799f5c1c",
+          "next": [
+            "compose_answer"
+          ],
+          "status": "no_context",
+          "state_keys": [
+            "context",
+            "plan",
+            "question",
+            "rag_answer",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 5,
+          "checkpoint_id": "1f1e71f6-b583-604e-8005-7645ed34e1b1",
           "next": [],
           "status": "answered",
           "state_keys": [
             "answer",
             "context",
+            "plan",
             "question",
-            "status"
+            "rag_answer",
+            "status",
+            "tool_fallbacks"
           ]
         }
       ]
     },
     {
       "case_id": "empty-question",
-      "run_id": "1b3bd92e-2d3c-4432-97a5-8c3b1b6a6f6a",
+      "fault": null,
+      "run_id": "8afabb4f-16b9-4a8f-94dc-e9b245888ea0",
       "question": "   ",
       "status": "rejected",
       "route": "receive_question > reject_question",
       "answer": null,
       "error": "La pregunta está vacía o es demasiado corta.",
-      "started_at": "2026-11-22T17:40:57.130+00:00",
-      "finished_at": "2026-11-22T17:40:57.136+00:00",
+      "started_at": "2026-11-23T09:22:35.616+00:00",
+      "finished_at": "2026-11-23T09:22:35.620+00:00",
+      "sources": null,
       "steps": [
         {
           "step": 1,
           "node": "receive_question",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:57.132+00:00",
+          "started_at": "2026-11-23T09:22:35.616+00:00",
           "duration_ms": 0.0,
           "error": null,
           "output": {
@@ -917,7 +1416,7 @@
           "step": 2,
           "node": "reject_question",
           "status": "ok",
-          "started_at": "2026-11-22T17:40:57.134+00:00",
+          "started_at": "2026-11-23T09:22:35.618+00:00",
           "duration_ms": 0.0,
           "error": null,
           "output": {
@@ -929,27 +1428,30 @@
       "checkpoints": [
         {
           "step": -1,
-          "checkpoint_id": "1f1e69bd-f9fe-6480-bfff-79b9ef68b8c9",
+          "checkpoint_id": "1f1e71f6-b588-6bca-bfff-fd8e8a6379f1",
           "next": [
             "__start__"
           ],
           "status": null,
-          "state_keys": []
+          "state_keys": [
+            "tool_fallbacks"
+          ]
         },
         {
           "step": 0,
-          "checkpoint_id": "1f1e69bd-f9ff-683a-8000-6c71728f7015",
+          "checkpoint_id": "1f1e71f6-b589-65ca-8000-6d95ce8c66ae",
           "next": [
             "receive_question"
           ],
           "status": null,
           "state_keys": [
-            "question"
+            "question",
+            "tool_fallbacks"
           ]
         },
         {
           "step": 1,
-          "checkpoint_id": "1f1e69bd-fa04-6600-8001-4cfeb6091ea9",
+          "checkpoint_id": "1f1e71f6-b58e-62f0-8001-64176cf92e28",
           "next": [
             "reject_question"
           ],
@@ -957,18 +1459,1630 @@
           "state_keys": [
             "error",
             "question",
-            "status"
+            "status",
+            "tool_fallbacks"
           ]
         },
         {
           "step": 2,
-          "checkpoint_id": "1f1e69bd-fa08-6a5c-8002-89658e29b1ff",
+          "checkpoint_id": "1f1e71f6-b592-6940-8002-6150ebfe4db4",
           "next": [],
           "status": "rejected",
           "state_keys": [
             "error",
             "question",
-            "status"
+            "status",
+            "tool_fallbacks"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "ticket-status",
+      "fault": null,
+      "run_id": "707b1a25-0b0c-428d-9f22-fdb1a3a7f150",
+      "question": "¿En qué estado está el ticket 2?",
+      "status": "answered",
+      "route": "receive_question > plan_sources > lookup_tickets > compose_answer",
+      "answer": "El ticket #2 «Patient not informed of appointment reschedule by clinic» está en estado Abierto. Categoría: experiencia del paciente; origen: cliente (paciente o representante); sede: London West End. Creado el 17/01/2024 y actualizado por última vez el 17/01/2024.\n\nFuente: gestor de incidentes (GET /api/incidents/2), consultado en vivo el 23/11/2026 09:22 UTC.",
+      "error": null,
+      "started_at": "2026-11-23T09:22:35.621+00:00",
+      "finished_at": "2026-11-23T09:22:36.866+00:00",
+      "sources": "incidents",
+      "steps": [
+        {
+          "step": 1,
+          "node": "receive_question",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:35.621+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "question": "¿En qué estado está el ticket 2?",
+            "status": "received"
+          }
+        },
+        {
+          "step": 2,
+          "node": "plan_sources",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:35.623+00:00",
+          "duration_ms": 1207.49,
+          "error": null,
+          "output": {
+            "plan": {
+              "knowledge_base": false,
+              "knowledge_question": null,
+              "ticket": {
+                "ticket_id": 2,
+                "status": null,
+                "category": null,
+                "origin": null,
+                "branch": null
+              },
+              "inventory": null,
+              "planner": "model",
+              "note": null
+            },
+            "status": "planned"
+          }
+        },
+        {
+          "step": 3,
+          "node": "lookup_tickets",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:36.833+00:00",
+          "duration_ms": 29.12,
+          "error": null,
+          "output": {
+            "ticket_result": {
+              "status": "ok",
+              "query": {
+                "ticket_id": 2,
+                "status": null,
+                "category": null,
+                "origin": null,
+                "branch": null
+              },
+              "tickets": [
+                {
+                  "id": 2,
+                  "title": "Patient not informed of appointment reschedule by clinic",
+                  "status": "open",
+                  "category": "patient_experience",
+                  "origin": "customer",
+                  "branch": "london_west",
+                  "created_at": "2024-01-17T00:00:00Z",
+                  "updated_at": "2024-01-17T00:00:00Z"
+                }
+              ],
+              "total": 1,
+              "error": null,
+              "endpoint": "GET /api/incidents/2",
+              "duration_ms": 29.0
+            }
+          }
+        },
+        {
+          "step": 4,
+          "node": "compose_answer",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:36.863+00:00",
+          "duration_ms": 0.04,
+          "error": null,
+          "output": {
+            "answer": "El ticket #2 «Patient not informed of appointment reschedule by clinic» está en estado Abierto. Categoría: experiencia del paciente; origen: cliente (paciente o representante); sede: London West End. Creado el 17/01/2024 y actualizado por última vez el 17/01/2024.\n\nFuente: gestor de incidentes (GET /api/incidents/2), consultado en vivo el 23/11/2026 09:22 UTC.",
+            "status": "answered"
+          }
+        }
+      ],
+      "checkpoints": [
+        {
+          "step": -1,
+          "checkpoint_id": "1f1e71f6-b595-612c-bfff-7fb319973378",
+          "next": [
+            "__start__"
+          ],
+          "status": null,
+          "state_keys": [
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 0,
+          "checkpoint_id": "1f1e71f6-b595-6ae6-8000-34ab2c23879c",
+          "next": [
+            "receive_question"
+          ],
+          "status": null,
+          "state_keys": [
+            "question",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 1,
+          "checkpoint_id": "1f1e71f6-b59a-68ac-8001-ae77c93e5259",
+          "next": [
+            "plan_sources"
+          ],
+          "status": "received",
+          "state_keys": [
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 2,
+          "checkpoint_id": "1f1e71f6-c122-60f8-8002-9ed4f05ecb61",
+          "next": [
+            "lookup_tickets"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e71f6-c16c-6d74-8003-c8310b392914",
+          "next": [
+            "compose_answer"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 4,
+          "checkpoint_id": "1f1e71f6-c172-64ae-8004-30b397df8a1a",
+          "next": [],
+          "status": "answered",
+          "state_keys": [
+            "answer",
+            "plan",
+            "question",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "ticket-list",
+      "fault": null,
+      "run_id": "a340a917-743d-48d2-9115-5627fa6dcd1c",
+      "question": "¿Qué tickets abiertos hay en London West?",
+      "status": "answered",
+      "route": "receive_question > plan_sources > lookup_tickets > compose_answer",
+      "answer": "Hay 4 tickets con esos criterios:\n- #26 «Duplicate charge for the same consultation detected» — Abierto · London West End · actualizado el 31/01/2024\n- #55 «Patient arrived at wrong location due to system error» — Abierto · London West End · actualizado el 18/01/2024\n- #2 «Patient not informed of appointment reschedule by clinic» — Abierto · London West End · actualizado el 17/01/2024\n- #69 «Billing code applied does not match service received» — Abierto · London West End · actualizado el 13/01/2024\n\nFuente: gestor de incidentes (GET /api/incidents?status=open&branch=london_west), consultado en vivo el 23/11/2026 09:22 UTC.",
+      "error": null,
+      "started_at": "2026-11-23T09:22:36.867+00:00",
+      "finished_at": "2026-11-23T09:22:38.800+00:00",
+      "sources": "incidents",
+      "steps": [
+        {
+          "step": 1,
+          "node": "receive_question",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:36.868+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "question": "¿Qué tickets abiertos hay en London West?",
+            "status": "received"
+          }
+        },
+        {
+          "step": 2,
+          "node": "plan_sources",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:36.868+00:00",
+          "duration_ms": 1911.88,
+          "error": null,
+          "output": {
+            "plan": {
+              "knowledge_base": false,
+              "knowledge_question": null,
+              "ticket": {
+                "ticket_id": null,
+                "status": "open",
+                "category": null,
+                "origin": null,
+                "branch": "london_west"
+              },
+              "inventory": null,
+              "planner": "model",
+              "note": null
+            },
+            "status": "planned"
+          }
+        },
+        {
+          "step": 3,
+          "node": "lookup_tickets",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:38.781+00:00",
+          "duration_ms": 15.3,
+          "error": null,
+          "output": {
+            "ticket_result": {
+              "status": "ok",
+              "query": {
+                "ticket_id": null,
+                "status": "open",
+                "category": null,
+                "origin": null,
+                "branch": "london_west"
+              },
+              "tickets": [
+                {
+                  "id": 26,
+                  "title": "Duplicate charge for the same consultation detected",
+                  "status": "open",
+                  "category": "billing_error",
+                  "origin": "customer",
+                  "branch": "london_west",
+                  "created_at": "2024-01-31T00:00:00Z",
+                  "updated_at": "2024-01-31T00:00:00Z"
+                },
+                {
+                  "id": 55,
+                  "title": "Patient arrived at wrong location due to system error",
+                  "status": "open",
+                  "category": "patient_experience",
+                  "origin": "customer",
+                  "branch": "london_west",
+                  "created_at": "2024-01-18T00:00:00Z",
+                  "updated_at": "2024-01-18T00:00:00Z"
+                },
+                {
+                  "id": 2,
+                  "title": "Patient not informed of appointment reschedule by clinic",
+                  "status": "open",
+                  "category": "patient_experience",
+                  "origin": "customer",
+                  "branch": "london_west",
+                  "created_at": "2024-01-17T00:00:00Z",
+                  "updated_at": "2024-01-17T00:00:00Z"
+                },
+                {
+                  "id": 69,
+                  "title": "Billing code applied does not match service received",
+                  "status": "open",
+                  "category": "billing_error",
+                  "origin": "customer",
+                  "branch": "london_west",
+                  "created_at": "2024-01-13T00:00:00Z",
+                  "updated_at": "2024-01-13T00:00:00Z"
+                }
+              ],
+              "total": 4,
+              "error": null,
+              "endpoint": "GET /api/incidents?status=open&branch=london_west",
+              "duration_ms": 15.2
+            }
+          }
+        },
+        {
+          "step": 4,
+          "node": "compose_answer",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:38.798+00:00",
+          "duration_ms": 0.06,
+          "error": null,
+          "output": {
+            "answer": "Hay 4 tickets con esos criterios:\n- #26 «Duplicate charge for the same consultation detected» — Abierto · London West End · actualizado el 31/01/2024\n- #55 «Patient arrived at wrong location due to system error» — Abierto · London West End · actualizado el 18/01/2024\n- #2 «Patient not informed of appointment reschedule by clinic» — Abierto · London West End · actualizado el 17/01/2024\n- #69 «Billing code applied does not match service received» — Abierto · London West End · actualizado el 13/01/2024\n\nFuente: gestor de incidentes (GET /api/incidents?status=open&branch=london_west), consultado en vivo el 23/11/2026 09:22 UTC.",
+            "status": "answered"
+          }
+        }
+      ],
+      "checkpoints": [
+        {
+          "step": -1,
+          "checkpoint_id": "1f1e71f6-c177-642c-bfff-eb22be4fc533",
+          "next": [
+            "__start__"
+          ],
+          "status": null,
+          "state_keys": [
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 0,
+          "checkpoint_id": "1f1e71f6-c178-661a-8000-8fbdd218e7b1",
+          "next": [
+            "receive_question"
+          ],
+          "status": null,
+          "state_keys": [
+            "question",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 1,
+          "checkpoint_id": "1f1e71f6-c179-6fba-8001-340c794f0865",
+          "next": [
+            "plan_sources"
+          ],
+          "status": "received",
+          "state_keys": [
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 2,
+          "checkpoint_id": "1f1e71f6-d3b8-608c-8002-4374d70c9228",
+          "next": [
+            "lookup_tickets"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e71f6-d3e0-60e6-8003-971d064e6240",
+          "next": [
+            "compose_answer"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 4,
+          "checkpoint_id": "1f1e71f6-d3e5-6960-8004-adb7d7ad240d",
+          "next": [],
+          "status": "answered",
+          "state_keys": [
+            "answer",
+            "plan",
+            "question",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "ticket-not-found",
+      "fault": null,
+      "run_id": "2618c43f-b33f-4f54-9d6b-c3289e77309b",
+      "question": "¿En qué estado está el ticket 99999?",
+      "status": "answered",
+      "route": "receive_question > plan_sources > lookup_tickets > ticket_fallback > compose_answer",
+      "answer": "No encontré el ticket #99999 en el gestor de incidentes. Revisa el número: no puedo confirmar su estado.",
+      "error": null,
+      "started_at": "2026-11-23T09:22:38.801+00:00",
+      "finished_at": "2026-11-23T09:22:39.719+00:00",
+      "sources": "incidents",
+      "steps": [
+        {
+          "step": 1,
+          "node": "receive_question",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:38.803+00:00",
+          "duration_ms": 0.01,
+          "error": null,
+          "output": {
+            "question": "¿En qué estado está el ticket 99999?",
+            "status": "received"
+          }
+        },
+        {
+          "step": 2,
+          "node": "plan_sources",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:38.805+00:00",
+          "duration_ms": 901.43,
+          "error": null,
+          "output": {
+            "plan": {
+              "knowledge_base": false,
+              "knowledge_question": null,
+              "ticket": {
+                "ticket_id": 99999,
+                "status": null,
+                "category": null,
+                "origin": null,
+                "branch": null
+              },
+              "inventory": null,
+              "planner": "model",
+              "note": null
+            },
+            "status": "planned"
+          }
+        },
+        {
+          "step": 3,
+          "node": "lookup_tickets",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:39.707+00:00",
+          "duration_ms": 7.54,
+          "error": null,
+          "output": {
+            "ticket_result": {
+              "status": "not_found",
+              "query": {
+                "ticket_id": 99999,
+                "status": null,
+                "category": null,
+                "origin": null,
+                "branch": null
+              },
+              "tickets": [],
+              "total": 0,
+              "error": "ticket not found",
+              "endpoint": "GET /api/incidents/99999",
+              "duration_ms": 7.5
+            }
+          }
+        },
+        {
+          "step": 4,
+          "node": "ticket_fallback",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:39.715+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "tool_fallbacks": [
+              "No encontré el ticket #99999 en el gestor de incidentes. Revisa el número: no puedo confirmar su estado."
+            ]
+          }
+        },
+        {
+          "step": 5,
+          "node": "compose_answer",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:39.717+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "answer": "No encontré el ticket #99999 en el gestor de incidentes. Revisa el número: no puedo confirmar su estado.",
+            "status": "answered"
+          }
+        }
+      ],
+      "checkpoints": [
+        {
+          "step": -1,
+          "checkpoint_id": "1f1e71f6-d3eb-67b6-bfff-2fc76945d165",
+          "next": [
+            "__start__"
+          ],
+          "status": null,
+          "state_keys": [
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 0,
+          "checkpoint_id": "1f1e71f6-d3ec-6aee-8000-d0e006acf510",
+          "next": [
+            "receive_question"
+          ],
+          "status": null,
+          "state_keys": [
+            "question",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 1,
+          "checkpoint_id": "1f1e71f6-d3f2-626e-8001-04d7a2dc55cb",
+          "next": [
+            "plan_sources"
+          ],
+          "status": "received",
+          "state_keys": [
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 2,
+          "checkpoint_id": "1f1e71f6-dc8b-6fce-8002-c402ce282b35",
+          "next": [
+            "lookup_tickets"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e71f6-dc9f-656a-8003-2013d531df3c",
+          "next": [
+            "ticket_fallback"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 4,
+          "checkpoint_id": "1f1e71f6-dca3-6f70-8004-26934a50f83c",
+          "next": [
+            "compose_answer"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 5,
+          "checkpoint_id": "1f1e71f6-dca8-6552-8005-fc7f9e762ab4",
+          "next": [],
+          "status": "answered",
+          "state_keys": [
+            "answer",
+            "plan",
+            "question",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "ticket-timeout",
+      "fault": "timeout",
+      "run_id": "e57b6863-1fa7-4a90-80b2-0048ed59b387",
+      "question": "¿En qué estado está el ticket 2?",
+      "status": "answered",
+      "route": "receive_question > plan_sources > lookup_tickets > ticket_fallback > compose_answer",
+      "answer": "No pude confirmar el estado del ticket #2 ahora mismo: el gestor de incidentes no respondió. Inténtalo de nuevo en unos minutos o revísalo en la sección Incidentes del backoffice.",
+      "error": null,
+      "started_at": "2026-11-23T09:22:39.719+00:00",
+      "finished_at": "2026-11-23T09:22:44.916+00:00",
+      "sources": "incidents",
+      "steps": [
+        {
+          "step": 1,
+          "node": "receive_question",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:39.720+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "question": "¿En qué estado está el ticket 2?",
+            "status": "received"
+          }
+        },
+        {
+          "step": 2,
+          "node": "plan_sources",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:39.722+00:00",
+          "duration_ms": 1175.59,
+          "error": null,
+          "output": {
+            "plan": {
+              "knowledge_base": false,
+              "knowledge_question": null,
+              "ticket": {
+                "ticket_id": 2,
+                "status": null,
+                "category": null,
+                "origin": null,
+                "branch": null
+              },
+              "inventory": null,
+              "planner": "model",
+              "note": null
+            },
+            "status": "planned"
+          }
+        },
+        {
+          "step": 3,
+          "node": "lookup_tickets",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:40.899+00:00",
+          "duration_ms": 4009.92,
+          "error": null,
+          "output": {
+            "ticket_result": {
+              "status": "unavailable",
+              "query": {
+                "ticket_id": 2,
+                "status": null,
+                "category": null,
+                "origin": null,
+                "branch": null
+              },
+              "tickets": [],
+              "total": 0,
+              "error": "timeout after 4 s",
+              "endpoint": "GET /api/incidents/2",
+              "duration_ms": 4008.7
+            }
+          }
+        },
+        {
+          "step": 4,
+          "node": "ticket_fallback",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:44.910+00:00",
+          "duration_ms": 0.01,
+          "error": null,
+          "output": {
+            "tool_fallbacks": [
+              "No pude confirmar el estado del ticket #2 ahora mismo: el gestor de incidentes no respondió. Inténtalo de nuevo en unos minutos o revísalo en la sección Incidentes del backoffice."
+            ]
+          }
+        },
+        {
+          "step": 5,
+          "node": "compose_answer",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:44.913+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "answer": "No pude confirmar el estado del ticket #2 ahora mismo: el gestor de incidentes no respondió. Inténtalo de nuevo en unos minutos o revísalo en la sección Incidentes del backoffice.",
+            "status": "answered"
+          }
+        }
+      ],
+      "checkpoints": [
+        {
+          "step": -1,
+          "checkpoint_id": "1f1e71f6-dcab-6748-bfff-053b334df89b",
+          "next": [
+            "__start__"
+          ],
+          "status": null,
+          "state_keys": [
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 0,
+          "checkpoint_id": "1f1e71f6-dcab-6ff4-8000-45c193b7e7f7",
+          "next": [
+            "receive_question"
+          ],
+          "status": null,
+          "state_keys": [
+            "question",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 1,
+          "checkpoint_id": "1f1e71f6-dcb0-65ae-8001-b56eb7d070ab",
+          "next": [
+            "plan_sources"
+          ],
+          "status": "received",
+          "state_keys": [
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 2,
+          "checkpoint_id": "1f1e71f6-e7e9-61a0-8002-d7bab9e5fd50",
+          "next": [
+            "lookup_tickets"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e71f7-0e2b-6368-8003-7f054d13f683",
+          "next": [
+            "ticket_fallback"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 4,
+          "checkpoint_id": "1f1e71f7-0e32-65e6-8004-475d315b5751",
+          "next": [
+            "compose_answer"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 5,
+          "checkpoint_id": "1f1e71f7-0e38-60b8-8005-09432b47427c",
+          "next": [],
+          "status": "answered",
+          "state_keys": [
+            "answer",
+            "plan",
+            "question",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "ticket-service-down",
+      "fault": "down",
+      "run_id": "59f1c457-47c2-4bf8-8aff-83123235e640",
+      "question": "¿Ya resolvieron la incidencia 92?",
+      "status": "answered",
+      "route": "receive_question > plan_sources > lookup_tickets > ticket_fallback > compose_answer",
+      "answer": "No pude confirmar el estado del ticket #92 ahora mismo: el gestor de incidentes no respondió. Inténtalo de nuevo en unos minutos o revísalo en la sección Incidentes del backoffice.",
+      "error": null,
+      "started_at": "2026-11-23T09:22:44.945+00:00",
+      "finished_at": "2026-11-23T09:22:46.168+00:00",
+      "sources": "incidents",
+      "steps": [
+        {
+          "step": 1,
+          "node": "receive_question",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:44.947+00:00",
+          "duration_ms": 0.01,
+          "error": null,
+          "output": {
+            "question": "¿Ya resolvieron la incidencia 92?",
+            "status": "received"
+          }
+        },
+        {
+          "step": 2,
+          "node": "plan_sources",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:44.950+00:00",
+          "duration_ms": 1204.65,
+          "error": null,
+          "output": {
+            "plan": {
+              "knowledge_base": false,
+              "knowledge_question": null,
+              "ticket": {
+                "ticket_id": 92,
+                "status": null,
+                "category": null,
+                "origin": null,
+                "branch": null
+              },
+              "inventory": null,
+              "planner": "model",
+              "note": null
+            },
+            "status": "planned"
+          }
+        },
+        {
+          "step": 3,
+          "node": "lookup_tickets",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:46.156+00:00",
+          "duration_ms": 7.27,
+          "error": null,
+          "output": {
+            "ticket_result": {
+              "status": "unavailable",
+              "query": {
+                "ticket_id": 92,
+                "status": null,
+                "category": null,
+                "origin": null,
+                "branch": null
+              },
+              "tickets": [],
+              "total": 0,
+              "error": "ConnectError",
+              "endpoint": "GET /api/incidents/92",
+              "duration_ms": 6.9
+            }
+          }
+        },
+        {
+          "step": 4,
+          "node": "ticket_fallback",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:46.164+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "tool_fallbacks": [
+              "No pude confirmar el estado del ticket #92 ahora mismo: el gestor de incidentes no respondió. Inténtalo de nuevo en unos minutos o revísalo en la sección Incidentes del backoffice."
+            ]
+          }
+        },
+        {
+          "step": 5,
+          "node": "compose_answer",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:46.165+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "answer": "No pude confirmar el estado del ticket #92 ahora mismo: el gestor de incidentes no respondió. Inténtalo de nuevo en unos minutos o revísalo en la sección Incidentes del backoffice.",
+            "status": "answered"
+          }
+        }
+      ],
+      "checkpoints": [
+        {
+          "step": -1,
+          "checkpoint_id": "1f1e71f7-0e83-61d0-bfff-2905f6102290",
+          "next": [
+            "__start__"
+          ],
+          "status": null,
+          "state_keys": [
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 0,
+          "checkpoint_id": "1f1e71f7-0e84-6a44-8000-f4d65aa027d5",
+          "next": [
+            "receive_question"
+          ],
+          "status": null,
+          "state_keys": [
+            "question",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 1,
+          "checkpoint_id": "1f1e71f7-0e8b-62cc-8001-20e7402a55dc",
+          "next": [
+            "plan_sources"
+          ],
+          "status": "received",
+          "state_keys": [
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 2,
+          "checkpoint_id": "1f1e71f7-1a0c-6c04-8002-a9a730ea258b",
+          "next": [
+            "lookup_tickets"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e71f7-1a21-60fa-8003-7ec25c460853",
+          "next": [
+            "ticket_fallback"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 4,
+          "checkpoint_id": "1f1e71f7-1a22-6a22-8004-0f5e46af8279",
+          "next": [
+            "compose_answer"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 5,
+          "checkpoint_id": "1f1e71f7-1a23-6f58-8005-5991c43ec433",
+          "next": [],
+          "status": "answered",
+          "state_keys": [
+            "answer",
+            "plan",
+            "question",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "stock-gloves",
+      "fault": null,
+      "run_id": "e0ecf683-5516-45c5-bb00-6bd72704a3d4",
+      "question": "¿Tenemos stock de guantes de nitrilo?",
+      "status": "answered",
+      "route": "receive_question > plan_sources > lookup_stock > compose_answer",
+      "answer": "Stock actual:\n- Guantes de nitrilo (caja de 100) (SKU HCR-PPE-001, Estados Unidos): 102 cajas en stock en la red.\n\nFuente: inventario (GET /inventory/products), consultado en vivo el 23/11/2026 09:22 UTC.",
+      "error": null,
+      "started_at": "2026-11-23T09:22:46.169+00:00",
+      "finished_at": "2026-11-23T09:22:48.709+00:00",
+      "sources": "inventory",
+      "steps": [
+        {
+          "step": 1,
+          "node": "receive_question",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:46.170+00:00",
+          "duration_ms": 0.01,
+          "error": null,
+          "output": {
+            "question": "¿Tenemos stock de guantes de nitrilo?",
+            "status": "received"
+          }
+        },
+        {
+          "step": 2,
+          "node": "plan_sources",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:46.173+00:00",
+          "duration_ms": 2519.42,
+          "error": null,
+          "output": {
+            "plan": {
+              "knowledge_base": false,
+              "knowledge_question": null,
+              "ticket": null,
+              "inventory": {
+                "product": "guantes de nitrilo"
+              },
+              "planner": "model",
+              "note": null
+            },
+            "status": "planned"
+          }
+        },
+        {
+          "step": 3,
+          "node": "lookup_stock",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:48.694+00:00",
+          "duration_ms": 11.93,
+          "error": null,
+          "output": {
+            "stock_result": {
+              "status": "ok",
+              "query": {
+                "product": "guantes de nitrilo"
+              },
+              "products": [
+                {
+                  "id": 1,
+                  "name": "Guantes de nitrilo (caja de 100)",
+                  "sku": "HCR-PPE-001",
+                  "category": "ppe",
+                  "unit": "box",
+                  "country": "US",
+                  "current_stock": 102
+                }
+              ],
+              "error": null,
+              "endpoint": "GET /inventory/products",
+              "duration_ms": 11.9
+            }
+          }
+        },
+        {
+          "step": 4,
+          "node": "compose_answer",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:48.706+00:00",
+          "duration_ms": 0.02,
+          "error": null,
+          "output": {
+            "answer": "Stock actual:\n- Guantes de nitrilo (caja de 100) (SKU HCR-PPE-001, Estados Unidos): 102 cajas en stock en la red.\n\nFuente: inventario (GET /inventory/products), consultado en vivo el 23/11/2026 09:22 UTC.",
+            "status": "answered"
+          }
+        }
+      ],
+      "checkpoints": [
+        {
+          "step": -1,
+          "checkpoint_id": "1f1e71f7-1a2e-6354-bfff-25df19ed80aa",
+          "next": [
+            "__start__"
+          ],
+          "status": null,
+          "state_keys": [
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 0,
+          "checkpoint_id": "1f1e71f7-1a2f-6786-8000-db87945a2401",
+          "next": [
+            "receive_question"
+          ],
+          "status": null,
+          "state_keys": [
+            "question",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 1,
+          "checkpoint_id": "1f1e71f7-1a35-6ef6-8001-191068e952ed",
+          "next": [
+            "plan_sources"
+          ],
+          "status": "received",
+          "state_keys": [
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 2,
+          "checkpoint_id": "1f1e71f7-3240-6d84-8002-16d947a7044c",
+          "next": [
+            "lookup_stock"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e71f7-325f-6b80-8003-25dfb39402bc",
+          "next": [
+            "compose_answer"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "stock_result",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 4,
+          "checkpoint_id": "1f1e71f7-3260-6cec-8004-1c02dc6f14a3",
+          "next": [],
+          "status": "answered",
+          "state_keys": [
+            "answer",
+            "plan",
+            "question",
+            "status",
+            "stock_result",
+            "tool_fallbacks"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "stock-unknown-product",
+      "fault": null,
+      "run_id": "a897e584-1189-420b-9e00-95c1a43fd3a9",
+      "question": "¿Hay stock de desfibriladores?",
+      "status": "answered",
+      "route": "receive_question > plan_sources > lookup_stock > stock_fallback > compose_answer",
+      "answer": "No encontré «desfibriladores» en el inventario de HealthCore, así que no puedo confirmar si hay stock.",
+      "error": null,
+      "started_at": "2026-11-23T09:22:48.709+00:00",
+      "finished_at": "2026-11-23T09:22:50.946+00:00",
+      "sources": "inventory",
+      "steps": [
+        {
+          "step": 1,
+          "node": "receive_question",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:48.710+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "question": "¿Hay stock de desfibriladores?",
+            "status": "received"
+          }
+        },
+        {
+          "step": 2,
+          "node": "plan_sources",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:48.712+00:00",
+          "duration_ms": 2214.91,
+          "error": null,
+          "output": {
+            "plan": {
+              "knowledge_base": false,
+              "knowledge_question": null,
+              "ticket": null,
+              "inventory": {
+                "product": "desfibriladores"
+              },
+              "planner": "model",
+              "note": null
+            },
+            "status": "planned"
+          }
+        },
+        {
+          "step": 3,
+          "node": "lookup_stock",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:50.929+00:00",
+          "duration_ms": 11.33,
+          "error": null,
+          "output": {
+            "stock_result": {
+              "status": "not_found",
+              "query": {
+                "product": "desfibriladores"
+              },
+              "products": [],
+              "error": "no product matches",
+              "endpoint": "GET /inventory/products",
+              "duration_ms": 11.3
+            }
+          }
+        },
+        {
+          "step": 4,
+          "node": "stock_fallback",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:50.941+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "tool_fallbacks": [
+              "No encontré «desfibriladores» en el inventario de HealthCore, así que no puedo confirmar si hay stock."
+            ]
+          }
+        },
+        {
+          "step": 5,
+          "node": "compose_answer",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:50.943+00:00",
+          "duration_ms": 0.0,
+          "error": null,
+          "output": {
+            "answer": "No encontré «desfibriladores» en el inventario de HealthCore, así que no puedo confirmar si hay stock.",
+            "status": "answered"
+          }
+        }
+      ],
+      "checkpoints": [
+        {
+          "step": -1,
+          "checkpoint_id": "1f1e71f7-3268-65b4-bfff-f7053bfd2cfb",
+          "next": [
+            "__start__"
+          ],
+          "status": null,
+          "state_keys": [
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 0,
+          "checkpoint_id": "1f1e71f7-3269-6734-8000-fda47d6b1528",
+          "next": [
+            "receive_question"
+          ],
+          "status": null,
+          "state_keys": [
+            "question",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 1,
+          "checkpoint_id": "1f1e71f7-326e-618a-8001-447663024065",
+          "next": [
+            "plan_sources"
+          ],
+          "status": "received",
+          "state_keys": [
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 2,
+          "checkpoint_id": "1f1e71f7-4790-652c-8002-7248ceafd6ea",
+          "next": [
+            "lookup_stock"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e71f7-47ae-6d42-8003-df43d273b718",
+          "next": [
+            "stock_fallback"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "stock_result",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 4,
+          "checkpoint_id": "1f1e71f7-47b5-617e-8004-fd4c0780bccd",
+          "next": [
+            "compose_answer"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "stock_result",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 5,
+          "checkpoint_id": "1f1e71f7-47b9-658a-8005-27db0879a8a8",
+          "next": [],
+          "status": "answered",
+          "state_keys": [
+            "answer",
+            "plan",
+            "question",
+            "status",
+            "stock_result",
+            "tool_fallbacks"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "ticket-and-policy",
+      "fault": null,
+      "run_id": "8c26ad04-9a1d-4225-b8a2-49290351bebd",
+      "question": "El ticket 2 es de un paciente al que no avisaron de un cambio de cita: ¿en qué estado está y qué dice la política de cancelación?",
+      "status": "answered",
+      "route": "receive_question > plan_sources > lookup_tickets > retrieve_context > generate_answer > compose_answer",
+      "answer": "El ticket #2 «Patient not informed of appointment reschedule by clinic» está en estado Abierto. Categoría: experiencia del paciente; origen: cliente (paciente o representante); sede: London West End. Creado el 17/01/2024 y actualizado por última vez el 17/01/2024.\n\nFuente: gestor de incidentes (GET /api/incidents/2), consultado en vivo el 23/11/2026 09:22 UTC.\n\nLa política de cancelación establece que si se cancela con más de 24 horas de anticipación no hay cargo. Si se cancela con menos de 24 horas o no se presenta, se aplica un cargo de 50 USD (o 40 GBP en Reino Unido) para pacientes de pago privado. Los pacientes con Medicare o Medicaid no tienen este cargo, pero se registra el incidente en su historial.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación",
+      "error": null,
+      "started_at": "2026-11-23T09:22:50.947+00:00",
+      "finished_at": "2026-11-23T09:22:54.559+00:00",
+      "sources": "incidents > knowledge_base",
+      "steps": [
+        {
+          "step": 1,
+          "node": "receive_question",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:50.948+00:00",
+          "duration_ms": 0.01,
+          "error": null,
+          "output": {
+            "question": "El ticket 2 es de un paciente al que no avisaron de un cambio de cita: ¿en qué estado está y qué dice la política de cancelación?",
+            "status": "received"
+          }
+        },
+        {
+          "step": 2,
+          "node": "plan_sources",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:50.950+00:00",
+          "duration_ms": 1612.49,
+          "error": null,
+          "output": {
+            "plan": {
+              "knowledge_base": true,
+              "knowledge_question": "¿Cuál es la política de cancelación?",
+              "ticket": {
+                "ticket_id": 2,
+                "status": null,
+                "category": null,
+                "origin": null,
+                "branch": null
+              },
+              "inventory": null,
+              "planner": "model",
+              "note": null
+            },
+            "status": "planned"
+          }
+        },
+        {
+          "step": 3,
+          "node": "lookup_tickets",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:52.564+00:00",
+          "duration_ms": 15.32,
+          "error": null,
+          "output": {
+            "ticket_result": {
+              "status": "ok",
+              "query": {
+                "ticket_id": 2,
+                "status": null,
+                "category": null,
+                "origin": null,
+                "branch": null
+              },
+              "tickets": [
+                {
+                  "id": 2,
+                  "title": "Patient not informed of appointment reschedule by clinic",
+                  "status": "open",
+                  "category": "patient_experience",
+                  "origin": "customer",
+                  "branch": "london_west",
+                  "created_at": "2024-01-17T00:00:00Z",
+                  "updated_at": "2024-01-17T00:00:00Z"
+                }
+              ],
+              "total": 1,
+              "error": null,
+              "endpoint": "GET /api/incidents/2",
+              "duration_ms": 15.2
+            }
+          }
+        },
+        {
+          "step": 4,
+          "node": "retrieve_context",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:52.581+00:00",
+          "duration_ms": 373.37,
+          "error": null,
+          "output": {
+            "context": [
+              {
+                "source_document": "appointment-policy",
+                "chunk_index": 1,
+                "section": "Política de cancelación",
+                "score": 0.6832
+              },
+              {
+                "source_document": "appointment-policy",
+                "chunk_index": 3,
+                "section": "Política de Citas y Cancelaciones",
+                "score": 0.5721
+              },
+              {
+                "source_document": "appointment-policy",
+                "chunk_index": 2,
+                "section": "Recordatorios automáticos",
+                "score": 0.4504
+              },
+              {
+                "source_document": "appointment-policy",
+                "chunk_index": 0,
+                "section": "Reserva de citas",
+                "score": 0.4106
+              }
+            ],
+            "status": "retrieved"
+          }
+        },
+        {
+          "step": 5,
+          "node": "generate_answer",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:52.955+00:00",
+          "duration_ms": 1599.66,
+          "error": null,
+          "output": {
+            "rag_answer": "La política de cancelación establece que si se cancela con más de 24 horas de anticipación no hay cargo. Si se cancela con menos de 24 horas o no se presenta, se aplica un cargo de 50 USD (o 40 GBP en Reino Unido) para pacientes de pago privado. Los pacientes con Medicare o Medicaid no tienen este cargo, pero se registra el incidente en su historial.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación"
+          }
+        },
+        {
+          "step": 6,
+          "node": "compose_answer",
+          "status": "ok",
+          "started_at": "2026-11-23T09:22:54.556+00:00",
+          "duration_ms": 0.07,
+          "error": null,
+          "output": {
+            "answer": "El ticket #2 «Patient not informed of appointment reschedule by clinic» está en estado Abierto. Categoría: experiencia del paciente; origen: cliente (paciente o representante); sede: London West End. Creado el 17/01/2024 y actualizado por última vez el 17/01/2024.\n\nFuente: gestor de incidentes (GET /api/incidents/2), consultado en vivo el 23/11/2026 09:22 UTC.\n\nLa política de cancelación establece que si se cancela con más de 24 horas de anticipación no hay cargo. Si se cancela con menos de 24 horas o no se presenta, se aplica un cargo de 50 USD (o 40 GBP en Reino Unido) para pacientes de pago privado. Los pacientes con Medicare o Medicaid no tienen este cargo, pero se registra el incidente en su historial.\n\nFuente: Política de Citas y Cancelaciones — Política de cancelación",
+            "status": "answered"
+          }
+        }
+      ],
+      "checkpoints": [
+        {
+          "step": -1,
+          "checkpoint_id": "1f1e71f7-47bf-61ba-bfff-6a4c4966054a",
+          "next": [
+            "__start__"
+          ],
+          "status": null,
+          "state_keys": [
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 0,
+          "checkpoint_id": "1f1e71f7-47bf-6fd4-8000-f5e265d1e415",
+          "next": [
+            "receive_question"
+          ],
+          "status": null,
+          "state_keys": [
+            "question",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 1,
+          "checkpoint_id": "1f1e71f7-47c5-6146-8001-60fd17707957",
+          "next": [
+            "plan_sources"
+          ],
+          "status": "received",
+          "state_keys": [
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 2,
+          "checkpoint_id": "1f1e71f7-5729-629a-8002-0a270fdca2c1",
+          "next": [
+            "lookup_tickets"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 3,
+          "checkpoint_id": "1f1e71f7-5751-6f10-8003-6fdf22e7a4c0",
+          "next": [
+            "retrieve_context"
+          ],
+          "status": "planned",
+          "state_keys": [
+            "plan",
+            "question",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 4,
+          "checkpoint_id": "1f1e71f7-5ae4-6664-8004-36fb6ac6e6d9",
+          "next": [
+            "generate_answer"
+          ],
+          "status": "retrieved",
+          "state_keys": [
+            "context",
+            "plan",
+            "question",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 5,
+          "checkpoint_id": "1f1e71f7-6a28-67c4-8005-b7c5b4d0297d",
+          "next": [
+            "compose_answer"
+          ],
+          "status": "retrieved",
+          "state_keys": [
+            "context",
+            "plan",
+            "question",
+            "rag_answer",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
+          ]
+        },
+        {
+          "step": 6,
+          "checkpoint_id": "1f1e71f7-6a2f-639e-8006-354b17bb7149",
+          "next": [],
+          "status": "answered",
+          "state_keys": [
+            "answer",
+            "context",
+            "plan",
+            "question",
+            "rag_answer",
+            "status",
+            "ticket_result",
+            "tool_fallbacks"
           ]
         }
       ]

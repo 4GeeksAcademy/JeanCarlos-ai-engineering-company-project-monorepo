@@ -1,28 +1,304 @@
 {
-  "description": "Evals of the LangGraph agent (services/agent). `python -m services.agent.record_evals` runs every case once against the real knowledge base and stores the traces in data/eval/agent_eval_traces.json; tests/pipelines/test_agent_evals.py checks the criteria against those traces, without calling the models again.",
+  "description": "Evals of the LangGraph agent (services/agent). `python -m services.agent.record_evals` runs every case once against the real sources (knowledge base in Qdrant + 4Geeks gateway, incident manager and inventory APIs) and stores the traces in data/eval/agent_eval_traces.json; tests/pipelines/test_agent_evals.py checks the criteria against those traces, without calling the models or the services again. `fault` injects a failure of the incident API for that case only: `timeout` (a server that accepts but never answers) or `down` (nothing listening).",
   "cases": [
-    {"id": "cancel-12h", "question": "¿Cobran cargo por cancelación con 12 horas de anticipación?",
-     "expect": {"route": ["receive_question", "retrieve_context", "generate_answer"], "retrieved_top3": "appointment-policy#1",
-                "answer_contains_all": ["50 USD", "40 GBP", "Medicare", "Medicaid"]}},
-    {"id": "medicare-no-show", "question": "¿A un paciente de Medicare se le cobra si no se presenta a la cita?",
-     "expect": {"route": ["receive_question", "retrieve_context", "generate_answer"], "retrieved_top3": "appointment-policy#1",
-                "answer_contains_any": ["no se le cobra", "no se les cobra", "no se cobra", "no tienen este cargo", "no se aplica"],
-                "answer_not_contains": ["se le cobra 50", "debe pagar 50"]}},
-    {"id": "medicaid-georgia", "question": "¿Aceptan Medicaid en la clínica de Georgia?",
-     "expect": {"route": ["receive_question", "retrieve_context", "generate_answer"], "retrieved_top3": "insurance-coverage#0",
-                "answer_contains_all": ["Texas", "Florida"], "answer_starts_with_any": ["No"]}},
-    {"id": "first-visit", "question": "¿Qué debo traer a mi primera cita?",
-     "expect": {"route": ["receive_question", "retrieve_context", "generate_answer"], "retrieved_top3": "new-patient-checklist#1",
-                "answer_contains_all": ["identidad", "tarjeta de seguro"]}},
-    {"id": "referral-escalation", "question": "Pasaron 6 días hábiles y el paciente no tiene opciones de cita con el especialista, ¿qué hago?",
-     "expect": {"route": ["receive_question", "retrieve_context", "generate_answer"], "retrieved_top3": "referral-process#2",
-                "answer_contains_all": ["Marcus Reid"]}},
-    {"id": "unlisted-insurance", "question": "¿Aceptan el seguro Humana en Texas?",
-     "expect": {"route": ["receive_question", "retrieve_context", "generate_answer"], "retrieved_top3": "insurance-coverage#0",
-                "answer_contains_all": ["Tom Callahan"], "answer_not_contains": ["sí aceptamos Humana", "Humana está cubierto"]}},
-    {"id": "off-topic", "question": "¿Cuál es la receta de la paella valenciana?",
-     "expect": {"route": ["receive_question", "retrieve_context", "answer_no_information"], "answer_equals_no_information": true}},
-    {"id": "empty-question", "question": "   ",
-     "expect": {"route": ["receive_question", "reject_question"], "status": "rejected"}}
+    {
+      "id": "cancel-12h",
+      "question": "¿Cobran cargo por cancelación con 12 horas de anticipación?",
+      "expect": {
+        "route": [
+          "receive_question",
+          "plan_sources",
+          "retrieve_context",
+          "generate_answer",
+          "compose_answer"
+        ],
+        "retrieved_top3": "appointment-policy#1",
+        "answer_contains_all": [
+          "50 USD",
+          "40 GBP",
+          "Medicare",
+          "Medicaid"
+        ],
+        "sources": "knowledge_base"
+      }
+    },
+    {
+      "id": "medicare-no-show",
+      "question": "¿A un paciente de Medicare se le cobra si no se presenta a la cita?",
+      "expect": {
+        "route": [
+          "receive_question",
+          "plan_sources",
+          "retrieve_context",
+          "generate_answer",
+          "compose_answer"
+        ],
+        "retrieved_top3": "appointment-policy#1",
+        "answer_contains_any": [
+          "no se le cobra",
+          "no se les cobra",
+          "no se cobra",
+          "no tienen este cargo",
+          "no se aplica"
+        ],
+        "answer_not_contains": [
+          "se le cobra 50",
+          "debe pagar 50"
+        ],
+        "sources": "knowledge_base"
+      }
+    },
+    {
+      "id": "medicaid-georgia",
+      "question": "¿Aceptan Medicaid en la clínica de Georgia?",
+      "expect": {
+        "route": [
+          "receive_question",
+          "plan_sources",
+          "retrieve_context",
+          "generate_answer",
+          "compose_answer"
+        ],
+        "retrieved_top3": "insurance-coverage#0",
+        "answer_contains_all": [
+          "Texas",
+          "Florida"
+        ],
+        "answer_starts_with_any": [
+          "No"
+        ],
+        "sources": "knowledge_base"
+      }
+    },
+    {
+      "id": "first-visit",
+      "question": "¿Qué debo traer a mi primera cita?",
+      "expect": {
+        "route": [
+          "receive_question",
+          "plan_sources",
+          "retrieve_context",
+          "generate_answer",
+          "compose_answer"
+        ],
+        "retrieved_top3": "new-patient-checklist#1",
+        "answer_contains_all": [
+          "identidad",
+          "tarjeta de seguro"
+        ],
+        "sources": "knowledge_base"
+      }
+    },
+    {
+      "id": "referral-escalation",
+      "question": "Pasaron 6 días hábiles y el paciente no tiene opciones de cita con el especialista, ¿qué hago?",
+      "expect": {
+        "route": [
+          "receive_question",
+          "plan_sources",
+          "retrieve_context",
+          "generate_answer",
+          "compose_answer"
+        ],
+        "retrieved_top3": "referral-process#2",
+        "answer_contains_all": [
+          "Marcus Reid"
+        ],
+        "sources": "knowledge_base"
+      }
+    },
+    {
+      "id": "unlisted-insurance",
+      "question": "¿Aceptan el seguro Humana en Texas?",
+      "expect": {
+        "route": [
+          "receive_question",
+          "plan_sources",
+          "retrieve_context",
+          "generate_answer",
+          "compose_answer"
+        ],
+        "retrieved_top3": "insurance-coverage#0",
+        "answer_contains_all": [
+          "Tom Callahan"
+        ],
+        "answer_not_contains": [
+          "sí aceptamos Humana",
+          "Humana está cubierto"
+        ],
+        "sources": "knowledge_base"
+      }
+    },
+    {
+      "id": "off-topic",
+      "question": "¿Cuál es la receta de la paella valenciana?",
+      "expect": {
+        "route": [
+          "receive_question",
+          "plan_sources",
+          "retrieve_context",
+          "answer_no_information",
+          "compose_answer"
+        ],
+        "answer_equals_no_information": true,
+        "sources": "knowledge_base"
+      }
+    },
+    {
+      "id": "empty-question",
+      "question": "   ",
+      "expect": {
+        "route": [
+          "receive_question",
+          "reject_question"
+        ],
+        "status": "rejected"
+      }
+    },
+    {
+      "id": "ticket-status",
+      "question": "¿En qué estado está el ticket 2?",
+      "expect": {
+        "route": [
+          "receive_question",
+          "plan_sources",
+          "lookup_tickets",
+          "compose_answer"
+        ],
+        "sources": "incidents",
+        "answer_reports_tool_data": true
+      }
+    },
+    {
+      "id": "ticket-list",
+      "question": "¿Qué tickets abiertos hay en London West?",
+      "expect": {
+        "route": [
+          "receive_question",
+          "plan_sources",
+          "lookup_tickets",
+          "compose_answer"
+        ],
+        "sources": "incidents",
+        "answer_reports_tool_data": true
+      }
+    },
+    {
+      "id": "ticket-not-found",
+      "question": "¿En qué estado está el ticket 99999?",
+      "expect": {
+        "route": [
+          "receive_question",
+          "plan_sources",
+          "lookup_tickets",
+          "ticket_fallback",
+          "compose_answer"
+        ],
+        "sources": "incidents",
+        "tool_status": "not_found",
+        "answer_starts_with_any": [
+          "No encontré el ticket #99999"
+        ]
+      }
+    },
+    {
+      "id": "ticket-timeout",
+      "question": "¿En qué estado está el ticket 2?",
+      "fault": "timeout",
+      "expect": {
+        "route": [
+          "receive_question",
+          "plan_sources",
+          "lookup_tickets",
+          "ticket_fallback",
+          "compose_answer"
+        ],
+        "sources": "incidents",
+        "tool_status": "unavailable",
+        "tool_error": "timeout after 4 s",
+        "answer_starts_with_any": [
+          "No pude confirmar el estado del ticket #2 ahora mismo"
+        ]
+      }
+    },
+    {
+      "id": "ticket-service-down",
+      "question": "¿Ya resolvieron la incidencia 92?",
+      "fault": "down",
+      "expect": {
+        "route": [
+          "receive_question",
+          "plan_sources",
+          "lookup_tickets",
+          "ticket_fallback",
+          "compose_answer"
+        ],
+        "sources": "incidents",
+        "tool_status": "unavailable",
+        "tool_error": "ConnectError",
+        "answer_starts_with_any": [
+          "No pude confirmar el estado del ticket #92 ahora mismo"
+        ]
+      }
+    },
+    {
+      "id": "stock-gloves",
+      "question": "¿Tenemos stock de guantes de nitrilo?",
+      "expect": {
+        "route": [
+          "receive_question",
+          "plan_sources",
+          "lookup_stock",
+          "compose_answer"
+        ],
+        "sources": "inventory",
+        "answer_reports_tool_data": true
+      }
+    },
+    {
+      "id": "stock-unknown-product",
+      "question": "¿Hay stock de desfibriladores?",
+      "expect": {
+        "route": [
+          "receive_question",
+          "plan_sources",
+          "lookup_stock",
+          "stock_fallback",
+          "compose_answer"
+        ],
+        "sources": "inventory",
+        "tool_status": "not_found",
+        "answer_starts_with_any": [
+          "No encontré «desfibriladores» en el inventario"
+        ]
+      }
+    },
+    {
+      "id": "ticket-and-policy",
+      "question": "El ticket 2 es de un paciente al que no avisaron de un cambio de cita: ¿en qué estado está y qué dice la política de cancelación?",
+      "expect": {
+        "route": [
+          "receive_question",
+          "plan_sources",
+          "lookup_tickets",
+          "retrieve_context",
+          "generate_answer",
+          "compose_answer"
+        ],
+        "sources": "incidents > knowledge_base",
+        "answer_reports_tool_data": true,
+        "retrieved_top3": "appointment-policy#1",
+        "answer_contains_all": [
+          "24 horas",
+          "50 USD"
+        ],
+        "answer_not_contains": [
+          "no aplicaría",
+          "excepción",
+          "no es responsabilidad del paciente"
+        ],
+        "knowledge_question_without_ticket": true
+      }
+    }
   ]
 }
