@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from .database import get_inventory_engine, open_database
 from .core.security import get_settings
 from .routes import auth, auth_password, knowledge, profiles, suppliers, tasks, telemetry, users
-from .routers import inventory
+from .routers import incidents, inventory
 from services.reporting.router import router as reporting_router
 from services.agent.router import router as agent_router
 from .schemas.errors import ErrorResponse, ValidationErrorResponse, ValidationIssue
@@ -85,8 +85,39 @@ async def timing_middleware(request: Request, call_next):
         )
 
 
+def incident_field(location: tuple | list) -> str:
+    parts = [str(part) for part in location if part not in {"body", "query", "path"}]
+    return parts[0] if parts else "body"
+
+
+@app.exception_handler(incidents.IncidentInputError)
+async def incident_input_error(_request: Request, error: incidents.IncidentInputError):
+    return JSONResponse(
+        status_code=400,
+        content={"detail": error.detail, "errors": [item.as_dict() for item in error.errors]},
+    )
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_error(_request: Request, error: RequestValidationError):
+    if _request.url.path.startswith("/api/incidents"):
+        # The incident manager reports invalid input as 400 with the offending field.
+        errors = []
+        for item in error.errors():
+            field = incident_field(item.get("loc", ()))
+            if item.get("type") == "json_invalid":
+                message = "The request body is not valid JSON."
+            elif item.get("type") == "missing":
+                message = "This field is required."
+            elif field == "incident_id":
+                message = "The incident id must be a positive whole number."
+            else:
+                message = "This value is not valid."
+            errors.append({"field": field, "message": message})
+        return JSONResponse(
+            status_code=400,
+            content={"detail": "Some fields are missing or invalid.", "errors": errors},
+        )
     if _request.url.path in {"/login", "/auth/forgot-password", "/auth/reset-password", "/telemetry/events"}:
         issues = [ValidationIssue(loc=["body"], msg="Invalid request", type="value_error")]
     else:
@@ -128,5 +159,6 @@ app.include_router(inventory.router)
 app.include_router(telemetry.router)
 app.include_router(reporting_router)
 app.include_router(tasks.router)
+app.include_router(incidents.router)
 app.include_router(knowledge.router)
 app.include_router(agent_router)

@@ -25,3 +25,9 @@ uv run pytest tests/pipelines/test_temporal_cv.py
 ```
 
 > _Spanish version: [README.es.md](./README.es.md)._
+
+## Scripts
+
+- `seed_incidents.py` — loads the legacy incident CSV (`data/raw/incidents-healthcore.csv`) into the incident manager using the shared rules in `packages/shared/incidents`. Idempotent; invalid rows are reported, never inserted. See `services/api/README.md`.
+- `generate-incident-catalog.mjs` — copies the shared incident catalog into the backoffice (`--check` verifies it is up to date).
+- `generate-telemetry-contract.mjs` — generates the backoffice telemetry contract.

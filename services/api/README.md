@@ -134,3 +134,39 @@ The backoffice inventory interface is available at `/inventory/products`.
 Its low-stock badge is an informational UI threshold of 10 units or less; it
 does not change API stock validation and is not the per-clinic minimum. The
 outbound form shows global stock and the API remains authoritative.
+
+## Incident manager
+
+Incidents live in PostgreSQL (same `DATABASE_URL` as inventory), table
+`incident`. The table is created on first use or by the seed. Allowed values
+come from `packages/shared/incidents/catalog.json` and are enforced both in the
+API and as `CHECK` constraints. All routes require a Bearer token.
+
+| Method | Route | Result |
+| --- | --- | --- |
+| POST | `/api/incidents` | 201; `title`, `description`, `category`, `origin`, `branch` required, `status` defaults to `open` |
+| GET | `/api/incidents?status=&origin=&branch=&category=` | List (newest first), `[]` when empty |
+| GET | `/api/incidents/{id}` | Detail or 404 |
+| PATCH | `/api/incidents/{id}/status` | `{"status": "..."}`; `open → in_progress/discarded`, `in_progress → resolved/discarded`; `resolved`/`discarded` are final |
+| GET | `/api/incidents/summary` | Totals by status, category, origin and branch (all keys, zeros when empty) |
+
+Invalid input (missing fields, values outside the catalog, invalid filters,
+malformed JSON, invalid transitions) returns **400**:
+
+```json
+{"detail": "Some fields are missing or invalid.",
+ "errors": [{"field": "title", "message": "Title is required."}]}
+```
+
+Unexpected errors return a generic 500 without stack traces. The legacy
+`incident_id` is stored in the internal `legacy_ref` column (never returned)
+only to make the seed idempotent: `title + created_at` collides for 6 distinct
+valid CSV rows.
+
+Seed the historical customer incidents (94 valid of 100 rows) from the
+repository root, or inside the API container:
+
+```bash
+python scripts/seed_incidents.py                          # data/raw/incidents-healthcore.csv
+docker compose exec api python scripts/seed_incidents.py
+```

@@ -4,7 +4,9 @@ FROM python:3.12-slim
 COPY --from=uv /uv /uvx /bin/
 WORKDIR /app
 
-COPY api/requirements.txt ./services/api/requirements.txt
+# Build context: repository root (see docker-compose.yml), so the API can import
+# the shared incident rules in packages/shared/incidents.
+COPY services/api/requirements.txt ./services/api/requirements.txt
 RUN uv pip install --system --no-cache -r services/api/requirements.txt
 COPY api ./services/api
 COPY telemetry ./services/telemetry
@@ -17,7 +19,11 @@ COPY --from=pipelines __init__.py ./data/__init__.py
 COPY --from=pipelines pipelines ./data/pipelines
 COPY --from=pipelines process ./data/process
 COPY --from=pipelines raw/clinics.csv ./data/raw/clinics.csv
+# Centralized incident manager: shared rules, seed script and its CSV (contexts in compose).
+COPY --from=shared incidents ./packages/shared/incidents
+COPY --from=scripts seed_incidents.py ./scripts/seed_incidents.py
+COPY --from=pipelines raw/incidents-healthcore.csv ./data/raw/incidents-healthcore.csv
 
 ENV PYTHONPATH=/app
 EXPOSE 8000
-CMD ["uvicorn", "services.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/services/api", "--reload-dir", "/app/services/telemetry", "--reload-dir", "/app/services/reporting", "--reload-dir", "/app/data"]
+CMD ["uvicorn", "services.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/services/api", "--reload-dir", "/app/services/telemetry", "--reload-dir", "/app/services/reporting", "--reload-dir", "/app/services/agent", "--reload-dir", "/app/packages/shared", "--reload-dir", "/app/data"]

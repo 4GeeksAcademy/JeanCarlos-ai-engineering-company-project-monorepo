@@ -22,3 +22,6 @@ __pycache__/
 
 # LangGraph agent: checkpoints and traces of local runs (SQLite)
 data/agent_state/
+
+# Node
+node_modules/

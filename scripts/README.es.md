@@ -23,3 +23,9 @@ Evaluación formal del modelo de ventas, solo sobre los 8 años de entrenamiento
 uv run python scripts/evaluate_sales_model.py
 uv run pytest tests/pipelines/test_temporal_cv.py
 ```
+
+## Scripts
+
+- `seed_incidents.py` — carga el CSV histórico de incidencias (`data/raw/incidents-healthcore.csv`) en el gestor usando las reglas compartidas de `packages/shared/incidents`. Idempotente; las filas inválidas se reportan y no se insertan. Ver `services/api/README.md`.
+- `generate-incident-catalog.mjs` — copia el catálogo compartido de incidencias al backoffice (`--check` comprueba que está al día).
+- `generate-telemetry-contract.mjs` — genera el contrato de telemetría del backoffice.
