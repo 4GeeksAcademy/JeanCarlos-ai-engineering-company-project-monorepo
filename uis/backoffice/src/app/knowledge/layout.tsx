@@ -12,6 +12,7 @@ export default async function KnowledgeLayout({ children }: { children: React.Re
         <Link href="/reporting">Reporte mensual</Link>
         <Link href="/telemetry">Telemetría</Link>
         <Link href="/knowledge">Asistente</Link>
+        <Link href="/rfp">RFPs</Link>
       </nav>
       {children}
     </>

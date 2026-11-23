@@ -1,4 +1,4 @@
-name: Python tests (sales forecast, RAG, agent, memory, guardrails, MCP server)
+name: Python tests (sales forecast, RAG, agent, memory, guardrails, RFP intake, MCP server)
 
 on:
   push:
@@ -28,5 +28,7 @@ jobs:
         run: uv run python -m pytest tests/pipelines/test_agent_graph.py tests/pipelines/test_agent_tools.py tests/pipelines/test_agent_evals.py tests/pipelines/test_agent_memory.py tests/pipelines/test_agent_memory_evidence.py -v
       - name: Agent harness and guardrails (deterministic; fails if a guardrail lets abuse through)
         run: uv run python -m pytest tests/pipelines/test_agent_guardrails.py tests/pipelines/test_agent_guardrails_evidence.py services/api/tests/test_agent.py -v
+      - name: RFP intake flow (dedicated rfp_intake graph; model stubbed, real PDF conversion)
+        run: uv run python -m pytest tests/pipelines/test_rfp_intake.py services/api/tests/test_rfp.py -v
       - name: HealthCore MCP server (real server, test OAuth server, stand-in API)
         run: uv run python -m pytest tests/mcps -v

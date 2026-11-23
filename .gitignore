@@ -32,3 +32,6 @@ mcps/healthcore_mcp/logs/
 
 # MCP demo stack (mcps/healthcore_mcp/scripts/codespaces_demo.sh): logs, pids, local databases
 .mcp-demo/
+
+# Hito 9: RFP PDFs uploaded through the backoffice (runtime artifact of the intake, may hold client data)
+data/raw/rfp/

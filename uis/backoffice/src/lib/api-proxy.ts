@@ -9,6 +9,7 @@ const upstreamPaths = {
   incidents: "/api/incidents",
   reporting: "/reporting",
   knowledge: "/knowledge",
+  rfp: "/api/rfp",
 } as const;
 
 export async function proxyApi(
@@ -34,7 +35,8 @@ export async function proxyApi(
     upstream = await fetch(apiUrl(`${upstreamPaths[resource]}${suffix}${query}`), {
       method: request.method,
       headers,
-      body: request.method === "GET" ? undefined : await request.text(),
+      // bytes, not text: the RFP upload is a multipart PDF
+      body: request.method === "GET" ? undefined : await request.arrayBuffer(),
       cache: "no-store",
       redirect: "manual",
     });

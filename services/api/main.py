@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 
 from .database import get_inventory_engine, open_database
 from .core.security import get_settings
-from .routes import auth, auth_password, knowledge, profiles, suppliers, tasks, telemetry, users
+from .routes import auth, auth_password, knowledge, profiles, rfp, suppliers, tasks, telemetry, users
 from .routers import incidents, inventory
 from services.reporting.router import router as reporting_router
 from services.agent.router import router as agent_router
@@ -162,3 +162,4 @@ app.include_router(tasks.router)
 app.include_router(incidents.router)
 app.include_router(knowledge.router)
 app.include_router(agent_router)
+app.include_router(rfp.router)

@@ -14,6 +14,7 @@ export default async function InventoryLayout({ children }: { children: React.Re
         <Link href="/reporting">Reporte mensual</Link>
         <Link href="/telemetry">Telemetría</Link>
         <Link href="/knowledge">Asistente</Link>
+        <Link href="/rfp">RFPs</Link>
         <Link href="/incidents">Incidentes</Link>
       </nav>
       {children}
