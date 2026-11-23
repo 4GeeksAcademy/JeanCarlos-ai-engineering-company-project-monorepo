@@ -230,10 +230,11 @@ export function canonicalRoute(): string {
 function apiRoute(input: string): string {
   const path = input.split("?")[0].replace(/^\/api/, "");
   if (/^\/inventory\/products\/\d+$/.test(path)) return "/inventory/products/{supply_id}";
+  if (/^\/inventory\/clinics\/\d+\/products\/\d+\/stock$/.test(path)) return "/inventory/clinics/{clinic_id}/products/{product_id}/stock";
   if (/^\/suppliers\/\d+\/rate$/.test(path)) return "/suppliers/{supplier_id}/rate";
   if (/^\/suppliers\/\d+\/status$/.test(path)) return "/suppliers/{supplier_id}/status";
   if (/^\/suppliers\/\d+$/.test(path)) return "/suppliers/{supplier_id}";
-  if (["/suppliers", "/inventory/products", "/inventory/orders", "/inventory/orders/inbound", "/inventory/orders/outbound"].includes(path)) return path;
+  if (["/suppliers", "/inventory/products", "/inventory/orders", "/inventory/orders/inbound", "/inventory/orders/outbound", "/inventory/expiring"].includes(path)) return path;
   return "unmatched";
 }
 
@@ -254,6 +255,7 @@ export function track(eventType: string, properties: Properties, schemaVersion =
   }
   if (typeof properties.route_template === "string" &&
     ![...routeNames, "unmatched", "/inventory/products/{supply_id}", "/suppliers/{supplier_id}",
+      "/inventory/clinics/{clinic_id}/products/{product_id}/stock", "/inventory/expiring",
       "/suppliers/{supplier_id}/rate", "/suppliers/{supplier_id}/status"].includes(properties.route_template)) {
     console.warn("Telemetry event rejected: route is not canonical.");
     return;

@@ -55,6 +55,77 @@ ai-engineering-company-project-monorepo/
 
 ---
 
+## Worker en segundo plano (Celery, ticket DEV-55)
+
+Las operaciones pesadas corren en un **worker de Celery**, un proceso aparte de la API
+FastAPI, con Redis como broker y como backend de resultados. La API solo encola y responde
+`202` con un `task_id`. `GET /tasks/{task_id}` informa del estado: `pending`, `started`,
+`retry`, `success` o `failure`. Detalles en
+[`docs/operations/async-tasks.md`](./docs/operations/async-tasks.md).
+
+**Levantarlo** (Redis, worker y Flower; credenciales en `services/api/.env`):
+
+```bash
+COMPOSE_ENV_FILE=services/api/.env docker compose up -d redis worker flower
+open http://localhost:5555                       # Flower: colas, tareas, reintentos
+```
+
+Sin Docker (con Redis ya en `localhost:6379`):
+
+```bash
+export REDIS_URL=redis://localhost:6379/0
+celery -A services.celery_app worker -Q reporting --loglevel INFO      # worker
+celery -A services.celery_app flower --port=5555                       # Flower
+```
+
+La API tiene que usar el mismo `REDIS_URL`.
+
+**Detenerlo:**
+
+```bash
+docker compose stop worker      # apagado en caliente: termina las tareas en curso (hasta 120 s)
+docker compose down             # todo; los mensajes en cola quedan en el volumen redis_data
+```
+
+Sin Docker, `Ctrl-C` una vez hace un apagado en caliente y dos veces uno en frío. Las
+tareas sin ACK vuelven a la cola (`task_acks_late`).
+
+Detener la API no detiene el worker ni pierde los mensajes en cola. Detener el worker deja
+los mensajes esperando en Redis hasta que vuelva a arrancar.
+
+---
+
+## Base de conocimiento RAG (Hito 7)
+
+Asistente para los coordinadores de pacientes: responde preguntas sobre seguros, citas, referencias y pacientes nuevos solo con los documentos de `docs/company-knowledge-base/`. El diseño completo está en [`docs/rag/rag-design.md`](docs/rag/rag-design.md).
+
+```bash
+docker compose up -d qdrant        # Qdrant en localhost:6333
+python -m data.process.rag         # indexa los documentos en la colección healthcore_knowledge
+python data/eval/evaluate_rag_retrieval.py   # Recall@3
+```
+
+Necesita `LLM_API_URL`, `LLM_API_KEY`, `EMBEDDING_MODEL` y `GENERATION_MODEL` (modelos distintos, del gateway de 4Geeks) en `services/api/.env`. Endpoint: `POST /knowledge/query`; UI: «Asistente» en el backoffice (`/knowledge`).
+
+## Agente de soporte con LangGraph (parte 1)
+
+El flujo RAG como grafo explícito (`services/agent/`): estado mínimo, nodos `receive_question → retrieve_context → generate_answer` (o `answer_no_information` / `reject_question`), checkpoints en SQLite y una traza consultable de cada corrida. Diseño: [`docs/agent/agent-design.md`](docs/agent/agent-design.md).
+
+```bash
+python -m services.agent.record_evals              # graba una corrida real por caso de eval
+python -m pytest tests/pipelines/test_agent_evals.py   # evals contra las trazas grabadas
+```
+
+Endpoints: `POST /agent/query` y `GET /agent/runs/{run_id}/trace` (administradores).
+
+## Agente con tools fuera del RAG (parte 2)
+
+El agente decide solo si una pregunta necesita la base de conocimiento, el gestor de incidentes (`GET /api/incidents`) o el inventario (`GET /inventory/products`): tools de solo lectura con contrato tipado, timeout de 4 s y fallback honesto. Diseño: [`docs/agent/agent-design.md`](docs/agent/agent-design.md) §8.
+
+## Servidor MCP con OAuth (`mcps/healthcore_mcp`)
+
+Expone los tickets del Incidents Manager (consultar, crear y cambiar de estado vía `PATCH /api/incidents/{id}/status`) y el inventario en solo lectura a cualquier cliente MCP autorizado: Streamable HTTP, OAuth 2.1 con MCP Auth (Keycloak en local), scopes por tool y auditoría de cada invocación. El agente LangGraph lo consume como cliente MCP. Detalle: [`mcps/healthcore_mcp/README.md`](mcps/healthcore_mcp/README.md).
+
 ## Guía de carpetas — qué va en cada una
 
 Lee el `README.md` enlazado dentro de cada carpeta antes de empezar a programar ahí.
