@@ -22,7 +22,7 @@ def agent(monkeypatch, tmp_path):
     isolate_memory(monkeypatch, tmp_path)
     monkeypatch.setattr(runner, "_runtime", AgentRuntime(tmp_path / "agent.sqlite"))
     monkeypatch.setattr(rag, "retrieve", lambda question: [CHUNK] if "cancel" in question.lower() else [])
-    monkeypatch.setattr(rag, "generate_answer", lambda question, context: "Sí, 50 USD (o 40 GBP).\nFuente: X")
+    monkeypatch.setattr(rag, "generate_answer", lambda question, context, **kwargs: "Sí, 50 USD (o 40 GBP).\nFuente: X")
     monkeypatch.setattr(planner, "plan_with_model", lambda q: (_ for _ in ()).throw(RuntimeError("no model")))
 
 
@@ -53,7 +53,7 @@ def test_empty_question_is_a_clear_422_from_the_graph(client, headers):
 
 
 def test_node_failure_is_a_503_without_internals(client, headers, monkeypatch):
-    def broken(question, context):
+    def broken(question, context, **kwargs):
         raise ConnectionError("upstream https://llm.internal/v1 refused: secret-token")
 
     monkeypatch.setattr(rag, "generate_answer", broken)
@@ -70,7 +70,7 @@ def test_trace_is_queryable_by_admins_only(client, headers, admin_headers):
 
     assert client.get(f"/agent/runs/{run_id}/trace", headers=headers).status_code == 403
     trace = client.get(f"/agent/runs/{run_id}/trace", headers=admin_headers).json()
-    assert trace["route"] == "receive_question > recall_memories > plan_sources > retrieve_context > generate_answer > compose_answer > self_evaluate"
+    assert trace["route"] == "receive_question > guard_input > classify_scope > recall_memories > plan_sources > retrieve_context > generate_answer > compose_answer > self_evaluate > guard_output"
     assert trace["sources"] == "knowledge_base"
     assert trace["checkpoints"][-1]["next"] == []
     assert client.get("/agent/runs/00000000-0000-0000-0000-000000000000/trace", headers=admin_headers).status_code == 404

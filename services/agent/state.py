@@ -9,7 +9,7 @@ never by appending turns to the state or the prompt. Tool credentials and PHI ne
 import operator
 from typing import Annotated, Any, Literal, TypedDict
 
-Status = Literal["received", "rejected", "phi_refused", "decided", "planned", "retrieved", "no_context", "answered"]
+Status = Literal["received", "rejected", "phi_refused", "guarded", "decided", "planned", "retrieved", "no_context", "answered"]
 
 
 class RetrievedChunk(TypedDict, total=False):
@@ -26,6 +26,7 @@ class RetrievedChunk(TypedDict, total=False):
 
 class AgentState(TypedDict, total=False):
     question: str  # input; normalized by receive_question (already PHI-screened by the runner)
+    run_id: str  # input: links guardrail events to the run's trace
     conversation_id: str  # input: memory proposals live per conversation
     actor: str  # input: authenticated staff user (who approves a memory)
     phi_categories: list[str]  # input: PHI found by the runner's guard (the text never enters)
@@ -33,6 +34,9 @@ class AgentState(TypedDict, total=False):
     memory_decision: dict[str, Any]  # resolve_pending_proposal: label, status, content, memory id
     memories: list[dict[str, Any]]  # recall_memories: approved memories relevant to the question
     memory_proposal: dict[str, Any]  # self_evaluate: proposed / blocked_phi / none
+    guard: dict[str, Any]  # guard_input: deterministic verdict (category, failure type, rules that fired)
+    scope: dict[str, Any]  # classify_scope: domain / general / personal_task / instruction_override
+    output_check: dict[str, Any]  # guard_output: ok, or the findings that replaced the answer
     status: Status  # what the last node concluded
     error: str  # why the question was rejected
     plan: dict[str, Any]  # SourcePlan: which sources the question needs (plan_sources)

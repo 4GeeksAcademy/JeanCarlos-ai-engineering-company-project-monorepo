@@ -11,12 +11,15 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 
 from data.pipelines import rag
 from packages.shared.incidents import BRANCH_LABELS
 
 from . import planner, tools
+from .harness import isolation, output_guard, prompts, rules, scope
+from .harness.events import get_events
 from .memory import llm as memory_llm
 from .memory.store import KINDS, MemoryPolicyError, Proposal, get_store
 from .state import AgentState
@@ -35,6 +38,11 @@ NODE_OUTPUTS: dict[str, frozenset[str]] = {
     "receive_question": frozenset({"question", "status", "error"}),
     "reject_question": frozenset({"status", "error"}),
     "refuse_phi": frozenset({"answer", "status", "memory_decision"}),
+    "guard_input": frozenset({"guard", "status"}),
+    "refuse_guarded": frozenset({"answer", "status", "memory_decision"}),
+    "classify_scope": frozenset({"scope"}),
+    "answer_general": frozenset({"answer", "status"}),
+    "guard_output": frozenset({"answer", "output_check"}),
     "resolve_pending_proposal": frozenset({"question", "status", "memory_decision"}),
     "recall_memories": frozenset({"memories"}),
     "plan_sources": frozenset({"plan", "status"}),
@@ -77,14 +85,23 @@ def receive_question(state: AgentState) -> AgentState:
     return {"question": question, "status": "received"}
 
 
+def _event(state: AgentState, guard: str, action: str, failure_type: str, category: str, **details) -> None:
+    get_events().record(guard, action, failure_type, category, run_id=state.get("run_id"),
+                        conversation_id=state.get("conversation_id"), **details)
+
+
 def reject_question(state: AgentState) -> AgentState:
     """Terminal node for invalid input: no source is consulted."""
+    _event(state, "input_validation", "blocked", "structural", "invalid_input")
     return {"status": "rejected", "error": state.get("error") or "La pregunta no es válida."}
 
 
 def plan_sources(state: AgentState) -> AgentState:
     """Decide which sources the question needs: knowledge base, ticket tool, stock tool."""
-    return {"plan": planner.plan_sources(state["question"]).model_dump(mode="json"), "status": "planned"}
+    plan = planner.plan_sources(state["question"])
+    if plan.planner == "rules" and plan.note:  # the model's plan was malformed or unavailable
+        _event(state, "planner_output", "fallback", "structural", "model_output_invalid", note=plan.note[:120])
+    return {"plan": plan.model_dump(mode="json"), "status": "planned"}
 
 
 # ---------------------------------------------------------------- tools
@@ -134,7 +151,7 @@ def stock_fallback(state: AgentState) -> AgentState:
 def knowledge_question(state: AgentState) -> str:
     """What the RAG is asked: the policy part chosen by the planner for mixed questions, or
     the whole question. The RAG never sees the ticket or the patient's case."""
-    return (state.get("plan") or {}).get("knowledge_question") or state["question"]
+    return (state.get("plan") or {}).get("knowledge_question") or state.get("question") or ""
 
 
 def retrieve_context(state: AgentState) -> AgentState:
@@ -151,10 +168,26 @@ def memory_context(state: AgentState) -> list[dict]:
             for m in state.get("memories") or []]
 
 
+_REGULATORY = re.compile(r"\b(?:hipaa|gdpr|ico|phi|brecha\w*|breach\w*|baa|dpa|business\s+associate|data\s+processing|"
+                         r"notificaci\w*|proteccion\s+de\s+datos|privacidad|permisible|permitido\s+compartir)\b", re.I)
+
+
+def regulatory_context(state: AgentState) -> list[dict]:
+    """The regulatory frame of the Compliance BRIEFING, for compliance questions the internal
+    knowledge base does not cover yet."""
+    return list(prompts.REGULATORY_BASELINE) if _REGULATORY.search(rules.plain(knowledge_question(state))) else []
+
+
 def generate_answer(state: AgentState) -> AgentState:
-    """Answer from the chunks retrieve_context produced (plus approved memories), with the RAG
-    generation step."""
-    return {"rag_answer": rag.generate_answer(knowledge_question(state), state["context"] + memory_context(state))}
+    """Answer from the chunks retrieve_context produced (plus approved memories and the
+    regulatory frame), with the RAG generation step and the compliance assistant's system prompt.
+    External content is isolated first: a block carrying instructions never reaches the model."""
+    blocks = state["context"] + memory_context(state) + regulatory_context(state)
+    safe, findings = isolation.isolate_context(blocks)
+    for finding in findings:
+        _event(state, "external_content_isolation", "sanitized", "security", "instructions_in_external_content",
+               source=finding["source"], rules=finding["rules"])
+    return {"rag_answer": rag.generate_answer(knowledge_question(state), safe, system_prompt=prompts.AGENT_SYSTEM_PROMPT)}
 
 
 def answer_no_information(state: AgentState) -> AgentState:
@@ -170,10 +203,31 @@ def _date(value: str) -> str:
     return datetime.fromisoformat(value).strftime("%d/%m/%Y")
 
 
-def format_tickets(result: dict) -> str:
+ACTIVE_BREACH_STATUSES = {"open", "in_progress"}
+
+
+def _safe_tickets(state: AgentState, tickets: list[dict]) -> list[dict]:
+    """Tool data is data: a title carrying instructions is replaced, and a compliance breach
+    still open or under investigation shows no details (BRIEFING §3)."""
+    safe = []
+    for t in tickets:
+        if t["category"] == "compliance_breach" and t["status"] in ACTIVE_BREACH_STATUSES:
+            _event(state, "tool_output_filter", "blocked", "content", "active_breach_details", ticket_id=t["id"])
+            safe.append({**t, "title": "incidente de cumplimiento en investigación: detalles reservados a Compliance",
+                         "branch": "reservada"})
+            continue
+        title, injection = isolation.isolate_tool_text(t["title"])
+        if injection:
+            _event(state, "external_content_isolation", "sanitized", "security", "instructions_in_tool_data",
+                   ticket_id=t["id"], rules=injection)
+        safe.append({**t, "title": title})
+    return safe
+
+
+def format_tickets(result: dict, state: AgentState | None = None) -> str:
     """Tool data rendered as text, without a model: the status shown is the one the API returned."""
     checked = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
-    tickets = result["tickets"]
+    tickets = _safe_tickets(state or {}, result["tickets"])
     if result["query"].get("ticket_id"):
         t = tickets[0]
         body = (f"El ticket #{t['id']} «{t['title']}» está en estado {STATUS_LABELS[t['status']]}. "
@@ -216,7 +270,7 @@ def compose_answer(state: AgentState) -> AgentState:
     if decision.get("status") in DECISION_ACKS:
         parts.append(DECISION_ACKS[decision["status"]].format(content=decision.get("content") or ""))
     if (state.get("ticket_result") or {}).get("status") == "ok":
-        parts.append(format_tickets(state["ticket_result"]))
+        parts.append(format_tickets(state["ticket_result"], state))
     if (state.get("stock_result") or {}).get("status") == "ok":
         parts.append(format_stock(state["stock_result"]))
     parts.extend(state.get("tool_fallbacks") or [])
@@ -229,10 +283,10 @@ def compose_answer(state: AgentState) -> AgentState:
 
 PHI_REFUSAL = (
     "No puedo procesar ni recordar información que identifique a un paciente (nombre, historia clínica, fecha "
-    "de nacimiento, diagnóstico, número de seguro, resultados o notas clínicas): en HealthCore está prohibido "
-    "guardarla en cualquier sistema del agente, por HIPAA en EE. UU. y UK GDPR en Reino Unido. No guardé nada. "
-    "Si necesitas registrar algo de un paciente, hazlo en su ficha del sistema clínico; si quieres, pregúntame "
-    "por la política o el procedimiento en términos generales."
+    "de nacimiento, número de seguro, o una combinación como edad + diagnóstico + clínica que permita "
+    "reidentificarlo): en HealthCore está prohibido por HIPAA en EE. UU. y UK GDPR en Reino Unido, y no guardé "
+    "nada. Reformula la consulta sin datos identificables, por ejemplo: «¿qué política aplica a un paciente adulto "
+    "con un diagnóstico crónico en una clínica de EE. UU.?», y te respondo con la política correspondiente."
 )
 
 
@@ -241,6 +295,7 @@ def refuse_phi(state: AgentState) -> AgentState:
     the attempt (categories only). A pending proposal is discarded, never approved."""
     store = get_store()
     categories = state.get("phi_categories") or ["patient_information"]
+    _event(state, "patient_identifiers", "blocked", "content", "patient_identifiable_case", categories=categories)
     decision: dict = {}
     pending = state.get("pending_proposal")
     if pending:
@@ -258,6 +313,10 @@ def resolve_pending_proposal(state: AgentState) -> AgentState:
     memory; anything unclear discards it. What is left of the message continues as the question."""
     pending = state["pending_proposal"]
     decision = memory_llm.classify_decision(pending, state["question"])
+    edited = decision.get("edited_content") or ""
+    if decision["label"] == "edit" and (rules.detect_instruction_override(edited) or memory_llm.touches_documented_policy(edited)):
+        _event(state, "memory_edit_guard", "blocked", "security", "poisoned_memory_edit")
+        decision = {**decision, "label": "ambiguous", "classifier": "guardrail", "edited_content": None}
     closed = get_store().resolve(
         pending["id"], label=decision["label"], confidence=decision["confidence"], classifier=decision["classifier"],
         decided_by=state.get("actor") or "unknown", decision_message=state["question"],
@@ -294,6 +353,8 @@ def self_evaluate(state: AgentState) -> AgentState:
     if store.pending(state["conversation_id"]):
         return {"answer": answer, "memory_proposal": {"outcome": "skipped", "reason": "a proposal is already pending"}}
     evaluation = memory_llm.self_evaluate(question, answer, state.get("memories") or [])
+    if evaluation.get("reason", "").startswith("self-evaluation unavailable"):
+        _event(state, "self_evaluation_output", "fallback", "structural", "model_output_invalid")
     actor = state.get("actor") or "unknown"
     if evaluation["outcome"] == "blocked_phi":
         record = store.record_blocked(conversation_id=state["conversation_id"], proposed_to=actor,
@@ -316,3 +377,80 @@ def self_evaluate(state: AgentState) -> AgentState:
     return {"answer": answer + ask,
             "memory_proposal": {"outcome": "proposed", "proposal_id": record["id"], "kind": record["kind"],
                                 "content": record["content"], "reason": evaluation.get("reason", "")}}
+
+
+# ---------------------------------------------------------------- harness (Hito 8 Parte 2)
+
+
+def guard_input(state: AgentState) -> AgentState:
+    """Deterministic guards on the whole message, before any model call: instruction override /
+    jailbreak (security), personal-chatbot use, active-breach probing and confidential contract
+    terms (content). A hit blocks; nothing here can allow what another layer blocks."""
+    message = state["question"]
+    conversation = state.get("conversation_id")
+    events = get_events()
+    checks = [
+        ("instruction_override", "security", rules.detect_instruction_override(message)),
+        ("personal_task", "content", rules.detect_personal_task(message)),
+        ("breach_probe", "content", rules.detect_breach_probe(
+            message, breach_topic_in_conversation=bool(conversation) and events.has_flag(conversation, "breach_topic"))),
+        ("confidential_contract", "content", rules.detect_confidential_contract(message)),
+    ]
+    if conversation and rules.mentions_breach(message):
+        events.set_flag(conversation, "breach_topic")
+    for category, failure_type, fired in checks:
+        if fired:
+            attempts = (events.count(conversation, category) + 1) if conversation else 1
+            _event(state, "input_rules", "blocked", failure_type, category, rules=fired, attempt=attempts)
+            return {"guard": {"category": category, "failure_type": failure_type, "rules": fired,
+                              "classifier": "rules", "attempt": attempts}, "status": "guarded"}
+    return {"guard": {"category": "allowed", "classifier": "rules"}, "status": state.get("status", "received")}
+
+
+def refuse_guarded(state: AgentState) -> AgentState:
+    """Firm, fixed refusal (never generated, so it cannot be talked into complying). A pending
+    memory proposal is discarded: an abusive turn never approves anything."""
+    guard = state.get("guard") or {}
+    scope_verdict = state.get("scope") or {}
+    category = guard.get("category") if guard.get("category") not in (None, "allowed") else scope_verdict.get("category")
+    answer = prompts.REFUSALS.get(category, prompts.REFUSALS["instruction_override"])
+    if category == "instruction_override" and (guard.get("attempt") or 1) >= 3:
+        answer += " Este es un intento repetido de cambiar mis instrucciones y queda registrado."
+    decision: dict = {}
+    pending = state.get("pending_proposal")
+    if pending and get_store().pending(state["conversation_id"]):
+        closed = get_store().resolve(pending["id"], label="ambiguous", confidence=0.0, classifier="guardrail",
+                                     decided_by=state.get("actor") or "unknown", decision_message="[bloqueado por guardrail]")
+        decision = {"proposal_id": pending["id"], "status": closed["status"], "label": "ambiguous"}
+    return {"answer": answer, "status": "guarded", "memory_decision": decision}
+
+
+def classify_scope(state: AgentState) -> AgentState:
+    """Second layer for what the rules did not decide: domain, general (answer + redirect),
+    personal task or instruction override (refuse)."""
+    verdict = scope.classify_scope(state["question"])
+    if verdict["classifier"].startswith("unavailable"):
+        _event(state, "scope_classifier", "fallback", "structural", "model_output_invalid")
+    elif verdict["category"] == "general":
+        _event(state, "scope_classifier", "redirected", "content", "out_of_domain", confidence=verdict["confidence"])
+    elif verdict["category"] in ("personal_task", "instruction_override"):
+        failure = "security" if verdict["category"] == "instruction_override" else "content"
+        _event(state, "scope_classifier", "blocked", failure, verdict["category"], confidence=verdict["confidence"])
+    return {"scope": verdict}
+
+
+def answer_general(state: AgentState) -> AgentState:
+    """Small talk / general question: one or two sentences, then always back to compliance."""
+    return {"answer": scope.answer_general(state["question"]), "status": "answered"}
+
+
+def guard_output(state: AgentState) -> AgentState:
+    """Last check before the user sees anything: format, leaks of the system prompt or internal
+    secrets, and PHI in the model output (BRIEFING: detected, not only instructed)."""
+    check = output_guard.check_output(state.get("answer"))
+    if check.ok:
+        return {"answer": state["answer"], "output_check": {"ok": True}}
+    for failure_type, category in check.findings:
+        _event(state, "output_guard", "blocked", failure_type, category.split(":")[0], detail=category)
+    return {"answer": prompts.OUTPUT_FALLBACK,
+            "output_check": {"ok": False, "findings": [f"{t}:{c}" for t, c in check.findings]}}

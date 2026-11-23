@@ -6,6 +6,7 @@
 - GET /agent/runs/{run_id}/trace: the persisted trace and checkpoints of a run (admins
   only: it contains retrieved sections and scores, which coordinators never see).
 - GET /agent/memory: audit view of the agent memory (admins only).
+- GET /agent/guardrails/summary: guardrail activations by guard, action and failure type (admins).
 
 Errors never expose internals: a rejected question is a 422 with the graph's message, a
 failure in any node is a 503 with the run id so the trace can be looked up.
@@ -68,3 +69,12 @@ def agent_memory() -> dict[str, Any]:
     store = get_store()
     return {"memories": store.list_memories(), "proposals": store.proposals()[-100:],
             "events": store.audit_trail()[-200:]}
+
+
+@router.get("/guardrails/summary", dependencies=[Depends(require_admin)])
+def guardrails_summary(since: str | None = None, conversation_id: str | None = None) -> dict[str, Any]:
+    """How many times each guardrail blocked, redirected or sanitized (admins). `since` (ISO
+    timestamp) scopes it to a test session; `conversation_id` to one conversation."""
+    from .harness.events import get_events
+
+    return get_events().summary(since=since, conversation_id=conversation_id)

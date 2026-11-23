@@ -264,7 +264,7 @@ def agent(monkeypatch, tmp_path, isolated_memory):
     monkeypatch.setattr(planner, "plan_with_model", lambda q: (_ for _ in ()).throw(RuntimeError("no model")))
     monkeypatch.setattr(rag, "retrieve", lambda q: [])
     monkeypatch.setattr(rag, "generate_answer",
-                        lambda q, context: generated.append(context) or "Respuesta con memoria.\nFuente: Memoria del agente")
+                        lambda q, context, **kwargs: generated.append(context) or "Respuesta con memoria.\nFuente: Memoria del agente")
 
     def evaluation(message, answer, memories):
         if "Manchester" in message and "?" not in message:
@@ -290,7 +290,7 @@ def test_cycle_approved_is_recalled_in_a_later_conversation(agent):
     second = agent.runtime.run("sí", conversation_id=first.conversation_id, actor="priya")
     assert second.memory["decision"]["status"] == "approved" and second.answer.startswith("Listo, lo recordaré")
     trace = agent.runtime.trace(second.run_id)
-    assert trace["route"] == "receive_question > resolve_pending_proposal > compose_answer > self_evaluate"
+    assert trace["route"] == "receive_question > guard_input > resolve_pending_proposal > compose_answer > self_evaluate > guard_output"
 
     later = agent.runtime.run("¿Cómo funciona el proceso de referidos internos en Manchester?", actor="marcus")
     later_trace = agent.runtime.trace(later.run_id)
@@ -312,7 +312,7 @@ def test_decision_and_a_new_question_in_the_same_message(agent):
     first = agent.runtime.run(MANCHESTER, actor="priya")
     second = agent.runtime.run("sí, ¿qué debo traer a mi primera cita?", conversation_id=first.conversation_id, actor="priya")
     route = agent.runtime.trace(second.run_id)["route"]
-    assert route.startswith("receive_question > resolve_pending_proposal > recall_memories > plan_sources")
+    assert route.startswith("receive_question > guard_input > resolve_pending_proposal > classify_scope > recall_memories > plan_sources")
     assert second.answer.startswith("Listo, lo recordaré") and len(agent.store.list_memories()) == 1
 
 
@@ -325,7 +325,7 @@ def test_ambiguous_reply_discards_and_never_approves(agent):
 def test_patient_information_is_refused_before_the_graph_and_never_stored(agent):
     result = agent.runtime.run("El paciente Johnson canceló su cita de mañana, apúntalo.", actor="priya")
     trace = agent.runtime.trace(result.run_id)
-    assert trace["route"] == "receive_question > refuse_phi" and result.memory["blocked_phi"]
+    assert trace["route"] == "receive_question > refuse_phi > guard_output" and result.memory["blocked_phi"]
     assert "No puedo procesar ni recordar información que identifique a un paciente" in result.answer
     database = json.dumps(trace) + json.dumps(agent.store.proposals()) + json.dumps(agent.store.audit_trail())
     checkpoints = sqlite3.connect(agent.runtime.tracer.path).execute("select count(*) from checkpoints").fetchone()[0]

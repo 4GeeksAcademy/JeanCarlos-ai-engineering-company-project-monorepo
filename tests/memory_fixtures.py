@@ -20,10 +20,16 @@ def fake_embed(text: str) -> list[float]:
 
 
 def isolate_memory(monkeypatch, tmp_path, *, evaluation=None, decision=None):
-    """Temporary memory store; self-evaluation and decision classifier stubbed (no proposals,
-    unclear decisions) unless the test passes its own."""
+    """Temporary memory store and guardrail log; self-evaluation, decision classifier and the
+    model part of the scope classifier stubbed (no proposals, unclear decisions, "domain")
+    unless the test passes its own. The deterministic guards always run for real."""
+    from services.agent.harness import events as guard_events
+    from services.agent.harness import scope
+
     store = memory_store.MemoryStore(tmp_path / "agent_memory.sqlite", embed=fake_embed)
     monkeypatch.setattr(memory_store, "_store", store)
+    monkeypatch.setattr(guard_events, "_events", guard_events.GuardEvents(tmp_path / "guardrails.sqlite"))
+    monkeypatch.setattr(scope, "_json_call", lambda system, user: {"category": "domain", "confidence": 0.9, "reason": "stub"})
     monkeypatch.setattr(memory_llm, "self_evaluate",
                         evaluation or (lambda message, answer, memories: {"outcome": "none", "reason": "stub"}))
     monkeypatch.setattr(memory_llm, "classify_decision", decision or (lambda proposal, message: {

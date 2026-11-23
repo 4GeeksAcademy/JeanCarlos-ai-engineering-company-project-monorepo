@@ -80,14 +80,14 @@ class AgentRuntime:
 
     @staticmethod
     def screen(question: str) -> tuple[str, list[str]]:
-        """PHI guard BEFORE the graph: a message with patient information never reaches the
-        state, the checkpoints or the trace; the graph only sees a placeholder and refuses."""
-        from .memory.phi_guard import find_phi
+        """Patient-identifier guard BEFORE the graph: direct identifiers or a combination of
+        quasi-identifiers (age + diagnosis + location…) never reach the state, the checkpoints or
+        the trace; the graph only sees a placeholder and refuses, asking to reformulate."""
+        from .harness.rules import detect_patient_identifiers
 
-        findings = find_phi(question)
-        if not findings:
+        categories = detect_patient_identifiers(question)
+        if not categories:
             return question, []
-        categories = sorted({f.category for f in findings})
         return f"[mensaje redactado: posible PHI ({', '.join(categories)})]", categories
 
     def _failed(self, run_id: str, error: BaseException) -> AgentRunError:
@@ -106,7 +106,7 @@ class AgentRuntime:
         conversation_id = conversation_id or str(uuid.uuid4())
         safe_question, phi = self.screen(question)
         pending = get_store().pending(conversation_id)
-        inputs = {"question": safe_question, "conversation_id": conversation_id, "actor": actor or "unknown",
+        inputs = {"question": safe_question, "run_id": run_id, "conversation_id": conversation_id, "actor": actor or "unknown",
                   "phi_categories": phi,
                   "pending_proposal": ({"id": pending["id"], "kind": pending["kind"], "content": pending["content"]}
                                        if pending else None)}
