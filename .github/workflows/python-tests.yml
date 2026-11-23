@@ -3,22 +3,9 @@ name: Python tests (sales forecast, RAG, agent, MCP server)
 on:
   push:
     branches: [main]
+  # No `paths` filter: GitHub only evaluates it over the first 300 changed files, and the PRs
+  # of this chained branch exceed that, so the workflow silently did not run. The job takes ~30 s.
   pull_request:
-    paths:
-      - "scripts/**.py"
-      - "tests/**"
-      - "data/process/rag.py"
-      - "data/pipelines/rag.py"
-      - "docs/company-knowledge-base/**"
-      - "services/agent/**"
-      - "mcps/**"
-      - "packages/shared/incidents/**"
-      - "data/eval/agent-eval-cases.json"
-      - "data/eval/agent_eval_traces.json"
-      - "data/raw/healthcore_sales.csv"
-      - "pyproject.toml"
-      - "uv.lock"
-      - ".github/workflows/python-tests.yml"
 
 permissions:
   contents: read
