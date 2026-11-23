@@ -1,0 +1,139 @@
+{
+  "realm": "healthcore",
+  "enabled": true,
+  "displayName": "HealthCore",
+  "accessTokenLifespan": 900,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "defaultDefaultClientScopes": [],
+  "defaultOptionalClientScopes": [],
+  "clientScopes": [
+    {
+      "name": "healthcore-mcp-audience",
+      "description": "Adds the HealthCore MCP server as token audience",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "audience-healthcore-mcp",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "healthcore-mcp",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "incidents:read",
+      "description": "Read tickets of the HealthCore Incidents Manager",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "consent.screen.text": "Read tickets of the HealthCore Incidents Manager"
+      }
+    },
+    {
+      "name": "incidents:write",
+      "description": "Create tickets and change their status in the HealthCore Incidents Manager",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "consent.screen.text": "Create tickets and change their status in the HealthCore Incidents Manager"
+      }
+    },
+    {
+      "name": "inventory:read",
+      "description": "Read HealthCore inventory stock (there is no inventory write scope)",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "consent.screen.text": "Read HealthCore inventory stock (there is no inventory write scope)"
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "healthcore-agent",
+      "name": "HealthCore support agent (LangGraph)",
+      "description": "Read-only: the agent only checks tickets and stock",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${MCP_AGENT_CLIENT_SECRET}",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "access.token.lifespan": "900"
+      },
+      "defaultClientScopes": [
+        "healthcore-mcp-audience",
+        "incidents:read",
+        "inventory:read"
+      ],
+      "optionalClientScopes": []
+    },
+    {
+      "clientId": "healthcore-ops",
+      "name": "HealthCore operations console",
+      "description": "Manages tickets (create, change status) and reads stock",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${MCP_OPS_CLIENT_SECRET}",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "access.token.lifespan": "900"
+      },
+      "defaultClientScopes": [
+        "healthcore-mcp-audience",
+        "incidents:read",
+        "incidents:write",
+        "inventory:read"
+      ],
+      "optionalClientScopes": []
+    },
+    {
+      "clientId": "healthcore-inventory-reader",
+      "name": "Inventory dashboards (partner)",
+      "description": "Only reads stock; cannot see tickets",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${MCP_INVENTORY_CLIENT_SECRET}",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "access.token.lifespan": "900"
+      },
+      "defaultClientScopes": [
+        "healthcore-mcp-audience",
+        "inventory:read"
+      ],
+      "optionalClientScopes": []
+    }
+  ]
+}
