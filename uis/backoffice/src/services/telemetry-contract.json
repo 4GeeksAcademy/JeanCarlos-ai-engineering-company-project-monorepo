@@ -1,30 +1,22 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "2.1.0",
   "events": [
     {
-      "event_type": "inventory_inbound_order_created",
+      "event_type": "inbound_order_created",
       "allowlist": [
-        "order_id",
-        "supply_id",
-        "quantity",
         "clinic_id",
-        "country"
+        "country",
+        "product_id",
+        "product_category",
+        "quantity",
+        "supplier_id",
+        "total_cost"
       ],
       "properties": {
-        "order_id": {
-          "type": "integer",
-          "required": true
-        },
-        "supply_id": {
-          "type": "integer",
-          "required": true
-        },
-        "quantity": {
-          "type": "integer",
-          "required": true
-        },
         "clinic_id": {
           "type": "integer",
+          "minimum": 1,
+          "maximum": 12,
           "required": true
         },
         "country": {
@@ -32,44 +24,114 @@
           "enum": [
             "US",
             "UK"
+          ],
+          "required": true
+        },
+        "product_id": {
+          "type": "integer",
+          "required": true
+        },
+        "product_category": {
+          "type": "string",
+          "enum": [
+            "medication",
+            "ppe",
+            "consumable",
+            "equipment"
+          ],
+          "required": true
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1,
+          "required": true
+        },
+        "supplier_id": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "required": true
+        },
+        "total_cost": {
+          "type": "number",
+          "minimum": 0,
+          "required": false
+        }
+      }
+    },
+    {
+      "event_type": "outbound_order_created",
+      "allowlist": [
+        "clinic_id",
+        "country",
+        "product_id",
+        "product_category",
+        "quantity",
+        "department"
+      ],
+      "properties": {
+        "clinic_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12,
+          "required": true
+        },
+        "country": {
+          "type": "string",
+          "enum": [
+            "US",
+            "UK"
+          ],
+          "required": true
+        },
+        "product_id": {
+          "type": "integer",
+          "required": true
+        },
+        "product_category": {
+          "type": "string",
+          "enum": [
+            "medication",
+            "ppe",
+            "consumable",
+            "equipment"
+          ],
+          "required": true
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1,
+          "required": true
+        },
+        "department": {
+          "type": "string",
+          "enum": [
+            "primary_care",
+            "general_consultation",
+            "specialty_care",
+            "chronic_care"
           ],
           "required": true
         }
       }
     },
     {
-      "event_type": "inventory_outbound_order_created",
+      "event_type": "stock_threshold_triggered",
       "allowlist": [
-        "order_id",
-        "supply_id",
-        "quantity",
         "clinic_id",
-        "consumption_type",
-        "country"
+        "country",
+        "product_id",
+        "product_category",
+        "quantity",
+        "min_stock_threshold",
+        "department"
       ],
       "properties": {
-        "order_id": {
-          "type": "integer",
-          "required": true
-        },
-        "supply_id": {
-          "type": "integer",
-          "required": true
-        },
-        "quantity": {
-          "type": "integer",
-          "required": true
-        },
         "clinic_id": {
           "type": "integer",
-          "required": true
-        },
-        "consumption_type": {
-          "type": "string",
-          "enum": [
-            "clinical_use",
-            "expiry_waste"
-          ],
+          "minimum": 1,
+          "maximum": 12,
           "required": true
         },
         "country": {
@@ -78,6 +140,181 @@
             "US",
             "UK"
           ],
+          "required": true
+        },
+        "product_id": {
+          "type": "integer",
+          "required": true
+        },
+        "product_category": {
+          "type": "string",
+          "enum": [
+            "medication",
+            "ppe",
+            "consumable",
+            "equipment"
+          ],
+          "required": true
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 0,
+          "required": true
+        },
+        "min_stock_threshold": {
+          "type": "integer",
+          "minimum": 1,
+          "required": true
+        },
+        "department": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "primary_care",
+            "general_consultation",
+            "specialty_care",
+            "chronic_care",
+            null
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "direct_stock_edit_rejected",
+      "allowlist": [
+        "clinic_id",
+        "country",
+        "product_id",
+        "product_category",
+        "quantity",
+        "attempted_method",
+        "route_template",
+        "response_status"
+      ],
+      "properties": {
+        "clinic_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12,
+          "required": true
+        },
+        "country": {
+          "type": "string",
+          "enum": [
+            "US",
+            "UK"
+          ],
+          "required": true
+        },
+        "product_id": {
+          "type": "integer",
+          "required": true
+        },
+        "product_category": {
+          "type": "string",
+          "enum": [
+            "medication",
+            "ppe",
+            "consumable",
+            "equipment"
+          ],
+          "required": true
+        },
+        "quantity": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "required": true
+        },
+        "attempted_method": {
+          "type": "string",
+          "enum": [
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE"
+          ],
+          "required": true
+        },
+        "route_template": {
+          "type": "string",
+          "const": "/inventory/clinics/{clinic_id}/products/{product_id}/stock",
+          "required": true
+        },
+        "response_status": {
+          "type": "integer",
+          "enum": [
+            403,
+            405
+          ],
+          "required": true
+        }
+      }
+    },
+    {
+      "event_type": "supply_expiry_flagged",
+      "allowlist": [
+        "clinic_id",
+        "country",
+        "product_id",
+        "product_category",
+        "quantity",
+        "expiry_date",
+        "days_until_expiry",
+        "expiry_window_days"
+      ],
+      "properties": {
+        "clinic_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12,
+          "required": true
+        },
+        "country": {
+          "type": "string",
+          "enum": [
+            "US",
+            "UK"
+          ],
+          "required": true
+        },
+        "product_id": {
+          "type": "integer",
+          "required": true
+        },
+        "product_category": {
+          "type": "string",
+          "enum": [
+            "medication",
+            "ppe",
+            "consumable",
+            "equipment"
+          ],
+          "required": true
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1,
+          "required": true
+        },
+        "expiry_date": {
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        "days_until_expiry": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30,
+          "required": true
+        },
+        "expiry_window_days": {
+          "type": "integer",
+          "const": 30,
           "required": true
         }
       }
@@ -135,91 +372,43 @@
       }
     },
     {
-      "event_type": "inventory_direct_stock_edit_rejected",
-      "allowlist": [
-        "attempted_method",
-        "route_template",
-        "response_status",
-        "detection_source"
-      ],
-      "properties": {
-        "attempted_method": {
-          "type": "string",
-          "enum": [
-            "POST",
-            "PUT",
-            "PATCH",
-            "DELETE"
-          ],
-          "required": true
-        },
-        "route_template": {
-          "type": "string",
-          "const": "/inventory/products/{supply_id}/stock",
-          "required": true
-        },
-        "response_status": {
-          "type": "integer",
-          "enum": [
-            403,
-            404,
-            405
-          ],
-          "required": true
-        },
-        "detection_source": {
-          "type": "string",
-          "const": "trusted_gateway",
-          "required": true
-        }
-      }
-    },
-    {
-      "event_type": "inventory_stock_threshold_triggered",
-      "allowlist": [
-        "supply_id",
-        "current_stock",
-        "threshold",
-        "unit"
-      ],
-      "properties": {
-        "supply_id": {
-          "type": "integer",
-          "required": true
-        },
-        "current_stock": {
-          "type": "integer",
-          "minimum": 0,
-          "required": true
-        },
-        "threshold": {
-          "type": "integer",
-          "const": 10,
-          "required": true
-        },
-        "unit": {
-          "type": "string",
-          "enum": [
-            "box",
-            "unit",
-            "pack",
-            "vial"
-          ],
-          "required": true
-        }
-      }
-    },
-    {
       "event_type": "inventory_outbound_insufficient_stock_rejected",
       "allowlist": [
-        "supply_id",
+        "clinic_id",
+        "country",
+        "product_id",
+        "product_category",
         "available_quantity",
         "requested_quantity",
-        "clinic_id"
+        "department"
       ],
       "properties": {
-        "supply_id": {
+        "clinic_id": {
           "type": "integer",
+          "minimum": 1,
+          "maximum": 12,
+          "required": true
+        },
+        "country": {
+          "type": "string",
+          "enum": [
+            "US",
+            "UK"
+          ],
+          "required": true
+        },
+        "product_id": {
+          "type": "integer",
+          "required": true
+        },
+        "product_category": {
+          "type": "string",
+          "enum": [
+            "medication",
+            "ppe",
+            "consumable",
+            "equipment"
+          ],
           "required": true
         },
         "available_quantity": {
@@ -232,389 +421,18 @@
           "minimum": 1,
           "required": true
         },
-        "clinic_id": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 12,
-          "required": true
-        }
-      }
-    },
-    {
-      "event_type": "claim_denial_rate_calculated",
-      "allowlist": [
-        "group_by",
-        "payerId",
-        "locationId",
-        "periodStart",
-        "periodEnd",
-        "claimsTotal",
-        "claimsDenied",
-        "denialRatePercent",
-        "thresholdPercent"
-      ],
-      "properties": {
-        "group_by": {
-          "type": "string",
-          "enum": [
-            "payerId",
-            "locationId"
-          ],
-          "required": true
-        },
-        "payerId": {
+        "department": {
           "type": [
             "string",
             "null"
           ],
-          "required": true
-        },
-        "locationId": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "required": true
-        },
-        "periodStart": {
-          "type": "string",
-          "format": "date",
-          "required": true
-        },
-        "periodEnd": {
-          "type": "string",
-          "format": "date",
-          "required": true
-        },
-        "claimsTotal": {
-          "type": "integer",
-          "minimum": 1,
-          "required": true
-        },
-        "claimsDenied": {
-          "type": "integer",
-          "minimum": 0,
-          "required": true
-        },
-        "denialRatePercent": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 100,
-          "required": true
-        },
-        "thresholdPercent": {
-          "type": "number",
-          "const": 8,
-          "required": true
-        }
-      }
-    },
-    {
-      "event_type": "claim_high_denial_rate_flagged",
-      "allowlist": [
-        "payerId",
-        "periodStart",
-        "periodEnd",
-        "denialRatePercent",
-        "thresholdPercent",
-        "claimsTotal"
-      ],
-      "properties": {
-        "payerId": {
-          "type": "string",
-          "required": true
-        },
-        "periodStart": {
-          "type": "string",
-          "format": "date",
-          "required": true
-        },
-        "periodEnd": {
-          "type": "string",
-          "format": "date",
-          "required": true
-        },
-        "denialRatePercent": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 100,
-          "required": true
-        },
-        "thresholdPercent": {
-          "type": "number",
-          "const": 8,
-          "required": true
-        },
-        "claimsTotal": {
-          "type": "integer",
-          "minimum": 10,
-          "required": true
-        }
-      }
-    },
-    {
-      "event_type": "appointment_no_show_cost_calculated",
-      "allowlist": [
-        "locationId",
-        "periodStart",
-        "periodEnd",
-        "noShowCount",
-        "estimatedLossUsd"
-      ],
-      "properties": {
-        "locationId": {
-          "type": "string",
-          "required": true
-        },
-        "periodStart": {
-          "type": "string",
-          "format": "date",
-          "required": true
-        },
-        "periodEnd": {
-          "type": "string",
-          "format": "date",
-          "required": true
-        },
-        "noShowCount": {
-          "type": "integer",
-          "minimum": 0,
-          "required": true
-        },
-        "estimatedLossUsd": {
-          "type": "number",
-          "minimum": 0,
-          "required": true
-        }
-      }
-    },
-    {
-      "event_type": "appointment_no_show_rate_calculated",
-      "allowlist": [
-        "locationId",
-        "periodStart",
-        "periodEnd",
-        "appointmentsTotal",
-        "noShowCount",
-        "noShowRatePercent",
-        "thresholdPercent"
-      ],
-      "properties": {
-        "locationId": {
-          "type": "string",
-          "required": true
-        },
-        "periodStart": {
-          "type": "string",
-          "format": "date",
-          "required": true
-        },
-        "periodEnd": {
-          "type": "string",
-          "format": "date",
-          "required": true
-        },
-        "appointmentsTotal": {
-          "type": "integer",
-          "minimum": 1,
-          "required": true
-        },
-        "noShowCount": {
-          "type": "integer",
-          "minimum": 0,
-          "required": true
-        },
-        "noShowRatePercent": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 100,
-          "required": true
-        },
-        "thresholdPercent": {
-          "type": "number",
-          "const": 20,
-          "required": true
-        }
-      }
-    },
-    {
-      "event_type": "appointment_high_no_show_rate_flagged",
-      "allowlist": [
-        "locationId",
-        "periodStart",
-        "periodEnd",
-        "noShowRatePercent",
-        "thresholdPercent",
-        "appointmentsTotal"
-      ],
-      "properties": {
-        "locationId": {
-          "type": "string",
-          "required": true
-        },
-        "periodStart": {
-          "type": "string",
-          "format": "date",
-          "required": true
-        },
-        "periodEnd": {
-          "type": "string",
-          "format": "date",
-          "required": true
-        },
-        "noShowRatePercent": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 100,
-          "required": true
-        },
-        "thresholdPercent": {
-          "type": "number",
-          "const": 20,
-          "required": true
-        },
-        "appointmentsTotal": {
-          "type": "integer",
-          "minimum": 10,
-          "required": true
-        }
-      }
-    },
-    {
-      "event_type": "clinician_cme_report_generated",
-      "allowlist": [
-        "cycleStart",
-        "asOfDate",
-        "clinicianCount",
-        "onTrackCount",
-        "atRiskCount",
-        "overdueCount",
-        "completeCount",
-        "hoursRequiredByRole",
-        "atRiskGapPercentagePoints"
-      ],
-      "properties": {
-        "cycleStart": {
-          "type": "string",
-          "format": "date",
-          "required": true
-        },
-        "asOfDate": {
-          "type": "string",
-          "format": "date",
-          "required": true
-        },
-        "clinicianCount": {
-          "type": "integer",
-          "minimum": 10,
-          "required": true
-        },
-        "onTrackCount": {
-          "type": "integer",
-          "minimum": 0,
-          "required": true
-        },
-        "atRiskCount": {
-          "type": "integer",
-          "minimum": 0,
-          "required": true
-        },
-        "overdueCount": {
-          "type": "integer",
-          "minimum": 0,
-          "required": true
-        },
-        "completeCount": {
-          "type": "integer",
-          "minimum": 0,
-          "required": true
-        },
-        "hoursRequiredByRole": {
-          "type": "object",
-          "required": true,
-          "additionalProperties": false,
-          "properties": {
-            "physician": {
-              "type": "integer",
-              "const": 40
-            },
-            "nurse_practitioner": {
-              "type": "integer",
-              "const": 30
-            }
-          }
-        },
-        "atRiskGapPercentagePoints": {
-          "type": "number",
-          "const": 15,
-          "required": true
-        }
-      }
-    },
-    {
-      "event_type": "clinician_cme_at_risk_detected",
-      "allowlist": [
-        "asOfDate",
-        "atRiskCount",
-        "overdueCount",
-        "atRiskGapPercentagePoints"
-      ],
-      "properties": {
-        "asOfDate": {
-          "type": "string",
-          "format": "date",
-          "required": true
-        },
-        "atRiskCount": {
-          "type": "integer",
-          "minimum": 0,
-          "required": true
-        },
-        "overdueCount": {
-          "type": "integer",
-          "minimum": 0,
-          "required": true
-        },
-        "atRiskGapPercentagePoints": {
-          "type": "number",
-          "const": 15,
-          "required": true
-        }
-      }
-    },
-    {
-      "event_type": "clinician_license_alert_triggered",
-      "allowlist": [
-        "asOfDate",
-        "windowDays",
-        "alertLevel",
-        "clinicianCount"
-      ],
-      "properties": {
-        "asOfDate": {
-          "type": "string",
-          "format": "date",
-          "required": true
-        },
-        "windowDays": {
-          "type": "integer",
           "enum": [
-            90,
-            30
+            "primary_care",
+            "general_consultation",
+            "specialty_care",
+            "chronic_care",
+            null
           ],
-          "required": true
-        },
-        "alertLevel": {
-          "type": "string",
-          "enum": [
-            "warning",
-            "urgent"
-          ],
-          "required": true
-        },
-        "clinicianCount": {
-          "type": "integer",
-          "minimum": 10,
           "required": true
         }
       }
@@ -861,19 +679,19 @@
     {
       "event_type": "inventory_product_created",
       "allowlist": [
-        "category",
+        "product_category",
         "unit",
-        "country"
+        "country",
+        "has_expiry_date"
       ],
       "properties": {
-        "category": {
+        "product_category": {
           "type": "string",
           "enum": [
+            "medication",
             "ppe",
-            "wound_care",
-            "diagnostics",
-            "medications",
-            "consumables"
+            "consumable",
+            "equipment"
           ],
           "required": true
         },
@@ -893,6 +711,10 @@
             "US",
             "UK"
           ],
+          "required": true
+        },
+        "has_expiry_date": {
+          "type": "boolean",
           "required": true
         }
       }
