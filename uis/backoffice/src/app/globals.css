@@ -48,3 +48,113 @@ small { display: block; font-size: .8rem; font-weight: normal; margin-top: .5rem
   .form-grid { grid-template-columns: minmax(0, 1fr); }
   .filters { align-items: stretch; flex-direction: column; }
 }
+
+/* Technical telemetry report */
+.report-period { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-bottom: .75rem; }
+.report-period label { display: grid; gap: .25rem; }
+.metric-bar { position: relative; min-width: 9rem; height: 1.5rem; background: #eef2f6; border-radius: .3rem; overflow: hidden; }
+.metric-bar-fill { position: absolute; inset: 0 auto 0 0; background: #8fb6d8; }
+.metric-bar-label { position: relative; padding: 0 .4rem; line-height: 1.5rem; font-variant-numeric: tabular-nums; }
+.kpi-countries { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1.25rem; }
+.kpi-countries h3 { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; margin: .5rem 0; font-size: 1rem; }
+.kpi-total { font-weight: 400; font-variant-numeric: tabular-nums; }
+.kpi-flag { color: #a15c00; font-weight: 700; }
+.report-month { font-size: 1.1rem; }
+
+/* Knowledge-base assistant (RAG, Hito 7) */
+.knowledge-page { max-width: 960px; }
+.knowledge-form { display: grid; gap: .6rem; }
+.knowledge-form textarea { width: 100%; resize: vertical; }
+.knowledge-actions { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+.knowledge-actions small { margin: 0; color: #4b5d6b; }
+.knowledge-examples { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.knowledge-chip { background: #eef4f8; color: #104c63; border-color: #b8c9d6; border-radius: 999px; padding: .4rem .8rem; text-align: left; }
+.knowledge-question { margin-top: 0; }
+.knowledge-answer { white-space: pre-wrap; line-height: 1.55; overflow-wrap: anywhere; }
+.knowledge-source { margin-bottom: 0; padding-top: .75rem; border-top: 1px solid #ccd5de; color: #4b5d6b; font-size: .9rem; }
+.knowledge-muted { color: #4b5d6b; }
+
+/* Incident manager */
+.app-nav { display: flex; flex-wrap: wrap; gap: 1rem; max-width: 1440px; margin: auto; padding: 1rem 1rem 0; }
+.app-nav a[aria-current="page"] { font-weight: bold; text-decoration-thickness: 3px; }
+.page-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.page-header p { margin: .25rem 0 0; }
+.button-link { background: #105b76; color: white; padding: .6rem 1rem; border-radius: 5px; text-decoration: none; font-weight: bold; }
+button.secondary { background: white; color: #105b76; border-color: #105b76; }
+.incident-form textarea { resize: vertical; }
+.incident-form [aria-invalid="true"] { border: 2px solid #9c2020; background: #fff6f6; }
+.field-error { color: #9c2020; font-weight: bold; font-size: .9rem; }
+.field-error::before { content: "⚠ "; }
+.phi-warning { background: #fff4d6; border: 2px solid #b26a00; border-left-width: 8px; border-radius: 8px; padding: .9rem 1rem; color: #4a2c00; }
+.phi-warning strong { font-size: 1.05rem; }
+.phi-warning p { margin: .4rem 0 0; }
+.branch-highlight { background: #e6f2fb; border: 2px solid #105b76; border-radius: 8px; padding: .6rem; box-shadow: 0 0 0 4px #cfe5f3; }
+.branch-highlight select { border: 2px solid #105b76; font-weight: bold; }
+.form-actions { display: flex; align-items: center; gap: 1rem; margin-top: 1.25rem; flex-wrap: wrap; }
+.notice { border-radius: 8px; padding: .8rem 1rem; margin-bottom: 1rem; }
+.notice p { margin: 0 0 .5rem; }
+.error-notice { background: #fdecec; border: 1px solid #e3a4a4; color: #7a1414; }
+.success-notice { background: #e4f5ea; border: 1px solid #9fd3b1; color: #14532d; }
+.empty-state { text-align: center; padding: 2rem 1rem; border: 2px dashed #ccd5de; border-radius: 12px; }
+.empty-state p { margin: .3rem 0; }
+.loading { display: flex; align-items: center; gap: .5rem; }
+.spinner { display: inline-block; width: 1em; height: 1em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -.15em; animation: spin .8s linear infinite; }
+.spinner.dark { color: #105b76; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+.result-count { color: #4b6070; margin: 0 0 .5rem; }
+.status-control { gap: .25rem; }
+.status-badge, .status-control select { font-weight: bold; border-radius: 1rem; padding: .3rem .7rem; width: fit-content; }
+.status-open { background: #e6f0fb; color: #12407a; }
+.status-in_progress { background: #fff1d6; color: #6b4300; }
+.status-resolved { background: #d7f0e2; color: #14532d; }
+.status-discarded { background: #ececec; color: #3f3f3f; }
+.summary-total { font-size: 1.1rem; }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 1rem; }
+.summary-card { border: 1px solid #ccd5de; border-radius: 10px; padding: .8rem 1rem; }
+.summary-card h3 { margin: 0 0 .5rem; font-size: 1rem; color: #104c63; }
+.summary-card dl { margin: 0; }
+.summary-card dl div { display: flex; justify-content: space-between; gap: 1rem; padding: .25rem 0; border-bottom: 1px solid #eef2f5; }
+.summary-card dd { margin: 0; font-weight: bold; }
+.summary-card .zero { color: #7b8a96; }
+.summary-card .zero dd { font-weight: normal; }
+@media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+.label-text { font-weight: bold; }
+.required { color: #9c2020; }
+.summary-compact { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; }
+.summary-compact p { margin: 0; }
+.incident-table td.nowrap { white-space: nowrap; overflow-wrap: normal; }
+.incident-table tbody th { min-width: 260px; }
+
+/* RFP intake in ticket mode (Hito 9) */
+.rfp-page { max-width: 1100px; }
+.rfp-upload { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+.rfp-ok { color: #1f6b3a; }
+.rfp-muted { color: #4b5d6b; }
+.rfp-table-wrap { overflow-x: auto; }
+.rfp-table { width: 100%; border-collapse: collapse; }
+.rfp-table th, .rfp-table td { text-align: left; padding: .45rem .5rem; border-bottom: 1px solid #ccd5de; }
+.rfp-selected { background: #eef4f8; }
+.rfp-link { background: none; border: none; color: #104c63; text-decoration: underline; padding: 0; }
+.rfp-badges { display: inline-flex; flex-wrap: wrap; gap: .3rem; }
+.rfp-badge { border-radius: 999px; padding: .1rem .55rem; font-size: .85rem; border: 1px solid #b8c9d6; background: #eef4f8; color: #104c63; }
+.rfp-analisis_completo { background: #e6f4ea; color: #1f6b3a; border-color: #a6d3b3; }
+.rfp-descartado { background: #f1f1f1; color: #4b4b4b; border-color: #c9c9c9; }
+.rfp-generando_borrador, .rfp-en_evaluacion { background: #eef0fb; color: #33408f; border-color: #bcc3ea; }
+.rfp-needs_human_review, .rfp-gen-needs_human_review, .rfp-fail { background: #fdf3e1; color: #7a4b00; border-color: #e8c983; }
+.rfp-gen-passed, .rfp-pass { background: #e6f4ea; color: #1f6b3a; border-color: #a6d3b3; }
+.rfp-eval { list-style: none; padding: 0; margin: .5rem 0; display: grid; gap: .3rem; font-size: .9rem; }
+.rfp-pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .85rem; background: #f7f9fb; border: 1px solid #dde5ec; border-radius: 6px; padding: .6rem; max-height: 28rem; overflow: auto; }
+.rfp-section details { margin-top: .4rem; }
+.rfp-failed { background: #fdecea; color: #8a1c13; border-color: #f0b3ad; }
+.rfp-phi { background: #fff4e0; color: #7a4a00; border-color: #f0cf92; }
+.rfp-warning { background: #fff4e0; border: 1px solid #f0cf92; padding: .6rem .8rem; border-radius: 6px; }
+.rfp-meta { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1rem; }
+.rfp-meta dt { font-weight: 600; }
+.rfp-meta dd { margin: 0; overflow-wrap: anywhere; }
+.rfp-summary { line-height: 1.55; }
+.rfp-workstreams { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.rfp-card { border: 1px solid #ccd5de; border-radius: 8px; padding: .8rem 1rem; }
+.rfp-card h4 { margin: 0 0 .2rem; }
+.rfp-card h5 { margin: .8rem 0 .2rem; }
+@media (max-width: 600px) { .rfp-meta { grid-template-columns: 1fr; } }
