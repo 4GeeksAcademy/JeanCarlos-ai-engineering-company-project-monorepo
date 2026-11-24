@@ -1,0 +1,331 @@
+{
+  "collection": "healthcore_knowledge",
+  "k": 3,
+  "questions": 19,
+  "documents_covered": [
+    "appointment-policy",
+    "insurance-coverage",
+    "new-patient-checklist",
+    "referral-process"
+  ],
+  "recall_at_k": 0.9473684210526315,
+  "target": 0.8,
+  "passed": true,
+  "mrr": 0.9315789473684211,
+  "min_score": 0.3,
+  "expected_chunk_score": {
+    "min": 0.3399,
+    "max": 0.765
+  },
+  "off_topic_best_score": {
+    "max": 0.1843
+  },
+  "expected_chunks_below_min_score": [],
+  "queries": [
+    {
+      "id": "ins-01",
+      "question": "¿Aceptan Medicaid en la clínica de Georgia?",
+      "expected": "insurance-coverage#0",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.5542,
+      "top": [
+        "insurance-coverage#0 (0.554)",
+        "insurance-coverage#1 (0.264)",
+        "new-patient-checklist#0 (0.259)"
+      ]
+    },
+    {
+      "id": "ins-02",
+      "question": "Un paciente sin seguro, ¿tiene algún descuento si paga el mismo día?",
+      "expected": "insurance-coverage#0",
+      "rank": 5,
+      "hit_at_k": false,
+      "expected_score": 0.3399,
+      "top": [
+        "appointment-policy#1 (0.407)",
+        "insurance-coverage#1 (0.363)",
+        "appointment-policy#0 (0.347)"
+      ]
+    },
+    {
+      "id": "ins-03",
+      "question": "¿Atienden pacientes del NHS en Londres?",
+      "expected": "insurance-coverage#1",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.5989,
+      "top": [
+        "insurance-coverage#1 (0.599)",
+        "new-patient-checklist#0 (0.318)",
+        "new-patient-checklist#2 (0.293)"
+      ]
+    },
+    {
+      "id": "ins-04",
+      "question": "¿Qué hago si el cupo mensual del NHS ya está lleno?",
+      "expected": "insurance-coverage#1",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.4996,
+      "top": [
+        "insurance-coverage#1 (0.500)",
+        "new-patient-checklist#0 (0.287)",
+        "appointment-policy#1 (0.286)"
+      ]
+    },
+    {
+      "id": "ins-05",
+      "question": "El paciente tiene un seguro que no conozco, ¿puedo confirmarle que lo cubrimos?",
+      "expected": "insurance-coverage#2",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.5475,
+      "top": [
+        "insurance-coverage#2 (0.547)",
+        "new-patient-checklist#0 (0.522)",
+        "new-patient-checklist#2 (0.441)"
+      ]
+    },
+    {
+      "id": "ins-06",
+      "question": "¿Qué seguros privados aceptan?",
+      "expected": "insurance-coverage#0",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.4678,
+      "top": [
+        "insurance-coverage#0 (0.468)",
+        "insurance-coverage#1 (0.435)",
+        "insurance-coverage#2 (0.386)"
+      ]
+    },
+    {
+      "id": "app-01",
+      "question": "¿Cobran cargo por cancelación con 12 horas de anticipación?",
+      "expected": "appointment-policy#1",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.6098,
+      "top": [
+        "appointment-policy#1 (0.610)",
+        "appointment-policy#2 (0.405)",
+        "appointment-policy#3 (0.376)"
+      ]
+    },
+    {
+      "id": "app-02",
+      "question": "¿A un paciente de Medicare se le cobra si no se presenta a la cita?",
+      "expected": "appointment-policy#1",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.5849,
+      "top": [
+        "appointment-policy#1 (0.585)",
+        "appointment-policy#3 (0.522)",
+        "appointment-policy#2 (0.423)"
+      ]
+    },
+    {
+      "id": "app-03",
+      "question": "¿Cuántos días hay que esperar para una cita de rutina?",
+      "expected": "appointment-policy#0",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.6085,
+      "top": [
+        "appointment-policy#0 (0.608)",
+        "appointment-policy#3 (0.499)",
+        "referral-process#1 (0.453)"
+      ]
+    },
+    {
+      "id": "app-04",
+      "question": "¿Hasta cuándo puede un paciente cambiar su cita desde el recordatorio?",
+      "expected": "appointment-policy#2",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.6943,
+      "top": [
+        "appointment-policy#2 (0.694)",
+        "appointment-policy#3 (0.488)",
+        "appointment-policy#1 (0.461)"
+      ]
+    },
+    {
+      "id": "app-05",
+      "question": "Un paciente ha faltado tres veces este semestre, ¿le puedo agendar otra cita normal?",
+      "expected": "appointment-policy#3",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.5503,
+      "top": [
+        "appointment-policy#3 (0.550)",
+        "appointment-policy#0 (0.443)",
+        "appointment-policy#2 (0.405)"
+      ]
+    },
+    {
+      "id": "ref-01",
+      "question": "¿Cómo funciona una referencia a un especialista dentro de la red?",
+      "expected": "referral-process#0",
+      "rank": 2,
+      "hit_at_k": true,
+      "expected_score": 0.5766,
+      "top": [
+        "referral-process#3 (0.592)",
+        "referral-process#0 (0.577)",
+        "referral-process#2 (0.407)"
+      ]
+    },
+    {
+      "id": "ref-02",
+      "question": "¿Cuánto tarda en promedio una referencia interna hasta tener la cita?",
+      "expected": "referral-process#1",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.765,
+      "top": [
+        "referral-process#1 (0.765)",
+        "referral-process#2 (0.711)",
+        "referral-process#3 (0.590)"
+      ]
+    },
+    {
+      "id": "ref-03",
+      "question": "Pasaron 6 días hábiles y el paciente no tiene opciones de cita con el especialista, ¿qué hago?",
+      "expected": "referral-process#2",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.497,
+      "top": [
+        "referral-process#2 (0.497)",
+        "appointment-policy#0 (0.494)",
+        "appointment-policy#3 (0.485)"
+      ]
+    },
+    {
+      "id": "ref-04",
+      "question": "¿Cómo se gestiona una referencia a un especialista que no es de HealthCore?",
+      "expected": "referral-process#3",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.6936,
+      "top": [
+        "referral-process#3 (0.694)",
+        "referral-process#0 (0.669)",
+        "referral-process#2 (0.451)"
+      ]
+    },
+    {
+      "id": "new-01",
+      "question": "¿Qué debo traer a mi primera cita?",
+      "expected": "new-patient-checklist#1",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.5653,
+      "top": [
+        "new-patient-checklist#1 (0.565)",
+        "new-patient-checklist#0 (0.509)",
+        "new-patient-checklist#2 (0.365)"
+      ]
+    },
+    {
+      "id": "new-02",
+      "question": "¿Qué tiene que completar un paciente nuevo antes de su primera consulta?",
+      "expected": "new-patient-checklist#0",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.7573,
+      "top": [
+        "new-patient-checklist#0 (0.757)",
+        "new-patient-checklist#2 (0.704)",
+        "new-patient-checklist#1 (0.594)"
+      ]
+    },
+    {
+      "id": "new-03",
+      "question": "¿Qué formulario de consentimiento firma un paciente nuevo en Manchester?",
+      "expected": "new-patient-checklist#0",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.5214,
+      "top": [
+        "new-patient-checklist#0 (0.521)",
+        "insurance-coverage#1 (0.465)",
+        "new-patient-checklist#2 (0.384)"
+      ]
+    },
+    {
+      "id": "new-04",
+      "question": "Si un paciente nuevo no llenó el historial médico, ¿lo pueden atender igual?",
+      "expected": "new-patient-checklist#2",
+      "rank": 1,
+      "hit_at_k": true,
+      "expected_score": 0.74,
+      "top": [
+        "new-patient-checklist#2 (0.740)",
+        "new-patient-checklist#0 (0.605)",
+        "new-patient-checklist#1 (0.464)"
+      ]
+    }
+  ],
+  "probes": [
+    {
+      "id": "off-01",
+      "group": "off_topic",
+      "question": "¿Cuál es la receta de la paella valenciana?",
+      "best": "referral-process#0",
+      "best_score": 0.1128,
+      "chunks_above_min_score": 0
+    },
+    {
+      "id": "off-02",
+      "group": "off_topic",
+      "question": "¿Quién ganó el último mundial de fútbol?",
+      "best": "insurance-coverage#1",
+      "best_score": 0.0257,
+      "chunks_above_min_score": 0
+    },
+    {
+      "id": "off-03",
+      "group": "off_topic",
+      "question": "¿Cómo configuro la impresora de la oficina?",
+      "best": "new-patient-checklist#0",
+      "best_score": 0.1547,
+      "chunks_above_min_score": 0
+    },
+    {
+      "id": "off-04",
+      "group": "off_topic",
+      "question": "Recomiéndame una película para el fin de semana.",
+      "best": "new-patient-checklist#1",
+      "best_score": 0.1843,
+      "chunks_above_min_score": 0
+    },
+    {
+      "id": "una-01",
+      "group": "unanswerable_in_domain",
+      "question": "¿Cuánto cuesta una resonancia magnética?",
+      "best": "appointment-policy#1",
+      "best_score": 0.2363,
+      "chunks_above_min_score": 0
+    },
+    {
+      "id": "una-02",
+      "group": "unanswerable_in_domain",
+      "question": "¿Aceptan el seguro Humana en Texas?",
+      "best": "insurance-coverage#0",
+      "best_score": 0.5372,
+      "chunks_above_min_score": 3
+    },
+    {
+      "id": "una-03",
+      "group": "unanswerable_in_domain",
+      "question": "¿Las clínicas tienen estacionamiento gratuito?",
+      "best": "appointment-policy#0",
+      "best_score": 0.3493,
+      "chunks_above_min_score": 2
+    }
+  ]
+}

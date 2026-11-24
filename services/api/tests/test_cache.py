@@ -93,6 +93,7 @@ def test_inventory_product_cache_is_invalidated_by_movements(
             "category": "ppe",
             "unit": "box",
             "country": "US",
+            "product_category": "ppe",
         })
         assert created.status_code == 201
         assert client.get("/inventory/products", headers=headers).json()[0]["current_stock"] == 0
@@ -111,6 +112,7 @@ def test_inventory_product_cache_is_invalidated_by_movements(
             "quantity": 2,
             "clinic_id": 1,
             "consumption_type": "clinical_use",
+            "department": "primary_care",
         })
         assert outbound.status_code == 201
         assert client.get("/inventory/products", headers=headers).json()[0]["current_stock"] == 3

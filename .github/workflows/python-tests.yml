@@ -1,0 +1,34 @@
+name: Python tests (sales forecast, RAG, agent, memory, guardrails, RFP intake, MCP server)
+
+on:
+  push:
+    branches: [main]
+  # No `paths` filter: GitHub only evaluates it over the first 300 changed files, and the PRs
+  # of this chained branch exceed that, so the workflow silently did not run. The job takes ~30 s.
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - name: Install locked dependencies
+        run: uv sync --locked
+      - name: Temporal CV, forecast and RAG tests (Qdrant and the LLM are stubbed)
+        run: uv run python -m pytest tests/pipelines/test_temporal_cv.py tests/pipelines/test_sales_forecast.py tests/pipelines/test_rag.py -v
+      - name: LangGraph agent tests and evals (evals read the recorded traces)
+        run: uv run python -m pytest tests/pipelines/test_agent_graph.py tests/pipelines/test_agent_tools.py tests/pipelines/test_agent_evals.py tests/pipelines/test_agent_memory.py tests/pipelines/test_agent_memory_evidence.py -v
+      - name: Agent harness and guardrails (deterministic; fails if a guardrail lets abuse through)
+        run: uv run python -m pytest tests/pipelines/test_agent_guardrails.py tests/pipelines/test_agent_guardrails_evidence.py services/api/tests/test_agent.py -v
+      - name: RFP intake flow (dedicated rfp_intake graph; model stubbed, real PDF conversion)
+        run: uv run python -m pytest tests/pipelines/test_rfp_intake.py services/api/tests/test_rfp.py -v
+      - name: HealthCore MCP server (real server, test OAuth server, stand-in API)
+        run: uv run python -m pytest tests/mcps -v
