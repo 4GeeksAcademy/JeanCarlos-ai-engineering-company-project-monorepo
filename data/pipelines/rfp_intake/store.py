@@ -148,6 +148,77 @@ def list_tickets(engine: Engine, limit: int = 50) -> list[dict]:
         rows = session.exec(select(RfpTicket, RfpMetadata).join(RfpMetadata, isouter=True)
                             .order_by(RfpTicket.created_at.desc()).limit(limit)).all()
         return [{"ticket_id": t.ticket_id, "rfp_id": t.rfp_id, "status": t.status, "stage": t.stage, "error": t.error,
-                 "phi_detected": t.phi_detected, "client_name": m.client_name if m else None,
+                 "phi_detected": t.phi_detected, "ready_for_generation": t.ready_for_generation, "client_name": m.client_name if m else None,
                  "client_country": m.client_country if m else None, "created_at": _jsonable(t.created_at),
                  "updated_at": _jsonable(t.updated_at)} for t, m in rows]
+
+
+# ================================================================ Part 2: generation and evaluation
+
+
+def claim_for_generation(engine: Engine, ticket_id: str, *, retry: bool = False) -> bool:
+    """Take a ticket from the Part 1 queue (status analisis_completo + ready_for_generation) in one
+    conditional UPDATE, so two triggers can never generate the same ticket twice. `retry` also
+    accepts a ticket whose previous generation run failed."""
+    from sqlalchemy import and_, or_, update
+
+    ready = and_(RfpTicket.status == "analisis_completo", RfpTicket.ready_for_generation.is_(True))
+    condition = or_(ready, RfpTicket.stage == "generation_failed") if retry else ready
+    with Session(engine) as session:
+        result = session.exec(update(RfpTicket).where(RfpTicket.ticket_id == ticket_id, condition).values(
+            status="generando_borrador", stage="generating", ready_for_generation=False, ready_for_approval=False,
+            response_handoff=None, error=None, updated_at=utcnow()))
+        session.commit()
+        return result.rowcount == 1
+
+
+def advance_status(engine: Engine, ticket_id: str, from_status: str, to_status: str, **values) -> bool:
+    """Conditional status change (parallel sections: only the first one moves the ticket)."""
+    from sqlalchemy import update
+
+    with Session(engine) as session:
+        result = session.exec(update(RfpTicket).where(RfpTicket.ticket_id == ticket_id, RfpTicket.status == from_status)
+                              .values(status=to_status, updated_at=utcnow(), **values))
+        session.commit()
+        return result.rowcount == 1
+
+
+def generation_queue(engine: Engine) -> list[str]:
+    create_tables(engine)
+    with Session(engine) as session:
+        return list(session.exec(select(RfpTicket.ticket_id).where(RfpTicket.status == "analisis_completo",
+                                                                   RfpTicket.ready_for_generation.is_(True))
+                                 .order_by(RfpTicket.created_at)))
+
+
+def generation_input(engine: Engine, ticket_id: str) -> tuple[RfpTicket, list[RfpDepartmentSection]]:
+    with Session(engine) as session:
+        ticket = session.get(RfpTicket, ticket_id)
+        sections = list(session.exec(select(RfpDepartmentSection).where(RfpDepartmentSection.ticket_id == ticket_id)
+                                     .order_by(RfpDepartmentSection.id)))
+        session.expunge_all()
+        return ticket, sections
+
+
+def reset_generation(engine: Engine, ticket_id: str) -> None:
+    with Session(engine) as session:
+        for row in session.exec(select(RfpDepartmentSection).where(RfpDepartmentSection.ticket_id == ticket_id)):
+            row.draft_content, row.evaluation_history, row.iterations = None, [], 0
+            row.evaluation_results, row.generation_status = {"contains_phi": False}, "not_started"
+            row.updated_at = utcnow()
+            session.add(row)
+        session.commit()
+
+
+def update_section(engine: Engine, ticket_id: str, department_id: str, *, history_entry: dict | None = None,
+                   **values) -> None:
+    with Session(engine) as session:
+        row = session.exec(select(RfpDepartmentSection).where(RfpDepartmentSection.ticket_id == ticket_id,
+                                                              RfpDepartmentSection.department_id == department_id)).one()
+        for key, value in values.items():
+            setattr(row, key, value)
+        if history_entry is not None:
+            row.evaluation_history = [*(row.evaluation_history or []), history_entry]
+        row.updated_at = utcnow()
+        session.add(row)
+        session.commit()

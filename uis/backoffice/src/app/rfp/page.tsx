@@ -4,19 +4,32 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 
 // RFP intake in ticket mode (HealthCore BRIEFING, Hito 9 Parte 1). Revenue Cycle uploads the PDF
 // (POST /api/rfp/tickets → 202 + ticket_id); the agentic flow runs in the background and this page
-// polls the ticket until it is `analisis_completo` or `descartado`.
+// polls the ticket until it is `analisis_completo` or `descartado`. Part 2: the per-department
+// generators and the parallel evaluators move it to `generando_borrador` → `en_evaluación` (→
+// `needs_human_review`); each section shows its draft and its EvaluationResult.
 
 type Status = "analizando" | "descartado" | "analisis_completo" | string;
 
 type TicketRow = {
   ticket_id: string; rfp_id: string; status: Status; stage: string; error: string | null; phi_detected: boolean;
-  client_name: string | null; client_country: string | null; created_at: string;
+  ready_for_generation: boolean; updated_at: string; client_name: string | null; client_country: string | null; created_at: string;
 };
 
 type Aspect = { aspect: string; detail: string; source: string };
 type Workstream = {
   department_id: string; department: string; owner: string; owner_role: string; key_aspects: Aspect[];
   requests: string[]; open_questions: string[]; worker: string;
+};
+type Violation = { rule_id: string; message: string };
+type Evaluation = {
+  iteration?: number; overall_pass: boolean; contains_phi: boolean; feedback_for_generator: string; generator_error?: string;
+  readability?: { pass: boolean; score: number | null; details: { words?: number; flesch_reading_ease?: number; issues?: string[] } };
+  relevance?: { pass: boolean; score: number; missing_aspects: string[]; covered_aspects: string[]; evaluator: string };
+  compliance?: { pass: boolean; rule_ids: string[]; violations: Violation[]; contains_phi: boolean };
+};
+type Section = {
+  department_id: string; owner: string; generation_status: string; iterations: number; draft_content: string | null;
+  evaluation_results: Evaluation | null; evaluation_history: { iteration: number; evaluation: Evaluation }[] | null;
 };
 type Ticket = TicketRow & {
   classification: { decision: string; document_type: string; confidence: number; reasons: string[] } | null;
@@ -27,16 +40,30 @@ type Ticket = TicketRow & {
     conflicts: { field: string; resolution: string }[]; open_questions: { department_id: string; question: string }[];
   } | null;
   handoff: { contract: string; route: string; required_clauses: string[] } | null;
+  sections: Section[];
+  response_handoff: { contract: string; max_iterations: number; needs_human_review: string[]; signals: { trigger: string; department_id: string }[] } | null;
+  ready_for_approval: boolean;
 };
 
 const STATUS_LABEL: Record<string, string> = {
   analizando: "Analizando", descartado: "Descartado", analisis_completo: "Análisis completo",
+  generando_borrador: "Generando borrador", "en_evaluación": "En evaluación", needs_human_review: "Revisión humana",
 };
+const SECTION_LABEL: Record<string, string> = {
+  not_started: "Pendiente", generating: "Generando", evaluating: "Evaluando", revising: "Corrigiendo con feedback",
+  passed: "Pasó la evaluación", needs_human_review: "Revisión humana",
+};
+const DEPARTMENT_NAME: Record<string, string> = {
+  revenue: "Revenue Cycle", clinical: "Clinical Operations", compliance: "Compliance and Data Governance",
+};
+const RUNNING = new Set(["analizando", "generando_borrador", "en_evaluación"]);
+const STOPPED_STAGES = new Set(["failed", "generation_failed", "generated", "done", "discarded"]);
 const STAGE_LABEL: Record<string, string> = {
   received: "Recibido", converting: "Convirtiendo PDF → Markdown", screening_phi: "Revisando PHI",
   classifying: "Clasificando", extracting: "Extrayendo metadatos", orchestrating: "Orquestando departamentos",
   workers: "Workers por departamento", synthesizing: "Sintetizando", done: "Listo", discarded: "Descartado",
-  failed: "Error",
+  failed: "Error", generating: "Generadores por departamento", evaluating: "Evaluadores en paralelo",
+  generated: "Borradores evaluados", generation_failed: "Error en la generación",
 };
 const POLL_MS = 3000;
 
@@ -58,16 +85,22 @@ export default function RfpIntakePage() {
   const [message, setMessage] = useState<{ kind: "error" | "ok"; text: string } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
+  const [justQueued, setJustQueued] = useState(false);
+
   const refresh = useCallback(async () => {
     try {
-      setTickets((await readJson(await fetch("/api/rfp/tickets", { cache: "no-store" }))) as TicketRow[]);
+      const rows = (await readJson(await fetch("/api/rfp/tickets", { cache: "no-store" }))) as TicketRow[];
+      setTickets(rows);
+      // a ticket that just finished Part 1 is picked up by Part 2 automatically: keep polling briefly
+      setJustQueued(rows.some((t) => t.status === "analisis_completo" && t.ready_for_generation
+        && Date.now() - new Date(t.updated_at).getTime() < 60_000));
       if (selected) setDetail((await readJson(await fetch(`/api/rfp/tickets/${selected}`, { cache: "no-store" }))) as Ticket);
     } catch (error) {
       setMessage({ kind: "error", text: error instanceof Error ? error.message : "Error al consultar los tickets." });
     }
   }, [selected]);
 
-  const pending = tickets.some((t) => t.status === "analizando" && t.stage !== "failed");
+  const pending = justQueued || tickets.some((t) => RUNNING.has(t.status) && !STOPPED_STAGES.has(t.stage));
   useEffect(() => {
     const timer = setTimeout(() => void refresh(), 0); // first load and whenever the selected ticket changes
     return () => clearTimeout(timer);
@@ -77,6 +110,17 @@ export default function RfpIntakePage() {
     const timer = setInterval(() => void refresh(), POLL_MS);
     return () => clearInterval(timer);
   }, [pending, refresh]);
+
+  async function generate(ticketId: string, retry: boolean) {
+    setMessage(null);
+    try {
+      await readJson(await fetch(`/api/rfp/tickets/${ticketId}/generate${retry ? "?retry=true" : ""}`, { method: "POST" }));
+      setMessage({ kind: "ok", text: "Generación en curso: generadores por departamento y evaluadores en paralelo." });
+      await refresh();
+    } catch (error) {
+      setMessage({ kind: "error", text: error instanceof Error ? error.message : "No se pudo iniciar la generación." });
+    }
+  }
 
   async function upload(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -129,7 +173,7 @@ export default function RfpIntakePage() {
                     <td>{t.rfp_id}</td>
                     <td>{t.client_name ?? "—"}</td>
                     <td>{t.client_country ?? "—"}</td>
-                    <td><StatusBadge status={t.status} failed={t.stage === "failed"} phi={t.phi_detected} /></td>
+                    <td><StatusBadge status={t.status} failed={t.stage === "failed" || t.stage === "generation_failed"} phi={t.phi_detected} /></td>
                     <td>{STAGE_LABEL[t.stage] ?? t.stage}</td>
                     <td><button type="button" className="rfp-link" onClick={() => setSelected(t.ticket_id)}>Ver</button></td>
                   </tr>
@@ -140,7 +184,7 @@ export default function RfpIntakePage() {
         )}
       </section>
 
-      {selected && detail && detail.ticket_id === selected && <TicketDetail ticket={detail} />}
+      {selected && detail && detail.ticket_id === selected && <TicketDetail ticket={detail} onGenerate={generate} />}
     </main>
   );
 }
@@ -148,13 +192,13 @@ export default function RfpIntakePage() {
 function StatusBadge({ status, failed, phi }: { status: Status; failed: boolean; phi: boolean }) {
   return (
     <span className="rfp-badges">
-      <span className={`rfp-badge rfp-${failed ? "failed" : status}`}>{failed ? "Error (reintentar)" : STATUS_LABEL[status] ?? status}</span>
+      <span className={`rfp-badge rfp-${failed ? "failed" : status.replace("ó", "o")}`}>{failed ? "Error (reintentar)" : STATUS_LABEL[status] ?? status}</span>
       {phi && <span className="rfp-badge rfp-phi" title="Se detectó y redactó posible PHI">PHI redactada</span>}
     </span>
   );
 }
 
-function TicketDetail({ ticket }: { ticket: Ticket }) {
+function TicketDetail({ ticket, onGenerate }: { ticket: Ticket; onGenerate: (id: string, retry: boolean) => void }) {
   const m = ticket.metadata ?? {};
   const s = ticket.synthesis;
   const field = (key: string) => (m[key] === null || m[key] === undefined || m[key] === "" ? "—" : String(m[key]));
@@ -205,10 +249,93 @@ function TicketDetail({ ticket }: { ticket: Ticket }) {
           {s.conflicts.length > 0 && (<><h3>Contradicciones detectadas</h3><ul>{s.conflicts.map((c) => <li key={c.field}>{c.field}: {c.resolution}</li>)}</ul></>)}
           {ticket.handoff && (
             <p className="rfp-muted">Handoff <code>{ticket.handoff.contract}</code> → <strong>{ticket.handoff.route}</strong> ·
-              cláusulas: {ticket.handoff.required_clauses.join(", ")} · {ticket.ready_for_generation ? "listo para la Parte 2" : "bloqueado hasta revisión de Compliance"}</p>
+              cláusulas: {ticket.handoff.required_clauses.join(", ")} · {ticket.ready_for_generation ? "listo para la Parte 2" : ticket.handoff.route === "proposal_generation" ? "tomado por la Parte 2" : "bloqueado hasta revisión de Compliance"}</p>
           )}
+          {ticket.status === "analisis_completo" && ticket.ready_for_generation && (
+            <button type="button" onClick={() => onGenerate(ticket.ticket_id, false)}>Generar borrador de la propuesta</button>
+          )}
+          {ticket.stage === "generation_failed" && (
+            <p className="error" role="alert">La generación falló en «{ticket.error}».{" "}
+              <button type="button" onClick={() => onGenerate(ticket.ticket_id, true)}>Reintentar</button></p>
+          )}
+          <ProposalSections ticket={ticket} />
         </>
       )}
     </section>
+  );
+}
+
+function ProposalSections({ ticket }: { ticket: Ticket }) {
+  const started = ticket.sections.some((s) => s.generation_status !== "not_started");
+  if (!started) return null;
+  const h = ticket.response_handoff;
+  return (
+    <>
+      <h3>Propuesta económica — borradores por departamento</h3>
+      {RUNNING.has(ticket.status) && ticket.stage !== "generated" && (
+        <p className="rfp-muted" role="status">{STAGE_LABEL[ticket.stage] ?? ticket.stage}…</p>
+      )}
+      {ticket.status === "needs_human_review" && (
+        <p className="rfp-warning">Una o más secciones agotaron el límite de iteraciones sin pasar la evaluación. Se conserva su último
+          borrador y su resultado de evaluación, y pasan igual a la Parte 3 para revisión humana.</p>
+      )}
+      <div className="rfp-workstreams">
+        {ticket.sections.map((s) => <SectionCard key={s.department_id} section={s} max={h?.max_iterations} />)}
+      </div>
+      {h && (
+        <p className="rfp-muted">Handoff <code>{h.contract}</code> → Parte 3 (aprobación por departamento; Compliance obligatorio)
+          {h.needs_human_review.length > 0 ? ` · revisión humana: ${h.needs_human_review.join(", ")}` : " · todas las secciones pasaron"}
+          {h.signals.length > 0 ? ` · señales: ${h.signals.map((x) => `${x.trigger} (${x.department_id})`).join(", ")}` : ""}</p>
+      )}
+    </>
+  );
+}
+
+function Check({ ok, label, children }: { ok: boolean | undefined; label: string; children?: React.ReactNode }) {
+  return (
+    <li><span className={`rfp-badge ${ok ? "rfp-pass" : "rfp-fail"}`}>{ok ? "✓" : "✗"} {label}</span> {children}</li>
+  );
+}
+
+function SectionCard({ section, max }: { section: Section; max?: number }) {
+  const e = section.evaluation_results;
+  const evaluated = e && "overall_pass" in e && (e.readability || e.generator_error);
+  return (
+    <article className="rfp-card rfp-section">
+      <h4>{DEPARTMENT_NAME[section.department_id] ?? section.department_id}</h4>
+      <p className="rfp-muted">
+        <span className={`rfp-badge rfp-gen-${section.generation_status}`}>{SECTION_LABEL[section.generation_status] ?? section.generation_status}</span>{" "}
+        iteración {section.iterations}{max ? `/${max}` : ""} · aprueba {section.owner}
+      </p>
+      {evaluated && e && (
+        <ul className="rfp-eval">
+          {e.generator_error ? <Check ok={false} label="Generador">{e.generator_error}</Check> : (
+            <>
+              <Check ok={e.readability?.pass} label="Legibilidad">
+                FK {e.readability?.score ?? "—"} · {e.readability?.details.words ?? "—"} palabras
+                {e.readability?.details.issues?.length ? ` · ${e.readability.details.issues.join("; ")}` : ""}
+              </Check>
+              <Check ok={e.relevance?.pass} label="Pertinencia">
+                {Math.round((e.relevance?.score ?? 0) * 100)} % de aspectos clave
+                {e.relevance?.missing_aspects.length ? ` · faltan: ${e.relevance.missing_aspects.join(", ")}` : ""}
+              </Check>
+              <Check ok={e.compliance?.pass} label="Compliance">
+                {e.compliance?.violations.length ? e.compliance.violations.map((v) => v.rule_id).join(", ") : `${e.compliance?.rule_ids.length} reglas OK`}
+                {e.contains_phi ? " · contains_phi" : ""}
+              </Check>
+            </>
+          )}
+        </ul>
+      )}
+      {e && !e.overall_pass && e.feedback_for_generator && (
+        <details><summary>Feedback al generador</summary><pre className="rfp-pre">{e.feedback_for_generator}</pre></details>
+      )}
+      {section.draft_content && (
+        <details open={section.generation_status === "passed"}><summary>Borrador</summary><pre className="rfp-pre">{section.draft_content}</pre></details>
+      )}
+      {(section.evaluation_history?.length ?? 0) > 1 && (
+        <p className="rfp-muted">Historial: {section.evaluation_history!.map((x) => `it. ${x.iteration} ${x.evaluation.overall_pass ? "✓" : "✗"}`).join(" → ")}</p>
+      )}
+    </article>
   );
 }

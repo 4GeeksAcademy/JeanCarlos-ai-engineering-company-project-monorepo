@@ -43,3 +43,47 @@ def build_handoff(ticket_id: str, state: dict, synthesis: dict) -> dict:
         "phi": {"detected": phi["detected"], "categories": phi["categories"]},
         "document_ref": "rfp_ticket.document_markdown",
     }
+
+
+# ================================================================ Part 2 → Part 3
+
+RESPONSE_CONTRACT = "rfp_response.handoff/v1"
+
+
+def _signals(sections) -> list[dict]:
+    """Part 3 arbitration triggers detectable in the structured evaluation (BRIEFING §7). Part 2
+    only signals them; the arbitration node of Part 3 resolves them."""
+    signals = []
+    for s in sections:
+        result = s.evaluation_results or {}
+        if result.get("contains_phi"):
+            signals.append({"trigger": "phi-detected", "department_id": s.department_id, "arbiter": "compliance"})
+        rules = {v["rule_id"] for v in (result.get("compliance") or {}).get("violations", [])}
+        if rules & {"HC-BAA-US", "HC-DPA-UK"}:
+            signals.append({"trigger": "baa-dpa-mismatch", "department_id": s.department_id, "arbiter": "compliance"})
+    return signals
+
+
+def build_response_handoff(ticket, sections, max_iterations: int) -> dict:
+    """Stored in `rfp_ticket.response_handoff` with the queue flag `ready_for_approval`. Part 3
+    picks up `status IN ('en_evaluación', 'needs_human_review') AND ready_for_approval`. Every
+    department travels with its generated content AND its structured EvaluationResult; sections
+    that exhausted the iteration limit go as needs_human_review — never removed."""
+    intake = ticket.handoff or {}
+    return {
+        "contract": RESPONSE_CONTRACT,
+        "ticket_id": ticket.ticket_id,
+        "intake_contract": intake.get("contract"),
+        "next_status": "esperando_aprobación",
+        "client_country": (intake.get("metadata") or {}).get("client_country"),
+        "currency": intake.get("currency"),
+        "required_clauses": intake.get("required_clauses", []),
+        "max_iterations": max_iterations,
+        "sections": [{"department_id": s.department_id, "owner": s.owner, "approver": s.owner,
+                      "status": s.generation_status, "iterations": s.iterations, "draft_content": s.draft_content,
+                      "evaluation_result": s.evaluation_results,
+                      "contains_phi": bool((s.evaluation_results or {}).get("contains_phi"))} for s in sections],
+        "needs_human_review": [s.department_id for s in sections if s.generation_status == "needs_human_review"],
+        "compliance_approval_required": True,  # BRIEFING §5: always, whatever the other departments
+        "signals": _signals(sections),
+    }

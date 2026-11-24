@@ -5,6 +5,13 @@ agentic flow lives in data/pipelines/rfp_intake/.
                                runs in the background (FastAPI BackgroundTasks, worker thread).
 - GET  /api/rfp/tickets        ticket list (polled by the backoffice).
 - GET  /api/rfp/tickets/{id}   ticket + metadata + readability + sections + synthesis + handoff.
+- POST /api/rfp/tickets/{id}/generate
+                               Part 2: takes the ticket from the Part 1 queue (analisis_completo +
+                               ready_for_generation) → 202; generators + parallel evaluators run in
+                               the background and the ticket moves generando_borrador → en_evaluación
+                               (→ needs_human_review). `?retry=true` re-runs a failed generation.
+
+After a successful intake the generation starts automatically (RFP_AUTO_GENERATE=0 disables it).
 """
 
 from __future__ import annotations
@@ -19,7 +26,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.exc import SQLAlchemyError
 
-from data.pipelines.rfp_intake import runner, store
+from data.pipelines.rfp_intake import response_runner, runner, store
+from data.pipelines.rfp_intake.response_graph import NotReadyForGeneration
 
 from ..core.dependencies import AuthenticatedUser
 from ..database import get_inventory_engine
@@ -51,11 +59,27 @@ def get_rfp_engine() -> Engine:
 Engine_ = Annotated[Engine, Depends(get_rfp_engine)]
 
 
+def auto_generate() -> bool:
+    return os.environ.get("RFP_AUTO_GENERATE", "1").strip().lower() not in {"0", "false", "no"}
+
+
 def run_in_background(engine: Engine, ticket_id: str) -> None:
+    """Part 1, then — if the ticket was queued for generation — Part 2 in the same worker thread."""
     try:
-        runner.run_intake(engine, ticket_id)
+        status = runner.run_intake(engine, ticket_id)
+        if status == "analisis_completo" and auto_generate():
+            run_generation_in_background(engine, ticket_id)
     except Exception as error:  # run_intake records failures; this only guards the thread
         logger.error("rfp_intake crashed ticket_id=%s error=%s", ticket_id, type(error).__name__)
+
+
+def run_generation_in_background(engine: Engine, ticket_id: str, retry: bool = False, claimed: bool = False) -> None:
+    try:
+        response_runner.run_generation(engine, ticket_id, retry=retry, claimed=claimed)
+    except NotReadyForGeneration:
+        logger.info("rfp_response skipped ticket_id=%s (not in the generation queue)", ticket_id)
+    except Exception as error:  # run_generation records failures; this only guards the thread
+        logger.error("rfp_response crashed ticket_id=%s error=%s", ticket_id, type(error).__name__)
 
 
 @router.post("/tickets", status_code=status.HTTP_202_ACCEPTED)
@@ -91,3 +115,22 @@ def get_rfp_ticket(ticket_id: TicketId, _user: AuthenticatedUser, engine: Engine
     if view is None:
         raise HTTPException(status_code=404, detail="Ticket not found")
     return view
+
+
+@router.post("/tickets/{ticket_id}/generate", status_code=status.HTTP_202_ACCEPTED)
+def generate_proposal(ticket_id: TicketId, user: AuthenticatedUser, engine: Engine_, background: BackgroundTasks,
+                      retry: bool = False) -> dict[str, Any]:
+    """The ticket is claimed here, synchronously (one conditional UPDATE → generando_borrador), so
+    the 202 already reflects the new status and two clicks can never generate it twice."""
+    try:
+        if store.ticket_view(engine, ticket_id) is None:
+            raise HTTPException(status_code=404, detail="Ticket not found")
+        response_runner.claim(engine, ticket_id, retry=retry)
+    except NotReadyForGeneration as error:
+        raise HTTPException(status_code=409, detail="El ticket no está listo para generar la propuesta "
+                                                    "(requiere analisis_completo y ready_for_generation).") from error
+    except SQLAlchemyError as error:
+        raise HTTPException(status_code=503, detail="RFP database unavailable") from error
+    background.add_task(run_generation_in_background, engine, ticket_id, retry, True)
+    logger.info("rfp_response queued ticket_id=%s by=%s", ticket_id, user.id)
+    return {"ticket_id": ticket_id, "status": "generando_borrador", "queued": True}

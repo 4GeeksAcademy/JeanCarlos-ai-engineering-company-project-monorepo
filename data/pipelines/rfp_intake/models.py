@@ -21,7 +21,10 @@ from .departments import DEPARTMENT_IDS
 STATUSES = ("analizando", "descartado", "analisis_completo", "generando_borrador", "en_evaluación",
             "needs_human_review", "esperando_aprobación", "terminado")
 STAGES = ("received", "converting", "screening_phi", "classifying", "extracting", "orchestrating", "workers",
-          "synthesizing", "done", "discarded", "failed")
+          "synthesizing", "done", "discarded", "failed",
+          # Part 2: generation and evaluation
+          "generating", "evaluating", "generated", "generation_failed")
+SECTION_STATUSES = ("not_started", "generating", "evaluating", "revising", "passed", "needs_human_review")
 COUNTRIES = ("US", "UK")
 PROGRAM_TYPES = ("occupational_health", "corporate_wellness", "referral_network", "other")
 APPROVAL_STATUSES = ("pending", "approved", "request_changes", "rejected")
@@ -61,6 +64,8 @@ class RfpTicket(SQLModel, table=True):
     synthesis: dict | None = Field(default=None, sa_type=JSON)
     handoff: dict | None = Field(default=None, sa_type=JSON)  # contract rfp_intake.handoff/v1 for Part 2
     ready_for_generation: bool = Field(default=False, index=True)  # queue flag read by Part 2
+    response_handoff: dict | None = Field(default=None, sa_type=JSON)  # contract rfp_response.handoff/v1 for Part 3
+    ready_for_approval: bool = Field(default=False, index=True)  # queue flag read by Part 3
     created_at: datetime = _ts()
     updated_at: datetime = _ts()
     completed_at: datetime | None = Field(default=None, sa_type=DateTime(timezone=True))
@@ -108,7 +113,8 @@ class RfpDepartmentSection(SQLModel, table=True):
     __tablename__ = "rfp_department_section"
     __table_args__ = (UniqueConstraint("ticket_id", "department_id", name="rfp_department_section_unique"),
                       _one_of("rfp_department_section", "department_id", DEPARTMENT_IDS),
-                      _one_of("rfp_department_section", "approval_status", APPROVAL_STATUSES))
+                      _one_of("rfp_department_section", "approval_status", APPROVAL_STATUSES),
+                      _one_of("rfp_department_section", "generation_status", SECTION_STATUSES))
 
     id: int | None = Field(default=None, primary_key=True)
     ticket_id: str = Field(sa_column=Column(String(36), ForeignKey("rfp_ticket.ticket_id", ondelete="CASCADE"),
@@ -121,8 +127,12 @@ class RfpDepartmentSection(SQLModel, table=True):
     excerpt_ids: list = Field(default_factory=list, sa_type=JSON)
     worker: str = "model"  # model / fallback
     # Parts 2 and 3
-    draft_content: str | None = Field(default=None, sa_type=Text)
-    evaluation_results: dict | None = Field(default=None, sa_type=JSON)  # includes contains_phi: bool
+    draft_content: str | None = Field(default=None, sa_type=Text)  # last draft, PHI-redacted
+    evaluation_results: dict | None = Field(default=None, sa_type=JSON)  # last EvaluationResult (incl. contains_phi)
+    generation_status: str = "not_started"
+    iterations: int = 0  # generator → evaluators cycles used (limit: guidelines.MAX_ITERATIONS)
+    evaluation_history: list | None = Field(default=None, sa_type=JSON)  # every iteration: draft + EvaluationResult
+    updated_at: datetime | None = Field(default=None, sa_type=DateTime(timezone=True))
     approval_status: str = "pending"
     approver: str | None = None
     approved_at: datetime | None = Field(default=None, sa_type=DateTime(timezone=True))

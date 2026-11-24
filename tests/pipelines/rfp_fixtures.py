@@ -56,6 +56,63 @@ WORKERS = {
 }
 
 
+def draft(department_id: str, country: str) -> str:
+    """A section that follows the HealthCore format and passes the three evaluators."""
+    currency = {"US": "USD", "UK": "GBP"}[country]
+    if department_id == "revenue":
+        return f"""## Commercial Terms — Revenue Cycle
+### Pricing and currency
+All prices in this proposal are quoted in {currency}. We propose a simple price per person per month. The amount is \
+[amount to be confirmed by Revenue Cycle]. It covers the services in the scope of the request. There are no hidden fees. \
+Extra services are quoted on request. The price model keeps the terms clear for the client.
+### Payment structure
+We invoice once a month. Each invoice lists the services we delivered. Payment is due when the client receives the \
+invoice. We can also agree on a plan with fewer invoices. Tom Callahan owns the commercial terms. He is the contact for \
+billing questions.
+### Contract term
+The term follows the request of the client. We can renew the contract at the end of the term. Both parties review the \
+prices before a renewal. Any change is agreed in writing.
+### Open questions
+- What budget does the client plan for this program?
+- Does the client prefer monthly invoices?
+"""
+    if department_id == "clinical":
+        sites = {"US": "our clinics in Texas", "UK": "our clinics in London and Manchester"}[country]
+        return f"""## Clinical Delivery — Clinical Operations
+### Sites and coverage
+We will deliver the program from {sites}. Each site has a clinical lead. The lead plans the work with the client. \
+We pick the site that is closest to the people we serve. The client can visit each site before the start.
+### Staffing and capacity
+Dr. Marcus Reid confirms the staff plan before we sign. We do not assume free capacity. We check the schedule of each \
+clinic first. Then we confirm the number of staff for the program.
+### Clinical services
+We offer the services that the request asks for. Our teams follow the same care standards at every site. Results go to \
+the person who received the care. The client receives only aggregate reports.
+### Open questions
+- How many people will use the service each month?
+- Which days of the week does the client prefer?
+"""
+    clause = {"US": ("Business Associate Agreement (BAA)", "HIPAA", "We sign a Business Associate Agreement (BAA) with "
+                     "the client under HIPAA before any service starts."),
+              "UK": ("Data Processing Agreement (DPA) under UK GDPR", "UK GDPR", "We sign a Data Processing Agreement "
+                     "(DPA) with the client under UK GDPR before any service starts.")}[country]
+    return f"""## Data Protection and Compliance — Compliance and Data Governance
+### Regulatory framework
+This program follows {clause[1]}. We protect health data at every step. Only the care team can see the records. The \
+client receives aggregate reports only. We never share an individual health record with the client. Our staff receive privacy training every year. \
+Access to the data is logged and reviewed.
+### {clause[0]}
+{clause[2]} The agreement sets how we handle and protect the data. It also sets how we report a breach. Our standard \
+template is the starting point.
+### Compliance approval
+Claire Whitfield must approve this proposal before signature. Her approval is required for every institutional \
+proposal. No contract is signed without it.
+### Open questions
+- Does the client want to use its own agreement template?
+- Who is the data protection contact at the client?
+"""
+
+
 class ScriptedModel:
     """Answers each agent according to its system prompt; `overrides[agent]` replaces an answer
     (a dict, a raw string, or an Exception to raise)."""
@@ -70,6 +127,10 @@ class ScriptedModel:
                                  ("compliance", "Compliance and Data Governance")):
             if system.startswith(f"Eres el worker de {name}"):
                 return f"worker:{department}"
+            if system.startswith(f"Eres el generador de {name}"):
+                return f"generator:{department}"
+        if "evaluador de pertinencia" in system:
+            return "evaluator:relevance"
         if "agente clasificador" in system:
             return "classifier"
         if "extractor de metadatos" in system:
@@ -89,6 +150,8 @@ class ScriptedModel:
         agent = self.agent_of(system)
         self.calls.append((agent, system, user))
         override = self.overrides.get(agent)
+        if isinstance(override, list):  # one answer per call, the last one repeats
+            override = override.pop(0) if len(override) > 1 else override[0]
         if isinstance(override, Exception):
             raise override
         if isinstance(override, str):
@@ -106,6 +169,15 @@ class ScriptedModel:
             return json.dumps({"summary": "El cliente pide una propuesta institucional; Revenue, Clinical y Compliance "
                                           "deben aportar su parte antes de cotizar.",
                                "next_steps": ["Pedir a Clinical Operations la capacidad de sedes — clinical"]})
+        if agent.startswith("generator:"):
+            country = "UK" if '"client_country": "UK"' in user else "US"
+            return json.dumps({"content": draft(agent.split(":")[1], country), "open_questions": []})
+        if agent == "evaluator:relevance":
+            section = user.split("<seccion>")[1]
+            evidence = next(line for line in section.splitlines() if line.strip() and not line.startswith("#"))
+            count = user.split("<seccion>")[0].count("\n") - 2
+            return json.dumps({"aspects": [{"index": i, "covered": True, "evidence": evidence.split(". ")[0]}
+                                           for i in range(max(count, 1))]})
         return json.dumps(WORKERS[agent.split(":")[1]])
 
     def agents_called(self) -> list[str]:

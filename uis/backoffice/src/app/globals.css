@@ -140,6 +140,12 @@ button.secondary { background: white; color: #105b76; border-color: #105b76; }
 .rfp-badge { border-radius: 999px; padding: .1rem .55rem; font-size: .85rem; border: 1px solid #b8c9d6; background: #eef4f8; color: #104c63; }
 .rfp-analisis_completo { background: #e6f4ea; color: #1f6b3a; border-color: #a6d3b3; }
 .rfp-descartado { background: #f1f1f1; color: #4b4b4b; border-color: #c9c9c9; }
+.rfp-generando_borrador, .rfp-en_evaluacion { background: #eef0fb; color: #33408f; border-color: #bcc3ea; }
+.rfp-needs_human_review, .rfp-gen-needs_human_review, .rfp-fail { background: #fdf3e1; color: #7a4b00; border-color: #e8c983; }
+.rfp-gen-passed, .rfp-pass { background: #e6f4ea; color: #1f6b3a; border-color: #a6d3b3; }
+.rfp-eval { list-style: none; padding: 0; margin: .5rem 0; display: grid; gap: .3rem; font-size: .9rem; }
+.rfp-pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .85rem; background: #f7f9fb; border: 1px solid #dde5ec; border-radius: 6px; padding: .6rem; max-height: 28rem; overflow: auto; }
+.rfp-section details { margin-top: .4rem; }
 .rfp-failed { background: #fdecea; color: #8a1c13; border-color: #f0b3ad; }
 .rfp-phi { background: #fff4e0; color: #7a4a00; border-color: #f0cf92; }
 .rfp-warning { background: #fff4e0; border: 1px solid #f0cf92; padding: .6rem .8rem; border-radius: 6px; }
