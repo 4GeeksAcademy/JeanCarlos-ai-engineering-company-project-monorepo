@@ -1,0 +1,507 @@
+{
+  "ticket_id": "5412e06a-f62e-4e5f-a1ca-2ec70d2178a7",
+  "error": null,
+  "ready_for_generation": true,
+  "status": "analisis_completo",
+  "classification": {
+    "is_rfp": true,
+    "confidence": 1.0,
+    "document_type": "formal_rfp",
+    "requester_role": "client",
+    "reasons": [
+      "Document is a formal Request for Proposal (RFP) issued by Meridian Manufacturing, a client organization.",
+      "It requests proposals for on-site occupational health and corporate wellness services that HealthCore provides.",
+      "Includes RFP reference number, evaluation criteria, timeline, and submission instructions.",
+      "Requester is a potential client (employer) seeking a healthcare partner."
+    ],
+    "decision": "accept",
+    "classifier": "model"
+  },
+  "created_at": "2026-11-24T00:00:50.330870+00:00",
+  "stage": "done",
+  "phi_detected": false,
+  "updated_at": "2026-11-24T00:01:30.187469+00:00",
+  "phi_categories": [],
+  "completed_at": "2026-11-24T00:01:30.182207+00:00",
+  "pdf_sha256": "a8cb02f349565511dc30d3613f6beac0b6d5d2f8f4c878ef92db3ba2c80d57ff",
+  "compliance_review_required": false,
+  "pdf_bytes": 4051,
+  "created_by": "06703c27-4594-4ec3-85b8-e639d548688a",
+  "synthesis": {
+    "summary": "Meridian Manufacturing solicita una propuesta para un programa de salud ocupacional y bienestar corporativo para 800 empleados, con una clínica presencial 3 días/semana. El contrato es por 12 meses con opción de renovación, y la evaluación pondera precio (25%), capacidad clínica (35%) y cumplimiento/seguridad de datos (25%). No se ha definido un presupuesto, por lo que la propuesta financiera debe ser competitiva y flexible. La fecha límite es el 23 de agosto de 2026, lo que exige una coordinación rápida entre Revenue, Clinical y Compliance.",
+    "next_steps": [
+      "Definir la estructura de la propuesta financiera (modelo de precios por empleado/mes o tarifa fija) y los términos de pago (mensual, trimestral, anticipado) — Revenue Cycle (Tom Callahan)",
+      "Confirmar los términos de precios para la renovación (fijos o renegociables) e incluir cláusulas de escalamiento — Revenue Cycle (Tom Callahan)",
+      "Preparar un desglose de precios alineado con el 25% de ponderación y el plazo de 12 meses — Revenue Cycle (Tom Callahan)",
+      "Confirmar los roles clínicos específicos necesarios (médico, enfermero, RN) y las horas semanales para la cobertura de 3 días — Clinical Operations (Dr. Marcus Reid)",
+      "Evaluar si la capacidad clínica actual puede manejar 800 empleados para exámenes anuales y manejo de enfermedades crónicas en el horario de 3 días/semana — Clinical Operations (Dr. Marcus Reid)",
+      "Preparar y proporcionar una plantilla de BAA compatible con HIPAA para su ejecución antes de la firma del contrato — Compliance (Claire Whitfield)",
+      "Documentar las prácticas de seguridad de datos (cifrado, controles de acceso, notificación de violaciones, capacitación) y verificar el cumplimiento de HIPAA — Compliance (Claire Whitfield)",
+      "La RFP menciona «Legal (BAA execution)», que no es un departamento de HealthCore: canalizar vía Compliance and Data Governance.",
+      "La RFP menciona «Procurement (submission instructions)», que no es un departamento de HealthCore: canalizar vía Revenue Cycle (decidir).",
+      "La RFP menciona «HR (contact person Rebecca Ortiz)», que no es un departamento de HealthCore: canalizar vía Revenue Cycle (decidir)."
+    ],
+    "workstreams": [
+      {
+        "department_id": "revenue",
+        "department": "Revenue Cycle",
+        "owner": "Tom Callahan",
+        "owner_role": "Revenue Cycle Director",
+        "key_aspects": [
+          {
+            "aspect": "Contract term and renewal",
+            "detail": "The contract is for 12 months with an option to renew, which must be reflected in the financial proposal structure and payment terms.",
+            "source": "P14"
+          },
+          {
+            "aspect": "Pricing evaluation criteria weight",
+            "detail": "Pricing has a 25% weight in the evaluation, so the financial proposal must be competitive and clearly structured.",
+            "source": "P29"
+          },
+          {
+            "aspect": "Budget constraints",
+            "detail": "No budget range is provided in the metadata, so the financial proposal must be designed without a predefined budget cap.",
+            "source": "metadata"
+          }
+        ],
+        "requests": [
+          "Define the financial proposal structure including pricing model (e.g., per employee per month, fixed fee) and payment terms (e.g., monthly, quarterly, upfront).",
+          "Confirm the renewal pricing terms (e.g., fixed or subject to renegotiation) and any escalation clauses.",
+          "Prepare a pricing breakdown that aligns with the 25% evaluation weight and the 12-month contract term."
+        ],
+        "open_questions": [
+          "What is the client's budget range for this program?",
+          "Are there any specific pricing models or payment schedules preferred by the client?"
+        ],
+        "worker": "model"
+      },
+      {
+        "department_id": "clinical",
+        "department": "Clinical Operations",
+        "owner": "Dr. Marcus Reid",
+        "owner_role": "Clinical Operations",
+        "key_aspects": [
+          {
+            "aspect": "Staffing plan for on-site clinic",
+            "detail": "The RFP requires an on-site occupational health clinic staffed 3 days/week, covering injury triage, annual wellness screenings for 800 employees, and chronic condition management (diabetes, hypertension).",
+            "source": "P10, P11, P12, P13"
+          },
+          {
+            "aspect": "Clinical capacity evaluation",
+            "detail": "The staffing plan must align with a clinical capacity evaluation, which is weighted at 35% of the proposal evaluation.",
+            "source": "P18, P27"
+          }
+        ],
+        "requests": [
+          "Confirm the specific clinical roles needed (e.g., physician, nurse practitioner, RN) and their required hours per week for 3-day coverage.",
+          "Provide the number of clinical staff available to assign to this contract, including any subcontracting options.",
+          "Assess whether the existing clinical capacity can handle 800 employees for annual screenings and chronic condition management within the 3-day/week schedule."
+        ],
+        "open_questions": [
+          "What is the exact location of the on-site clinic (city/state) to determine travel and logistics?",
+          "Are there any specific licensure or certification requirements for clinical staff in that state?",
+          "What is the expected patient volume per day for injury triage and chronic condition management?"
+        ],
+        "worker": "model"
+      },
+      {
+        "department_id": "compliance",
+        "department": "Compliance and Data Governance",
+        "owner": "Claire Whitfield",
+        "owner_role": "Chief Compliance Officer",
+        "key_aspects": [
+          {
+            "aspect": "BAA execution prior to contract",
+            "detail": "Vendor must execute a Business Associate Agreement (BAA) compliant with HIPAA before contract signing, as required by the RFP.",
+            "source": "P15"
+          },
+          {
+            "aspect": "HIPAA compliance for health data",
+            "detail": "The program involves occupational health and wellness data for US employees, requiring full HIPAA safeguards for protected health information (PHI).",
+            "source": "metadata"
+          },
+          {
+            "aspect": "Data security practices per evaluation criteria",
+            "detail": "Compliance and data security practices are explicitly part of the evaluation with a 25% weight, demanding detailed security measures.",
+            "source": "P28"
+          }
+        ],
+        "requests": [
+          "Prepare and provide a HIPAA-compliant BAA template for execution prior to contract.",
+          "Confirm that all data handling procedures for employee health data meet HIPAA Privacy and Security Rules.",
+          "Document data security practices including encryption, access controls, breach notification protocols, and employee training.",
+          "Establish a process to verify BAA execution before any contract or data sharing begins."
+        ],
+        "open_questions": [
+          "The RFP does not specify detailed security requirements beyond a general mention; need client-specific security expectations or certifications (e.g., SOC 2, HITRUST).",
+          "Clarify if the client requires additional state-level privacy regulations beyond HIPAA (e.g., CCPA/CPRA) applicable to employee health data."
+        ],
+        "worker": "model"
+      }
+    ],
+    "conflicts": [],
+    "unmapped_requests": [
+      {
+        "mention": "Legal (BAA execution)",
+        "suggested_department": "compliance",
+        "paragraph_ids": [
+          15
+        ]
+      },
+      {
+        "mention": "Procurement (submission instructions)",
+        "suggested_department": null,
+        "paragraph_ids": [
+          39
+        ]
+      },
+      {
+        "mention": "HR (contact person Rebecca Ortiz)",
+        "suggested_department": null,
+        "paragraph_ids": [
+          41
+        ]
+      }
+    ],
+    "synthesizer": "model",
+    "open_questions": [
+      {
+        "department_id": "revenue",
+        "question": "La RFP no indica presupuesto de referencia."
+      }
+    ],
+    "orchestrator": "model"
+  },
+  "rfp_id": "RFP-20261124-5412E0",
+  "handoff": {
+    "contract": "rfp_intake.handoff/v1",
+    "ticket_id": "5412e06a-f62e-4e5f-a1ca-2ec70d2178a7",
+    "route": "proposal_generation",
+    "next_status": "generando_borrador",
+    "metadata": {
+      "rfp_reference": "MM-OH-2026-002",
+      "client_name": "Meridian Manufacturing, Inc.",
+      "client_type": "employer",
+      "client_country": "US",
+      "program_type": "occupational_health",
+      "program_types": [
+        "occupational_health",
+        "corporate_wellness"
+      ],
+      "covered_population": 800,
+      "population_unit": "employees",
+      "deadline": "2026-08-23",
+      "deadline_text": "August 23, 2026",
+      "budget_range": null,
+      "contract_term": "12 months, with option to renew",
+      "currency": "USD",
+      "regulation": "HIPAA",
+      "agreement_type": "BAA",
+      "departments_needed": [
+        "revenue",
+        "clinical",
+        "compliance"
+      ]
+    },
+    "currency": "USD",
+    "required_clauses": [
+      "BAA (Business Associate Agreement, HIPAA)"
+    ],
+    "workstreams": [
+      {
+        "department_id": "revenue",
+        "owner": "Tom Callahan",
+        "key_aspects": [
+          {
+            "aspect": "Contract term and renewal",
+            "detail": "The contract is for 12 months with an option to renew, which must be reflected in the financial proposal structure and payment terms.",
+            "source": "P14"
+          },
+          {
+            "aspect": "Pricing evaluation criteria weight",
+            "detail": "Pricing has a 25% weight in the evaluation, so the financial proposal must be competitive and clearly structured.",
+            "source": "P29"
+          },
+          {
+            "aspect": "Budget constraints",
+            "detail": "No budget range is provided in the metadata, so the financial proposal must be designed without a predefined budget cap.",
+            "source": "metadata"
+          }
+        ],
+        "requests": [
+          "Define the financial proposal structure including pricing model (e.g., per employee per month, fixed fee) and payment terms (e.g., monthly, quarterly, upfront).",
+          "Confirm the renewal pricing terms (e.g., fixed or subject to renegotiation) and any escalation clauses.",
+          "Prepare a pricing breakdown that aligns with the 25% evaluation weight and the 12-month contract term."
+        ],
+        "open_questions": [
+          "What is the client's budget range for this program?",
+          "Are there any specific pricing models or payment schedules preferred by the client?"
+        ]
+      },
+      {
+        "department_id": "clinical",
+        "owner": "Dr. Marcus Reid",
+        "key_aspects": [
+          {
+            "aspect": "Staffing plan for on-site clinic",
+            "detail": "The RFP requires an on-site occupational health clinic staffed 3 days/week, covering injury triage, annual wellness screenings for 800 employees, and chronic condition management (diabetes, hypertension).",
+            "source": "P10, P11, P12, P13"
+          },
+          {
+            "aspect": "Clinical capacity evaluation",
+            "detail": "The staffing plan must align with a clinical capacity evaluation, which is weighted at 35% of the proposal evaluation.",
+            "source": "P18, P27"
+          }
+        ],
+        "requests": [
+          "Confirm the specific clinical roles needed (e.g., physician, nurse practitioner, RN) and their required hours per week for 3-day coverage.",
+          "Provide the number of clinical staff available to assign to this contract, including any subcontracting options.",
+          "Assess whether the existing clinical capacity can handle 800 employees for annual screenings and chronic condition management within the 3-day/week schedule."
+        ],
+        "open_questions": [
+          "What is the exact location of the on-site clinic (city/state) to determine travel and logistics?",
+          "Are there any specific licensure or certification requirements for clinical staff in that state?",
+          "What is the expected patient volume per day for injury triage and chronic condition management?"
+        ]
+      },
+      {
+        "department_id": "compliance",
+        "owner": "Claire Whitfield",
+        "key_aspects": [
+          {
+            "aspect": "BAA execution prior to contract",
+            "detail": "Vendor must execute a Business Associate Agreement (BAA) compliant with HIPAA before contract signing, as required by the RFP.",
+            "source": "P15"
+          },
+          {
+            "aspect": "HIPAA compliance for health data",
+            "detail": "The program involves occupational health and wellness data for US employees, requiring full HIPAA safeguards for protected health information (PHI).",
+            "source": "metadata"
+          },
+          {
+            "aspect": "Data security practices per evaluation criteria",
+            "detail": "Compliance and data security practices are explicitly part of the evaluation with a 25% weight, demanding detailed security measures.",
+            "source": "P28"
+          }
+        ],
+        "requests": [
+          "Prepare and provide a HIPAA-compliant BAA template for execution prior to contract.",
+          "Confirm that all data handling procedures for employee health data meet HIPAA Privacy and Security Rules.",
+          "Document data security practices including encryption, access controls, breach notification protocols, and employee training.",
+          "Establish a process to verify BAA execution before any contract or data sharing begins."
+        ],
+        "open_questions": [
+          "The RFP does not specify detailed security requirements beyond a general mention; need client-specific security expectations or certifications (e.g., SOC 2, HITRUST).",
+          "Clarify if the client requires additional state-level privacy regulations beyond HIPAA (e.g., CCPA/CPRA) applicable to employee health data."
+        ]
+      }
+    ],
+    "conflicts": [],
+    "open_questions": [
+      {
+        "department_id": "revenue",
+        "question": "La RFP no indica presupuesto de referencia."
+      }
+    ],
+    "phi": {
+      "detected": false,
+      "categories": []
+    },
+    "document_ref": "rfp_ticket.document_markdown"
+  },
+  "metadata": {
+    "client_type": "employer",
+    "budget_range": null,
+    "estimated_tokens": 392,
+    "extracted_at": "2026-11-24T00:01:08.334394+00:00",
+    "client_country": "US",
+    "contract_term": "12 months, with option to renew",
+    "pdf_pages": 2,
+    "program_type": "occupational_health",
+    "currency": "USD",
+    "flesch_kincaid_grade": 13.17,
+    "program_types": [
+      "occupational_health",
+      "corporate_wellness"
+    ],
+    "regulation": "HIPAA",
+    "flesch_reading_ease": 29.42,
+    "ticket_id": "5412e06a-f62e-4e5f-a1ca-2ec70d2178a7",
+    "covered_population": 800,
+    "agreement_type": "BAA",
+    "gunning_fog": 11.3,
+    "population_unit": "employees",
+    "departments_needed": [
+      "revenue",
+      "clinical",
+      "compliance"
+    ],
+    "cost_band": "low",
+    "rfp_reference": "MM-OH-2026-002",
+    "deadline": "2026-08-23",
+    "open_questions": [
+      {
+        "department_id": "revenue",
+        "question": "La RFP no indica presupuesto de referencia."
+      }
+    ],
+    "client_name": "Meridian Manufacturing, Inc.",
+    "deadline_text": "August 23, 2026",
+    "word_count": 221,
+    "readability": {
+      "words": 221,
+      "sentences": 13,
+      "characters": 1570,
+      "estimated_tokens": 392,
+      "pages": 2,
+      "flesch_kincaid_grade": 13.17,
+      "flesch_reading_ease": 29.42,
+      "gunning_fog": 11.3,
+      "smog": null,
+      "cost_band": "low",
+      "notes": [
+        "SMOG requiere 30 frases"
+      ]
+    }
+  },
+  "sections": [
+    {
+      "key_aspects": [
+        {
+          "aspect": "Contract term and renewal",
+          "detail": "The contract is for 12 months with an option to renew, which must be reflected in the financial proposal structure and payment terms.",
+          "source": "P14"
+        },
+        {
+          "aspect": "Pricing evaluation criteria weight",
+          "detail": "Pricing has a 25% weight in the evaluation, so the financial proposal must be competitive and clearly structured.",
+          "source": "P29"
+        },
+        {
+          "aspect": "Budget constraints",
+          "detail": "No budget range is provided in the metadata, so the financial proposal must be designed without a predefined budget cap.",
+          "source": "metadata"
+        }
+      ],
+      "ticket_id": "5412e06a-f62e-4e5f-a1ca-2ec70d2178a7",
+      "department_id": "revenue",
+      "open_questions": [
+        "What is the client's budget range for this program?",
+        "Are there any specific pricing models or payment schedules preferred by the client?"
+      ],
+      "worker": "model",
+      "evaluation_results": {
+        "contains_phi": false
+      },
+      "approver": null,
+      "approved_at": null,
+      "owner": "Tom Callahan",
+      "id": 1,
+      "requests": [
+        "Define the financial proposal structure including pricing model (e.g., per employee per month, fixed fee) and payment terms (e.g., monthly, quarterly, upfront).",
+        "Confirm the renewal pricing terms (e.g., fixed or subject to renegotiation) and any escalation clauses.",
+        "Prepare a pricing breakdown that aligns with the 25% evaluation weight and the 12-month contract term."
+      ],
+      "excerpt_ids": [
+        14,
+        20,
+        29
+      ],
+      "draft_content": null,
+      "approval_status": "pending",
+      "created_at": "2026-11-24T00:01:17.693719+00:00"
+    },
+    {
+      "key_aspects": [
+        {
+          "aspect": "BAA execution prior to contract",
+          "detail": "Vendor must execute a Business Associate Agreement (BAA) compliant with HIPAA before contract signing, as required by the RFP.",
+          "source": "P15"
+        },
+        {
+          "aspect": "HIPAA compliance for health data",
+          "detail": "The program involves occupational health and wellness data for US employees, requiring full HIPAA safeguards for protected health information (PHI).",
+          "source": "metadata"
+        },
+        {
+          "aspect": "Data security practices per evaluation criteria",
+          "detail": "Compliance and data security practices are explicitly part of the evaluation with a 25% weight, demanding detailed security measures.",
+          "source": "P28"
+        }
+      ],
+      "ticket_id": "5412e06a-f62e-4e5f-a1ca-2ec70d2178a7",
+      "department_id": "compliance",
+      "open_questions": [
+        "The RFP does not specify detailed security requirements beyond a general mention; need client-specific security expectations or certifications (e.g., SOC 2, HITRUST).",
+        "Clarify if the client requires additional state-level privacy regulations beyond HIPAA (e.g., CCPA/CPRA) applicable to employee health data."
+      ],
+      "worker": "model",
+      "evaluation_results": {
+        "contains_phi": false
+      },
+      "approver": null,
+      "approved_at": null,
+      "owner": "Claire Whitfield",
+      "id": 2,
+      "requests": [
+        "Prepare and provide a HIPAA-compliant BAA template for execution prior to contract.",
+        "Confirm that all data handling procedures for employee health data meet HIPAA Privacy and Security Rules.",
+        "Document data security practices including encryption, access controls, breach notification protocols, and employee training.",
+        "Establish a process to verify BAA execution before any contract or data sharing begins."
+      ],
+      "excerpt_ids": [
+        15,
+        19,
+        28
+      ],
+      "draft_content": null,
+      "approval_status": "pending",
+      "created_at": "2026-11-24T00:01:20.706958+00:00"
+    },
+    {
+      "key_aspects": [
+        {
+          "aspect": "Staffing plan for on-site clinic",
+          "detail": "The RFP requires an on-site occupational health clinic staffed 3 days/week, covering injury triage, annual wellness screenings for 800 employees, and chronic condition management (diabetes, hypertension).",
+          "source": "P10, P11, P12, P13"
+        },
+        {
+          "aspect": "Clinical capacity evaluation",
+          "detail": "The staffing plan must align with a clinical capacity evaluation, which is weighted at 35% of the proposal evaluation.",
+          "source": "P18, P27"
+        }
+      ],
+      "ticket_id": "5412e06a-f62e-4e5f-a1ca-2ec70d2178a7",
+      "department_id": "clinical",
+      "open_questions": [
+        "What is the exact location of the on-site clinic (city/state) to determine travel and logistics?",
+        "Are there any specific licensure or certification requirements for clinical staff in that state?",
+        "What is the expected patient volume per day for injury triage and chronic condition management?"
+      ],
+      "worker": "model",
+      "evaluation_results": {
+        "contains_phi": false
+      },
+      "approver": null,
+      "approved_at": null,
+      "owner": "Dr. Marcus Reid",
+      "id": 3,
+      "requests": [
+        "Confirm the specific clinical roles needed (e.g., physician, nurse practitioner, RN) and their required hours per week for 3-day coverage.",
+        "Provide the number of clinical staff available to assign to this contract, including any subcontracting options.",
+        "Assess whether the existing clinical capacity can handle 800 employees for annual screenings and chronic condition management within the 3-day/week schedule."
+      ],
+      "excerpt_ids": [
+        10,
+        11,
+        12,
+        13,
+        18,
+        27
+      ],
+      "draft_content": null,
+      "approval_status": "pending",
+      "created_at": "2026-11-24T00:01:21.588378+00:00"
+    }
+  ]
+}
