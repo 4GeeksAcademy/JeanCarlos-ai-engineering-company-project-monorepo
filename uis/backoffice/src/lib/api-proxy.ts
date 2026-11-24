@@ -2,8 +2,18 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { apiUrl, sameOrigin, SESSION_COOKIE } from "@/lib/server-api";
 
+const upstreamPaths = {
+  suppliers: "/suppliers",
+  inventory: "/inventory",
+  telemetry: "/telemetry",
+  incidents: "/api/incidents",
+  reporting: "/reporting",
+  knowledge: "/knowledge",
+  rfp: "/api/rfp",
+} as const;
+
 export async function proxyApi(
-  resource: "suppliers" | "inventory" | "telemetry",
+  resource: keyof typeof upstreamPaths,
   request: Request,
   context: { params: Promise<{ path?: string[] }> },
 ) {
@@ -22,10 +32,11 @@ export async function proxyApi(
   if (contentType) headers.set("Content-Type", contentType);
   let upstream: Response;
   try {
-    upstream = await fetch(apiUrl(`/${resource}${suffix}${query}`), {
+    upstream = await fetch(apiUrl(`${upstreamPaths[resource]}${suffix}${query}`), {
       method: request.method,
       headers,
-      body: request.method === "GET" ? undefined : await request.text(),
+      // bytes, not text: the RFP upload is a multipart PDF
+      body: request.method === "GET" ? undefined : await request.arrayBuffer(),
       cache: "no-store",
       redirect: "manual",
     });
