@@ -42,7 +42,7 @@ def run_intake(engine: Engine, ticket_id: str) -> str:
     logger.info("rfp_intake start ticket_id=%s previous_stage=%s", ticket_id, stage_before)
     try:
         result = graph().invoke({"ticket_id": ticket_id, "pdf_path": path, "sections": []},
-                                config={"configurable": {"engine": engine}})
+                                config={"configurable": {"engine": engine, "thread_id": f"rfp-{ticket_id}:intake"}})
     except Exception as error:  # recorded on the ticket, never swallowed
         with Session(engine) as session:
             failed_at = session.get(RfpTicket, ticket_id).stage

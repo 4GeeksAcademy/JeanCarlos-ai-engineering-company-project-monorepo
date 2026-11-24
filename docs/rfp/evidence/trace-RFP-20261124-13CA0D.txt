@@ -1,0 +1,86 @@
+   1 22:51:32.372 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:intake      convert_document     tool:pdf_to_markdown
+   2 22:51:32.581 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:intake      screen_phi           guardrail:phi
+   3 22:51:32.590 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:intake      classify             agent:classifier
+   4 22:51:34.332 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:intake      extract_metadata     agent:extractor
+   5 22:51:36.114 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:intake      orchestrate          agent:orchestrator
+   6 22:51:57.148 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:intake      department_worker    agent:worker:clinical
+   7 22:51:57.147 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:intake      department_worker    agent:worker:revenue
+   8 22:51:57.149 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:intake      department_worker    agent:worker:compliance
+   9 22:52:03.267 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:intake      synthesize           agent:synthesizer
+  10 22:52:10.529 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  prepare              coordinator
+  11 22:52:10.565 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  generate             agent:generator:compliance
+  12 22:52:12.938 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  evaluate_compliance  evaluator:compliance:compliance
+  13 22:52:12.940 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  evaluate_readability evaluator:readability:compliance
+  14 22:52:10.563 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  generate             agent:generator:clinical
+  15 22:52:13.329 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  evaluate_compliance  evaluator:compliance:clinical
+  16 22:52:13.330 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  evaluate_readability evaluator:readability:clinical
+  17 22:52:12.941 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  evaluate_relevance   agent:evaluator:relevance:compliance
+  18 22:52:17.408 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  judge                judge:compliance
+  19 22:52:17.415 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  generate             agent:generator:compliance
+  20 22:52:20.000 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  evaluate_compliance  evaluator:compliance:compliance
+  21 22:52:20.001 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  evaluate_readability evaluator:readability:compliance
+  22 22:52:10.558 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  generate             agent:generator:revenue
+  23 22:52:23.324 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  evaluate_compliance  evaluator:compliance:revenue
+  24 22:52:23.325 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  evaluate_readability evaluator:readability:revenue
+  25 22:52:20.001 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  evaluate_relevance   agent:evaluator:relevance:compliance
+  26 22:52:23.339 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  judge                judge:compliance
+  27 22:52:23.345 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  finish               coordinator:compliance
+  28 22:52:10.564 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  section              section:compliance
+  29 22:52:13.331 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  evaluate_relevance   agent:evaluator:relevance:clinical
+  30 22:52:23.946 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  judge                judge:clinical
+  31 22:52:23.952 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  finish               coordinator:clinical
+  32 22:52:10.548 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  section              section:clinical
+  33 22:52:23.325 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  evaluate_relevance   agent:evaluator:relevance:revenue
+  34 22:52:24.910 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  judge                judge:revenue
+  35 22:52:24.918 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  generate             agent:generator:revenue
+  36 22:52:26.553 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  evaluate_compliance  evaluator:compliance:revenue
+  37 22:52:26.554 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  evaluate_readability evaluator:readability:revenue
+  38 22:52:26.553 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  evaluate_relevance   agent:evaluator:relevance:revenue
+  39 22:52:27.395 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  judge                judge:revenue
+  40 22:52:27.402 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  finish               coordinator:revenue
+  41 22:52:10.542 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  section              section:revenue
+  42 22:52:27.408 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:generation  finalize             coordinator
+  43 22:52:27.462 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852             open_approval        coordinator
+  44 22:52:27.467 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852             arbitrate            arbiter:rules (BRIEFING §7)
+  45 22:52:27.481 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     prepare_packet       coordinator:approval_packet
+  46 22:52:27.484 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:clinical    prepare_packet       coordinator:approval_packet
+  47 22:52:27.500 interrupted rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     await_approval       human:Tom Callahan
+  48 22:52:27.501 interrupted rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:clinical    await_approval       human:Dr. Marcus Reid
+  49 22:52:27.487 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:compliance  prepare_packet       coordinator:approval_packet
+  50 22:52:27.504 interrupted rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:compliance  await_approval       human:Claire Whitfield
+  51 22:52:27.475 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852             dispatch             coordinator:dispatch
+  52 22:52:27.515 interrupted rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852             await_departments    coordinator:await_departments
+  53 22:52:31.350 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:clinical    await_approval       human:Dr. Marcus Reid
+  54 22:52:31.359 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:clinical    record_decision      coordinator:record_decision
+  55 22:52:31.379 interrupted rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:clinical    await_closure        coordinator:await_closure
+  56 22:52:31.389 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852             await_departments    coordinator:await_departments
+  57 22:52:31.400 interrupted rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852             await_departments    coordinator:await_departments
+  58 22:52:32.543 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     await_approval       human:Tom Callahan
+  59 22:52:32.547 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     record_decision      coordinator:record_decision
+  60 22:52:32.569 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     generate             agent:generator:revenue
+  61 22:52:34.248 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     evaluate_compliance  evaluator:compliance:revenue
+  62 22:52:34.247 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     evaluate_readability evaluator:readability:revenue
+  63 22:52:34.250 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     evaluate_relevance   agent:evaluator:relevance:revenue
+  64 22:52:35.161 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     judge                judge:revenue
+  65 22:52:35.168 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     finish               coordinator:revenue
+  66 22:52:32.560 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     revise               agent:generator:revenue
+  67 22:52:35.185 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     prepare_packet       coordinator:approval_packet
+  68 22:52:35.196 interrupted rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     await_approval       human:Tom Callahan
+  69 22:52:35.205 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852             await_departments    coordinator:await_departments
+  70 22:52:35.213 interrupted rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852             await_departments    coordinator:await_departments
+  71 22:52:35.590 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     await_approval       human:Tom Callahan
+  72 22:52:35.595 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     record_decision      coordinator:record_decision
+  73 22:52:35.603 interrupted rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     await_closure        coordinator:await_closure
+  74 22:52:35.611 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852             await_departments    coordinator:await_departments
+  75 22:52:35.621 interrupted rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852             await_departments    coordinator:await_departments
+  76 22:52:35.634 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:compliance  await_approval       human:Claire Whitfield
+  77 22:52:35.636 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:compliance  record_decision      coordinator:record_decision
+  78 22:52:35.648 interrupted rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:compliance  await_closure        coordinator:await_closure
+  79 22:52:35.659 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852             await_departments    coordinator:await_departments
+  80 22:52:35.666 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852             arbitrate            arbiter:rules (BRIEFING §7)
+  81 22:52:35.676 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852             synthesize           agent:final_document_synthesizer
+  82 22:52:35.703 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:revenue     await_closure        coordinator:await_closure
+  83 22:52:35.701 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:clinical    await_closure        coordinator:await_closure
+  84 22:52:35.701 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852:compliance  await_closure        coordinator:await_closure
+  85 22:52:35.692 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852             close_branches       coordinator:dispatch
+  86 22:52:35.728 ok          rfp-13ca0d4c-e6e4-4d46-85eb-d528b1d98852             close                coordinator

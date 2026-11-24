@@ -23,7 +23,10 @@ STATUSES = ("analizando", "descartado", "analisis_completo", "generando_borrador
 STAGES = ("received", "converting", "screening_phi", "classifying", "extracting", "orchestrating", "workers",
           "synthesizing", "done", "discarded", "failed",
           # Part 2: generation and evaluation
-          "generating", "evaluating", "generated", "generation_failed")
+          "generating", "evaluating", "generated", "generation_failed",
+          # Part 3: approval, arbitration and closing
+          "awaiting_approval", "arbitration", "finalizing", "completed", "approval_rejected",
+          "discarded_by_compliance", "approval_failed")
 SECTION_STATUSES = ("not_started", "generating", "evaluating", "revising", "passed", "needs_human_review")
 COUNTRIES = ("US", "UK")
 PROGRAM_TYPES = ("occupational_health", "corporate_wellness", "referral_network", "other")
@@ -66,6 +69,11 @@ class RfpTicket(SQLModel, table=True):
     ready_for_generation: bool = Field(default=False, index=True)  # queue flag read by Part 2
     response_handoff: dict | None = Field(default=None, sa_type=JSON)  # contract rfp_response.handoff/v1 for Part 3
     ready_for_approval: bool = Field(default=False, index=True)  # queue flag read by Part 3
+    # Part 3: arbitration record (trigger, fixed arbiter, rule, resolution, round) and the decision
+    # a named arbiter is being asked for right now (None when nobody is asked)
+    arbitration: list | None = Field(default=None, sa_type=JSON)
+    pending_arbitration: dict | None = Field(default=None, sa_type=JSON)
+    approval_round: int = 0  # arbitration rounds used (limit: approval.MAX_ARBITRATION_ROUNDS)
     created_at: datetime = _ts()
     updated_at: datetime = _ts()
     completed_at: datetime | None = Field(default=None, sa_type=DateTime(timezone=True))
@@ -136,10 +144,54 @@ class RfpDepartmentSection(SQLModel, table=True):
     approval_status: str = "pending"
     approver: str | None = None
     approved_at: datetime | None = Field(default=None, sa_type=DateTime(timezone=True))
+    # Part 3: what the approver sees, what they decided, and the revision rounds they used
+    approval_packet: dict | None = Field(default=None, sa_type=JSON)
+    approval_comment: str | None = Field(default=None, sa_type=Text)
+    confirmed_capacity: int | None = None  # people the clinical staff can cover (Dr. Marcus Reid)
+    revision_rounds: int = 0  # request_changes used (limit: approval.MAX_REVISION_ROUNDS)
+    decision_history: list | None = Field(default=None, sa_type=JSON)
     created_at: datetime = _ts()
 
 
-TABLES = [RfpTicket.__table__, RfpMetadata.__table__, RfpDepartmentSection.__table__]
+class RfpFinalDocument(SQLModel, table=True):
+    """BRIEFING §2.3 FinalDocument: ticket_id, sections, currency, generated_at (+ the approvals and
+    the arbitration record it was built from, and the Markdown delivered to Revenue Cycle)."""
+    __tablename__ = "rfp_final_document"
+
+    ticket_id: str = Field(sa_column=Column(String(36), ForeignKey("rfp_ticket.ticket_id", ondelete="CASCADE"),
+                                            primary_key=True))
+    rfp_id: str
+    client_name: str | None = None
+    client_country: str | None = None
+    currency: str | None = None
+    regulation: str | None = None
+    agreement_type: str | None = None
+    sections: list = Field(default_factory=list, sa_type=JSON)  # approved sections, in the BRIEFING order
+    approvals: list = Field(default_factory=list, sa_type=JSON)
+    arbitration: list = Field(default_factory=list, sa_type=JSON)
+    markdown: str = Field(sa_type=Text)
+    generated_at: datetime = _ts()
+
+
+class RfpTrace(SQLModel, table=True):
+    """One row per node execution of the three graphs: agent, input, output, timestamps."""
+    __tablename__ = "rfp_trace"
+
+    id: int | None = Field(default=None, primary_key=True)
+    ticket_id: str = Field(sa_column=Column(String(36), ForeignKey("rfp_ticket.ticket_id", ondelete="CASCADE"),
+                                            nullable=False, index=True))
+    thread_id: str | None = None
+    node: str
+    agent: str
+    status: str  # ok / interrupted / error
+    input: dict | list | None = Field(default=None, sa_type=JSON)
+    output: dict | list | None = Field(default=None, sa_type=JSON)
+    started_at: datetime = Field(sa_type=DateTime(timezone=True))
+    finished_at: datetime = Field(sa_type=DateTime(timezone=True))
+
+
+TABLES = [RfpTicket.__table__, RfpMetadata.__table__, RfpDepartmentSection.__table__, RfpFinalDocument.__table__,
+          RfpTrace.__table__]
 
 
 def create_tables(engine) -> None:

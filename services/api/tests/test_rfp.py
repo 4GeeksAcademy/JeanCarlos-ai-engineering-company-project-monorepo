@@ -1,5 +1,6 @@
 """RFP endpoints on the existing API: upload answers 202 fast, the intake runs in the background
-and (Part 2) chains the generation + evaluation; POST /generate takes a queued ticket."""
+and chains the generation + evaluation (Part 2) and the approval flow (Part 3); POST /generate and
+POST /approval take a queued ticket; each department decides through its own endpoint."""
 
 import pytest
 
@@ -30,9 +31,10 @@ def test_upload_is_accepted_and_processed_in_the_background(client, headers, mod
     assert response.status_code == 202
     body = response.json()
     assert body["status"] == "analizando" and body["rfp_id"].startswith("RFP-")
-    # TestClient runs background tasks before returning: intake + (automatic) Part 2 are done
+    # TestClient runs background tasks before returning: intake + Part 2 + opening Part 3 are done
     ticket = client.get(f"/api/rfp/tickets/{body['ticket_id']}", headers=headers).json()
-    assert ticket["status"] == "en_evaluación" and ticket["stage"] == "generated" and len(ticket["sections"]) == 3
+    assert ticket["status"] == "esperando_aprobación" and ticket["stage"] == "awaiting_approval"
+    assert len(ticket["sections"]) == 3
     assert ticket["synthesis"]["workstreams"] and ticket["response_handoff"]["contract"] == "rfp_response.handoff/v1"
     assert all(s["generation_status"] == "passed" and s["evaluation_results"]["overall_pass"] for s in ticket["sections"])
     assert "document_markdown" not in ticket and "raw_pdf_path" not in ticket
@@ -44,11 +46,12 @@ def test_a_rejected_document_does_not_stop_other_tickets(client, headers, model)
     discarded = upload(client, headers, INVALID).json()
     accepted = upload(client, headers, FORMAL).json()
     statuses = {t["ticket_id"]: t["status"] for t in client.get("/api/rfp/tickets", headers=headers).json()}
-    assert statuses == {discarded["ticket_id"]: "descartado", accepted["ticket_id"]: "en_evaluación"}
+    assert statuses == {discarded["ticket_id"]: "descartado", accepted["ticket_id"]: "esperando_aprobación"}
 
 
 def test_generate_takes_a_ticket_from_the_part1_queue(client, headers, model, monkeypatch):  # noqa: F811
     monkeypatch.setenv("RFP_AUTO_GENERATE", "0")
+    monkeypatch.setenv("RFP_AUTO_APPROVAL", "0")
     ticket_id = upload(client, headers, FORMAL).json()["ticket_id"]
     assert client.get(f"/api/rfp/tickets/{ticket_id}", headers=headers).json()["status"] == "analisis_completo"
     response = client.post(f"/api/rfp/tickets/{ticket_id}/generate", headers=headers)
@@ -60,6 +63,43 @@ def test_generate_takes_a_ticket_from_the_part1_queue(client, headers, model, mo
     discarded = upload(client, headers, INVALID).json()["ticket_id"]
     assert client.post(f"/api/rfp/tickets/{discarded}/generate", headers=headers).status_code == 409
     assert client.post(f"/api/rfp/tickets/{ticket_id}/generate").status_code == 401
+
+
+def test_approval_flow_through_the_api(client, headers, model, monkeypatch):  # noqa: F811
+    monkeypatch.setenv("RFP_AUTO_APPROVAL", "0")
+    ticket_id = upload(client, headers, FORMAL).json()["ticket_id"]
+    base = f"/api/rfp/tickets/{ticket_id}"
+    assert client.post(f"{base}/sections/revenue/decision", headers=headers,
+                       json={"action": "approve", "approver": "Tom Callahan"}).status_code == 409  # not open yet
+    assert client.post(f"{base}/approval", headers=headers).status_code == 202
+    assert client.post(f"{base}/approval", headers=headers).status_code == 409  # opened once
+    state = client.get(f"{base}/approval", headers=headers).json()
+    assert {k: v["paused_at"] for k, v in state["threads"].items()} == {
+        "ticket": "await_departments", "revenue": "await_approval", "clinical": "await_approval",
+        "compliance": "await_approval"}
+    assert state["threads"]["clinical"]["thread_id"] == f"rfp-{ticket_id}:clinical"
+    assert state["packets"]["clinical"]["requires_capacity"] is True
+    invalid = client.post(f"{base}/sections/clinical/decision", headers=headers,
+                          json={"action": "approve", "approver": "Tom Callahan", "confirmed_capacity": 900})
+    assert invalid.status_code == 422 and "Dr. Marcus Reid" in invalid.json()["detail"]
+    assert client.post(f"{base}/sections/legal/decision", headers=headers, json={}).status_code == 422
+    assert client.get(f"{base}/document", headers=headers).status_code == 404
+    for department_id, approver in (("clinical", "Dr. Marcus Reid"), ("revenue", "Tom Callahan"),
+                                    ("compliance", "Claire Whitfield")):
+        body = {"action": "approve", "approver": approver}
+        if department_id == "clinical":
+            body["confirmed_capacity"] = 900
+        assert client.post(f"{base}/sections/{department_id}/decision", headers=headers, json=body).status_code == 202
+    ticket = client.get(base, headers=headers).json()
+    assert (ticket["status"], ticket["stage"]) == ("terminado", "completed")
+    document = client.get(f"{base}/document", headers=headers).json()
+    assert document["currency"] == "USD" and len(document["sections"]) == 3
+    markdown = client.get(f"{base}/document?format=markdown", headers=headers)
+    assert markdown.headers["content-type"].startswith("text/markdown") and markdown.text.startswith("# Economic Proposal")
+    trace = client.get(f"{base}/trace", headers=headers).json()
+    assert trace[0]["node"] == "convert_document" and trace[-1]["node"] == "close"
+    assert client.post(f"{base}/arbitration", headers=headers, json={}).status_code == 409
+    assert client.get(f"{base}/trace").status_code == 401
 
 
 def test_non_pdf_and_missing_session_are_rejected(client, headers):

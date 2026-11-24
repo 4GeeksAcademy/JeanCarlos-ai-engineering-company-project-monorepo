@@ -21,6 +21,7 @@ from langgraph.types import Send
 from . import agents, document, phi, store
 from .departments import DEPARTMENTS
 from .models import utcnow
+from .tracing import traced
 
 
 class IntakeState(TypedDict, total=False):
@@ -143,10 +144,15 @@ NODES = {"convert_document": convert_document, "screen_phi": screen_phi, "classi
          "synthesize": synthesize}
 
 
+AGENTS = {"convert_document": "tool:pdf_to_markdown", "screen_phi": "guardrail:phi", "classify": "agent:classifier",
+          "discard": "coordinator", "extract_metadata": "agent:extractor", "orchestrate": "agent:orchestrator",
+          "department_worker": lambda task: f"agent:worker:{task['department_id']}", "synthesize": "agent:synthesizer"}
+
+
 def build_graph():
     graph = StateGraph(IntakeState)
     for name, node in NODES.items():
-        graph.add_node(name, node)
+        graph.add_node(name, traced(AGENTS[name], node, node=name, shape_only=name in ("convert_document", "screen_phi")))
     graph.add_edge(START, "convert_document")
     graph.add_edge("convert_document", "screen_phi")
     graph.add_edge("screen_phi", "classify")

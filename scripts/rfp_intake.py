@@ -8,6 +8,14 @@ the same pipeline (data/pipelines/rfp_intake) and the same PostgreSQL as the bac
     python scripts/rfp_intake.py generate <ticket_id>    # Part 2: drafts + evaluation for a queued ticket (sync)
     python scripts/rfp_intake.py generate-retry <ticket_id>   # re-run a failed generation
     python scripts/rfp_intake.py generate-ready          # drain the Part 1 queue (analisis_completo + ready)
+    python scripts/rfp_intake.py approval-open <ticket_id>     # Part 3: open the approval flow (Part 2 queue)
+    python scripts/rfp_intake.py approval <ticket_id>          # where each checkpointed thread is paused
+    python scripts/rfp_intake.py decide <ticket_id> '<json>'   # resume a department: {"department_id": "clinical",
+                                                               #   "action": "approve", "approver": "Dr. Marcus Reid",
+                                                               #   "confirmed_capacity": 800}
+    python scripts/rfp_intake.py arbitrate <ticket_id> '<json>'  # ruling of the fixed arbiter (BRIEFING §7)
+    python scripts/rfp_intake.py document <ticket_id>          # final document (Markdown)
+    python scripts/rfp_intake.py trace <ticket_id>             # agent / node / status of every execution
     python scripts/rfp_intake.py scram-verifier          # SCRAM verifier for scripts/supabase_rfp_role.sql
 
 Database: RFP_DATABASE_URL if set, otherwise DATABASE_URL (services/api/.env).
@@ -51,14 +59,16 @@ def scram_verifier(password: str, iterations: int = 4096) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("command", choices=["process", "reprocess", "show", "list", "generate", "generate-retry",
-                                                 "generate-ready", "scram-verifier"])
+                                                 "generate-ready", "approval-open", "approval", "decide", "arbitrate",
+                                                 "document", "trace", "scram-verifier"])
     parser.add_argument("target", nargs="?")
+    parser.add_argument("payload", nargs="?", help="JSON for decide / arbitrate")
     args = parser.parse_args(argv)
     if args.command == "scram-verifier":
         print(scram_verifier(getpass.getpass("Password for rfp_pipeline: ")))
         return 0
 
-    from data.pipelines.rfp_intake import response_runner, runner, store
+    from data.pipelines.rfp_intake import approval_runner, response_runner, runner, store
     from data.pipelines.rfp_intake.models import create_tables
 
     eng = engine()
@@ -72,6 +82,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if not args.target:
         parser.error("target required")
+    if args.command in ("approval-open", "approval", "decide", "arbitrate", "document", "trace"):
+        return part3(args, eng, approval_runner, store)
     if args.command == "process":
         ticket = store.receive(eng, Path(args.target).read_bytes(), created_by="cli")
         ticket_id = ticket.ticket_id
@@ -91,6 +103,30 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "show":
         print(json.dumps(view, ensure_ascii=False, indent=2))
     return 0 if view["stage"] not in ("failed", "generation_failed") else 2
+
+
+def part3(args, eng, approval_runner, store) -> int:
+    ticket_id = args.target
+    if args.command == "approval-open":
+        result = approval_runner.open_approval(eng, ticket_id)
+    elif args.command == "approval":
+        result = approval_runner.status(eng, ticket_id)
+    elif args.command == "decide":
+        payload = json.loads(args.payload or "{}")
+        result = approval_runner.submit_decision(eng, ticket_id, payload.pop("department_id"), payload)
+    elif args.command == "arbitrate":
+        result = approval_runner.submit_arbitration(eng, ticket_id, json.loads(args.payload or "{}"))
+    elif args.command == "document":
+        document = store.final_document(eng, ticket_id)
+        print(document["markdown"] if document else "no final document yet", file=sys.stdout if document else sys.stderr)
+        return 0 if document else 1
+    else:
+        for row in store.trace(eng, ticket_id):
+            print(f"{row['id']:>4} {row['started_at'][11:23]} {row['status']:<11} {row['thread_id'] or '':<52} "
+                  f"{row['node']:<20} {row['agent']}")
+        return 0
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
 
 
 if __name__ == "__main__":

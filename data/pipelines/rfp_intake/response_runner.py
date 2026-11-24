@@ -45,7 +45,8 @@ def run_generation(engine: Engine, ticket_id: str, *, retry: bool = False, claim
     store.reset_generation(engine, ticket_id)
     logger.info("rfp_response start ticket_id=%s", ticket_id)
     try:
-        result = graph().invoke({"ticket_id": ticket_id, "sections": []}, config={"configurable": {"engine": engine}})
+        config = {"configurable": {"engine": engine, "thread_id": f"rfp-{ticket_id}:generation"}}
+        result = graph().invoke({"ticket_id": ticket_id, "sections": []}, config=config)
     except Exception as error:  # recorded on the ticket, never swallowed
         with Session(engine) as session:
             stage = session.get(RfpTicket, ticket_id).stage

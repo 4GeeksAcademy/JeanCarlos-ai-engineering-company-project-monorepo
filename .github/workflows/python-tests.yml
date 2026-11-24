@@ -28,7 +28,7 @@ jobs:
         run: uv run python -m pytest tests/pipelines/test_agent_graph.py tests/pipelines/test_agent_tools.py tests/pipelines/test_agent_evals.py tests/pipelines/test_agent_memory.py tests/pipelines/test_agent_memory_evidence.py -v
       - name: Agent harness and guardrails (deterministic; fails if a guardrail lets abuse through)
         run: uv run python -m pytest tests/pipelines/test_agent_guardrails.py tests/pipelines/test_agent_guardrails_evidence.py services/api/tests/test_agent.py -v
-      - name: RFP flow, parts 1 and 2 (intake + generation/evaluation loop; model stubbed, real PDF conversion)
-        run: uv run python -m pytest tests/pipelines/test_rfp_intake.py tests/pipelines/test_rfp_response.py services/api/tests/test_rfp.py -v
+      - name: RFP flow, parts 1-3 (intake, generation/evaluation loop, approval with interrupt + SQLite checkpointer, E2E; model stubbed)
+        run: uv run python -m pytest tests/pipelines/test_rfp_intake.py tests/pipelines/test_rfp_response.py tests/pipelines/test_rfp_approval.py tests/pipelines/test_rfp_e2e.py services/api/tests/test_rfp.py -v
       - name: HealthCore MCP server (real server, test OAuth server, stand-in API)
         run: uv run python -m pytest tests/mcps -v

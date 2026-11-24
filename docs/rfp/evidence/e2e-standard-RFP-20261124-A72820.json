@@ -1,0 +1,994 @@
+{
+  "ticket_id": "a728206c-21df-4b3c-a438-3befaa2b49d2",
+  "rfp_id": "RFP-20261124-A72820",
+  "plan": "standard",
+  "status": "terminado",
+  "stage": "completed",
+  "timeline": [
+    {
+      "step": "upload (Parte 1)",
+      "seconds": 0.0,
+      "status": "analizando",
+      "stage": "received",
+      "sections": {}
+    },
+    {
+      "step": "intake (Parte 1)",
+      "seconds": 25.9,
+      "status": "analisis_completo",
+      "stage": "done",
+      "sections": {
+        "compliance": {
+          "generation": "not_started",
+          "approval": "pending"
+        },
+        "clinical": {
+          "generation": "not_started",
+          "approval": "pending"
+        },
+        "revenue": {
+          "generation": "not_started",
+          "approval": "pending"
+        }
+      }
+    },
+    {
+      "step": "generation + evaluation (Parte 2)",
+      "seconds": 47.1,
+      "status": "en_evaluación",
+      "stage": "generated",
+      "sections": {
+        "compliance": {
+          "generation": "passed",
+          "approval": "pending"
+        },
+        "clinical": {
+          "generation": "passed",
+          "approval": "pending"
+        },
+        "revenue": {
+          "generation": "passed",
+          "approval": "pending"
+        }
+      }
+    },
+    {
+      "step": "open approval (Parte 3)",
+      "seconds": 47.3,
+      "status": "esperando_aprobación",
+      "stage": "awaiting_approval",
+      "sections": {
+        "compliance": {
+          "generation": "passed",
+          "approval": "pending"
+        },
+        "clinical": {
+          "generation": "passed",
+          "approval": "pending"
+        },
+        "revenue": {
+          "generation": "passed",
+          "approval": "pending"
+        }
+      },
+      "threads": {
+        "ticket": {
+          "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2",
+          "paused_at": "await_departments"
+        },
+        "compliance": {
+          "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:compliance",
+          "paused_at": "await_approval"
+        },
+        "clinical": {
+          "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:clinical",
+          "paused_at": "await_approval"
+        },
+        "revenue": {
+          "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+          "paused_at": "await_approval"
+        }
+      }
+    },
+    {
+      "step": "Dr. Marcus Reid → approve (clinical)",
+      "seconds": 47.3,
+      "status": "esperando_aprobación",
+      "stage": "awaiting_approval",
+      "sections": {
+        "compliance": {
+          "generation": "passed",
+          "approval": "pending"
+        },
+        "clinical": {
+          "generation": "passed",
+          "approval": "approved"
+        },
+        "revenue": {
+          "generation": "passed",
+          "approval": "pending"
+        }
+      }
+    },
+    {
+      "step": "Tom Callahan → request_changes (revenue)",
+      "seconds": 68.9,
+      "status": "esperando_aprobación",
+      "stage": "awaiting_approval",
+      "sections": {
+        "compliance": {
+          "generation": "passed",
+          "approval": "pending"
+        },
+        "clinical": {
+          "generation": "passed",
+          "approval": "approved"
+        },
+        "revenue": {
+          "generation": "passed",
+          "approval": "pending"
+        }
+      }
+    },
+    {
+      "step": "Tom Callahan → approve (revenue)",
+      "seconds": 69.0,
+      "status": "esperando_aprobación",
+      "stage": "awaiting_approval",
+      "sections": {
+        "compliance": {
+          "generation": "passed",
+          "approval": "pending"
+        },
+        "clinical": {
+          "generation": "passed",
+          "approval": "approved"
+        },
+        "revenue": {
+          "generation": "passed",
+          "approval": "approved"
+        }
+      }
+    },
+    {
+      "step": "Claire Whitfield → approve (compliance)",
+      "seconds": 69.1,
+      "status": "terminado",
+      "stage": "completed",
+      "sections": {
+        "compliance": {
+          "generation": "passed",
+          "approval": "approved"
+        },
+        "clinical": {
+          "generation": "passed",
+          "approval": "approved"
+        },
+        "revenue": {
+          "generation": "passed",
+          "approval": "approved"
+        }
+      }
+    }
+  ],
+  "steps": [
+    {
+      "step": "Dr. Marcus Reid → approve (clinical)",
+      "input": {
+        "action": "approve",
+        "approver": "Dr. Marcus Reid",
+        "comment": "Sites and staff confirmed for the full population.",
+        "confirmed_capacity": 800
+      },
+      "threads": {
+        "ticket": "await_departments",
+        "compliance": "await_approval",
+        "clinical": "await_closure",
+        "revenue": "await_approval"
+      }
+    },
+    {
+      "step": "Tom Callahan → request_changes (revenue)",
+      "input": {
+        "action": "request_changes",
+        "approver": "Tom Callahan",
+        "comment": "State that invoices are monthly and in the client's currency; keep the amount as to be confirmed."
+      },
+      "threads": {
+        "ticket": "await_departments",
+        "compliance": "await_approval",
+        "clinical": "await_closure",
+        "revenue": "await_approval"
+      }
+    },
+    {
+      "step": "Tom Callahan → approve (revenue)",
+      "input": {
+        "action": "approve",
+        "approver": "Tom Callahan",
+        "comment": "Commercial terms approved."
+      },
+      "threads": {
+        "ticket": "await_departments",
+        "compliance": "await_approval",
+        "clinical": "await_closure",
+        "revenue": "await_closure"
+      }
+    },
+    {
+      "step": "Claire Whitfield → approve (compliance)",
+      "input": {
+        "action": "approve",
+        "approver": "Claire Whitfield",
+        "comment": "Instrument and approval clause verified."
+      },
+      "threads": {
+        "ticket": "ended",
+        "compliance": "ended",
+        "clinical": "ended",
+        "revenue": "ended"
+      }
+    }
+  ],
+  "arbitration": [],
+  "final_document": {
+    "currency": "USD",
+    "rfp_id": "RFP-20261124-A72820",
+    "client_name": "Meridian Manufacturing, Inc.",
+    "agreement_type": "BAA",
+    "approvals": [
+      {
+        "department_id": "revenue",
+        "approver": "Tom Callahan",
+        "decision": "approved",
+        "approved_at": "2026-11-24 22:55 UTC",
+        "revision_rounds": 1,
+        "confirmed_capacity": null
+      },
+      {
+        "department_id": "clinical",
+        "approver": "Dr. Marcus Reid",
+        "decision": "approved",
+        "approved_at": "2026-11-24 22:55 UTC",
+        "revision_rounds": 0,
+        "confirmed_capacity": 800
+      },
+      {
+        "department_id": "compliance",
+        "approver": "Claire Whitfield",
+        "decision": "approved",
+        "approved_at": "2026-11-24 22:55 UTC",
+        "revision_rounds": 0,
+        "confirmed_capacity": null
+      }
+    ],
+    "markdown": "# Economic Proposal — HealthCore for Meridian Manufacturing, Inc.\n\n- **Client:** Meridian Manufacturing, Inc. (US)\n- **Program:** occupational_health, corporate_wellness\n- **RFP reference:** MM-OH-2026-002 · **Ticket:** RFP-20261124-A72820\n- **Covered population:** 800 employees\n- **Currency:** USD\n- **Regulatory framework:** HIPAA — Business Associate Agreement (BAA)\n- **Prepared for:** Revenue Cycle — Tom Callahan (owner of the ticket)\n- **Generated:** 2026-11-24 22:55 UTC\n\n## Commercial Terms — Revenue Cycle\n\n### Pricing and currency\nWe quote all prices in USD for Meridian Manufacturing. The program covers 800 employees. Pricing carries 25% weight in the evaluation. We propose a per-employee per-month (PEPM) model. This model aligns with the 12-month contract term and the optional renewal. The total monthly fee includes all occupational health and corporate wellness services delivered on-site three days per week. We designed the PEPM rate to be competitive. The exact rate is [amount to be confirmed by Revenue Cycle]. All services comply with HIPAA. HealthCore will sign a Business Associate Agreement (BAA) as required.\n\n### Payment structure\nHealthCore invoices monthly in arrears in USD. Payment terms are [payment terms to be confirmed by Revenue Cycle]. We do not offer discounts for early or prepayment. All invoices comply with HIPAA and the BAA.\n\n### Contract term\nThe initial contract term is 12 months, starting on the service commencement date. Meridian Manufacturing has the option to renew for additional periods. Renewal pricing will be negotiated based on then-current rates. The exact mechanism is [to be confirmed by Revenue Cycle].\n\n### Open questions\n- What is the client's expected total budget or cost range for this contract?\n- Does the client prefer per-employee per-month pricing or a bundled annual fee?\n- What payment milestones or late-payment terms does the client require?\n- What price adjustment mechanism (if any) applies upon renewal?\n\n_Approved by Tom Callahan (Revenue Cycle Director) on 2026-11-24 22:55 UTC._\n\n## Clinical Delivery — Clinical Operations\n\n### Sites and coverage\nWe will deliver on-site services using HealthCore’s network of nine US clinics. Three are in Texas, three in Florida, and three in Georgia. The nearest clinic to the client site will coordinate staff and clinical oversight. We need the exact facility location to assign the lead clinic.\n\n### Staffing and capacity\nWe propose a team for three clinic days per week. The mix will likely include a registered nurse (RN) and a nurse practitioner (NP) for most shifts, with a physician available for complex cases. We will allocate fractional FTE based on expected daily visit volume. We cannot confirm capacity until we know the site location, daily operating hours, and triage volume.\n\nFor wellness screenings, we plan to screen all 800 employees within 12 months. We need the number of screening slots per day to calculate throughput. We will propose a schedule once we have those inputs.\n\n### Clinical services\nWe will provide injury triage and treatment for workplace incidents. Annual wellness screenings will include biometrics and health risk assessments. For chronic condition management (diabetes, hypertension), we will offer education, monitoring, and care coordination with the employee’s primary care provider. All services comply with HIPAA and the required Business Associate Agreement.\n\n### Open questions\n- What is the specific daily hours of operation for the on-site clinic (e.g., 8-hour shift)?\n- What is the expected average number of injury/illness triage visits per clinic day?\n- Are there any additional services required beyond those listed (e.g., drug testing, pre-employment physicals, ergonomic assessments)?\n- What is the geographic location of Meridian Manufacturing's facility (city/state) to assess local staffing availability?\n- Does the client require any specific certifications or experience for clinical staff (e.g., COHN, BLS)?\n- What is the expected number of wellness screenings per clinic day to cover 800 employees in 12 months?\n- How many employees are expected to enroll in chronic condition management, and what follow-up frequency is required?\n\n_Approved by Dr. Marcus Reid (Clinical Operations) on 2026-11-24 22:55 UTC._\n\n## Data Protection and Compliance — Compliance and Data Governance\n\n### Regulatory framework\nMeridian Manufacturing, Inc. is based in the US. HealthCore complies with the Health Insurance Portability and Accountability Act (HIPAA). We use protected health information (PHI) only for permitted purposes. We limit disclosures to the minimum necessary. Your organization receives aggregate, de-identified program reports. Individual health records are never shared with you.\n\n### Business Associate Agreement (BAA)\nThe RFP requires a HIPAA-compliant Business Associate Agreement (BAA) before contract execution. HealthCore will provide a BAA template. Both parties must sign it before work begins. The BAA covers permitted uses, safeguards, breach notification, and subcontractor obligations. We notify breaches within 60 days of discovery.\n\n### Compliance approval\nClaire Whitfield, Chief Compliance Officer, must approve all contracts before signature. This approval is mandatory. It cannot be waived or skipped. We will submit the signed BAA and data security evidence for your evaluation.\n\n### Data security practices\nCompliance and data security practices carry 25% weight in your evaluation. HealthCore uses encryption for data at rest and in transit. We enforce role-based access controls. We maintain a documented breach notification procedure. We can provide evidence of these practices on request.\n\n### Open questions\n- What specific data security practices or certifications (e.g., SOC 2, ISO 27001) does your organization require beyond HIPAA compliance?\n\n_Approved by Claire Whitfield (Chief Compliance Officer) on 2026-11-24 22:55 UTC._\n\n## Approvals\n\n| Department | Approver | Decision | Date | Revision rounds |\n|---|---|---|---|---|\n| Revenue Cycle | Tom Callahan | approved | 2026-11-24 22:55 UTC | 1 |\n| Clinical Operations | Dr. Marcus Reid | approved | 2026-11-24 22:55 UTC | 0 |\n| Compliance and Data Governance | Claire Whitfield | approved | 2026-11-24 22:55 UTC | 0 |\n",
+    "ticket_id": "a728206c-21df-4b3c-a438-3befaa2b49d2",
+    "client_country": "US",
+    "regulation": "HIPAA",
+    "sections": [
+      {
+        "department_id": "revenue",
+        "department": "Revenue Cycle",
+        "content": "## Commercial Terms — Revenue Cycle\n\n### Pricing and currency\nWe quote all prices in USD for Meridian Manufacturing. The program covers 800 employees. Pricing carries 25% weight in the evaluation. We propose a per-employee per-month (PEPM) model. This model aligns with the 12-month contract term and the optional renewal. The total monthly fee includes all occupational health and corporate wellness services delivered on-site three days per week. We designed the PEPM rate to be competitive. The exact rate is [amount to be confirmed by Revenue Cycle]. All services comply with HIPAA. HealthCore will sign a Business Associate Agreement (BAA) as required.\n\n### Payment structure\nHealthCore invoices monthly in arrears in USD. Payment terms are [payment terms to be confirmed by Revenue Cycle]. We do not offer discounts for early or prepayment. All invoices comply with HIPAA and the BAA.\n\n### Contract term\nThe initial contract term is 12 months, starting on the service commencement date. Meridian Manufacturing has the option to renew for additional periods. Renewal pricing will be negotiated based on then-current rates. The exact mechanism is [to be confirmed by Revenue Cycle].\n\n### Open questions\n- What is the client's expected total budget or cost range for this contract?\n- Does the client prefer per-employee per-month pricing or a bundled annual fee?\n- What payment milestones or late-payment terms does the client require?\n- What price adjustment mechanism (if any) applies upon renewal?",
+        "approver": "Tom Callahan",
+        "approved_at": "2026-11-24 22:55 UTC",
+        "revision_rounds": 1,
+        "iterations": 2,
+        "generation_status": "passed"
+      },
+      {
+        "department_id": "clinical",
+        "department": "Clinical Operations",
+        "content": "## Clinical Delivery — Clinical Operations\n\n### Sites and coverage\nWe will deliver on-site services using HealthCore’s network of nine US clinics. Three are in Texas, three in Florida, and three in Georgia. The nearest clinic to the client site will coordinate staff and clinical oversight. We need the exact facility location to assign the lead clinic.\n\n### Staffing and capacity\nWe propose a team for three clinic days per week. The mix will likely include a registered nurse (RN) and a nurse practitioner (NP) for most shifts, with a physician available for complex cases. We will allocate fractional FTE based on expected daily visit volume. We cannot confirm capacity until we know the site location, daily operating hours, and triage volume.\n\nFor wellness screenings, we plan to screen all 800 employees within 12 months. We need the number of screening slots per day to calculate throughput. We will propose a schedule once we have those inputs.\n\n### Clinical services\nWe will provide injury triage and treatment for workplace incidents. Annual wellness screenings will include biometrics and health risk assessments. For chronic condition management (diabetes, hypertension), we will offer education, monitoring, and care coordination with the employee’s primary care provider. All services comply with HIPAA and the required Business Associate Agreement.\n\n### Open questions\n- What is the specific daily hours of operation for the on-site clinic (e.g., 8-hour shift)?\n- What is the expected average number of injury/illness triage visits per clinic day?\n- Are there any additional services required beyond those listed (e.g., drug testing, pre-employment physicals, ergonomic assessments)?\n- What is the geographic location of Meridian Manufacturing's facility (city/state) to assess local staffing availability?\n- Does the client require any specific certifications or experience for clinical staff (e.g., COHN, BLS)?\n- What is the expected number of wellness screenings per clinic day to cover 800 employees in 12 months?\n- How many employees are expected to enroll in chronic condition management, and what follow-up frequency is required?",
+        "approver": "Dr. Marcus Reid",
+        "approved_at": "2026-11-24 22:55 UTC",
+        "revision_rounds": 0,
+        "iterations": 1,
+        "generation_status": "passed"
+      },
+      {
+        "department_id": "compliance",
+        "department": "Compliance and Data Governance",
+        "content": "## Data Protection and Compliance — Compliance and Data Governance\n\n### Regulatory framework\nMeridian Manufacturing, Inc. is based in the US. HealthCore complies with the Health Insurance Portability and Accountability Act (HIPAA). We use protected health information (PHI) only for permitted purposes. We limit disclosures to the minimum necessary. Your organization receives aggregate, de-identified program reports. Individual health records are never shared with you.\n\n### Business Associate Agreement (BAA)\nThe RFP requires a HIPAA-compliant Business Associate Agreement (BAA) before contract execution. HealthCore will provide a BAA template. Both parties must sign it before work begins. The BAA covers permitted uses, safeguards, breach notification, and subcontractor obligations. We notify breaches within 60 days of discovery.\n\n### Compliance approval\nClaire Whitfield, Chief Compliance Officer, must approve all contracts before signature. This approval is mandatory. It cannot be waived or skipped. We will submit the signed BAA and data security evidence for your evaluation.\n\n### Data security practices\nCompliance and data security practices carry 25% weight in your evaluation. HealthCore uses encryption for data at rest and in transit. We enforce role-based access controls. We maintain a documented breach notification procedure. We can provide evidence of these practices on request.\n\n### Open questions\n- What specific data security practices or certifications (e.g., SOC 2, ISO 27001) does your organization require beyond HIPAA compliance?",
+        "approver": "Claire Whitfield",
+        "approved_at": "2026-11-24 22:55 UTC",
+        "revision_rounds": 0,
+        "iterations": 1,
+        "generation_status": "passed"
+      }
+    ],
+    "arbitration": [],
+    "generated_at": "2026-11-24T22:55:31.181435+00:00"
+  },
+  "trace": [
+    {
+      "id": 165,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:intake",
+      "node": "convert_document",
+      "agent": "tool:pdf_to_markdown",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:22.148879+00:00"
+    },
+    {
+      "id": 166,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:intake",
+      "node": "screen_phi",
+      "agent": "guardrail:phi",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:22.462397+00:00"
+    },
+    {
+      "id": 167,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:intake",
+      "node": "classify",
+      "agent": "agent:classifier",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:22.469642+00:00"
+    },
+    {
+      "id": 168,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:intake",
+      "node": "extract_metadata",
+      "agent": "agent:extractor",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:26.486721+00:00"
+    },
+    {
+      "id": 169,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:intake",
+      "node": "orchestrate",
+      "agent": "agent:orchestrator",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:28.271973+00:00"
+    },
+    {
+      "id": 173,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:intake",
+      "node": "department_worker",
+      "agent": "agent:worker:compliance",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:30.037876+00:00"
+    },
+    {
+      "id": 174,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:intake",
+      "node": "department_worker",
+      "agent": "agent:worker:clinical",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:30.036100+00:00"
+    },
+    {
+      "id": 180,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:intake",
+      "node": "department_worker",
+      "agent": "agent:worker:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:30.034701+00:00"
+    },
+    {
+      "id": 200,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:intake",
+      "node": "synthesize",
+      "agent": "agent:synthesizer",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:38.940840+00:00"
+    },
+    {
+      "id": 201,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "prepare",
+      "agent": "coordinator",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:48.044218+00:00"
+    },
+    {
+      "id": 202,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "generate",
+      "agent": "agent:generator:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:48.053323+00:00"
+    },
+    {
+      "id": 203,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "evaluate_compliance",
+      "agent": "evaluator:compliance:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:50.847554+00:00"
+    },
+    {
+      "id": 204,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "evaluate_readability",
+      "agent": "evaluator:readability:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:50.849824+00:00"
+    },
+    {
+      "id": 205,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "evaluate_relevance",
+      "agent": "agent:evaluator:relevance:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:50.850795+00:00"
+    },
+    {
+      "id": 206,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "judge",
+      "agent": "judge:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:53.025796+00:00"
+    },
+    {
+      "id": 207,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "generate",
+      "agent": "agent:generator:compliance",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:48.055353+00:00"
+    },
+    {
+      "id": 208,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "evaluate_compliance",
+      "agent": "evaluator:compliance:compliance",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:59.137298+00:00"
+    },
+    {
+      "id": 209,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "evaluate_readability",
+      "agent": "evaluator:readability:compliance",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:59.139014+00:00"
+    },
+    {
+      "id": 210,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "generate",
+      "agent": "agent:generator:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:53.035081+00:00"
+    },
+    {
+      "id": 211,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "evaluate_compliance",
+      "agent": "evaluator:compliance:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:00.057955+00:00"
+    },
+    {
+      "id": 212,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "evaluate_readability",
+      "agent": "evaluator:readability:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:00.059295+00:00"
+    },
+    {
+      "id": 213,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "evaluate_relevance",
+      "agent": "agent:evaluator:relevance:compliance",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:59.139551+00:00"
+    },
+    {
+      "id": 214,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "judge",
+      "agent": "judge:compliance",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:00.454515+00:00"
+    },
+    {
+      "id": 215,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "finish",
+      "agent": "coordinator:compliance",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:00.465195+00:00"
+    },
+    {
+      "id": 216,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "section",
+      "agent": "section:compliance",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:48.054821+00:00"
+    },
+    {
+      "id": 217,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "evaluate_relevance",
+      "agent": "agent:evaluator:relevance:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:00.059805+00:00"
+    },
+    {
+      "id": 218,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "judge",
+      "agent": "judge:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:01.136420+00:00"
+    },
+    {
+      "id": 219,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "finish",
+      "agent": "coordinator:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:01.144727+00:00"
+    },
+    {
+      "id": 220,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "section",
+      "agent": "section:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:48.049590+00:00"
+    },
+    {
+      "id": 221,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "generate",
+      "agent": "agent:generator:clinical",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:48.054465+00:00"
+    },
+    {
+      "id": 222,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "evaluate_compliance",
+      "agent": "evaluator:compliance:clinical",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:07.967839+00:00"
+    },
+    {
+      "id": 223,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "evaluate_readability",
+      "agent": "evaluator:readability:clinical",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:07.970186+00:00"
+    },
+    {
+      "id": 224,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "evaluate_relevance",
+      "agent": "agent:evaluator:relevance:clinical",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:07.971080+00:00"
+    },
+    {
+      "id": 225,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "judge",
+      "agent": "judge:clinical",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:09.163545+00:00"
+    },
+    {
+      "id": 226,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "finish",
+      "agent": "coordinator:clinical",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:09.175503+00:00"
+    },
+    {
+      "id": 227,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "section",
+      "agent": "section:clinical",
+      "status": "ok",
+      "started_at": "2026-11-24T22:54:48.053546+00:00"
+    },
+    {
+      "id": 228,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:generation",
+      "node": "finalize",
+      "agent": "coordinator",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:09.193708+00:00"
+    },
+    {
+      "id": 229,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2",
+      "node": "open_approval",
+      "agent": "coordinator",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:09.301316+00:00"
+    },
+    {
+      "id": 230,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2",
+      "node": "arbitrate",
+      "agent": "arbiter:rules (BRIEFING §7)",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:09.311655+00:00"
+    },
+    {
+      "id": 231,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:clinical",
+      "node": "prepare_packet",
+      "agent": "coordinator:approval_packet",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:09.344062+00:00"
+    },
+    {
+      "id": 232,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "prepare_packet",
+      "agent": "coordinator:approval_packet",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:09.342639+00:00"
+    },
+    {
+      "id": 233,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "await_approval",
+      "agent": "human:Tom Callahan",
+      "status": "interrupted",
+      "started_at": "2026-11-24T22:55:09.368873+00:00"
+    },
+    {
+      "id": 234,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:clinical",
+      "node": "await_approval",
+      "agent": "human:Dr. Marcus Reid",
+      "status": "interrupted",
+      "started_at": "2026-11-24T22:55:09.368167+00:00"
+    },
+    {
+      "id": 235,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:compliance",
+      "node": "prepare_packet",
+      "agent": "coordinator:approval_packet",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:09.351012+00:00"
+    },
+    {
+      "id": 236,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:compliance",
+      "node": "await_approval",
+      "agent": "human:Claire Whitfield",
+      "status": "interrupted",
+      "started_at": "2026-11-24T22:55:09.372194+00:00"
+    },
+    {
+      "id": 237,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2",
+      "node": "dispatch",
+      "agent": "coordinator:dispatch",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:09.330453+00:00"
+    },
+    {
+      "id": 238,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2",
+      "node": "await_departments",
+      "agent": "coordinator:await_departments",
+      "status": "interrupted",
+      "started_at": "2026-11-24T22:55:09.385704+00:00"
+    },
+    {
+      "id": 239,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:clinical",
+      "node": "await_approval",
+      "agent": "human:Dr. Marcus Reid",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:09.414675+00:00"
+    },
+    {
+      "id": 240,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:clinical",
+      "node": "record_decision",
+      "agent": "coordinator:record_decision",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:09.417558+00:00"
+    },
+    {
+      "id": 241,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:clinical",
+      "node": "await_closure",
+      "agent": "coordinator:await_closure",
+      "status": "interrupted",
+      "started_at": "2026-11-24T22:55:09.425072+00:00"
+    },
+    {
+      "id": 242,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2",
+      "node": "await_departments",
+      "agent": "coordinator:await_departments",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:09.430644+00:00"
+    },
+    {
+      "id": 243,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2",
+      "node": "await_departments",
+      "agent": "coordinator:await_departments",
+      "status": "interrupted",
+      "started_at": "2026-11-24T22:55:09.437719+00:00"
+    },
+    {
+      "id": 244,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "await_approval",
+      "agent": "human:Tom Callahan",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:09.452790+00:00"
+    },
+    {
+      "id": 245,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "record_decision",
+      "agent": "coordinator:record_decision",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:09.454744+00:00"
+    },
+    {
+      "id": 246,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "generate",
+      "agent": "agent:generator:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:09.466831+00:00"
+    },
+    {
+      "id": 247,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "evaluate_compliance",
+      "agent": "evaluator:compliance:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:20.828981+00:00"
+    },
+    {
+      "id": 248,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "evaluate_readability",
+      "agent": "evaluator:readability:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:20.828134+00:00"
+    },
+    {
+      "id": 249,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "evaluate_relevance",
+      "agent": "agent:evaluator:relevance:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:20.830420+00:00"
+    },
+    {
+      "id": 250,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "judge",
+      "agent": "judge:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:22.069237+00:00"
+    },
+    {
+      "id": 251,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "generate",
+      "agent": "agent:generator:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:22.081719+00:00"
+    },
+    {
+      "id": 252,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "evaluate_compliance",
+      "agent": "evaluator:compliance:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:25.661762+00:00"
+    },
+    {
+      "id": 253,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "evaluate_readability",
+      "agent": "evaluator:readability:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:25.662945+00:00"
+    },
+    {
+      "id": 254,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "evaluate_relevance",
+      "agent": "agent:evaluator:relevance:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:25.662390+00:00"
+    },
+    {
+      "id": 255,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "judge",
+      "agent": "judge:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:30.935882+00:00"
+    },
+    {
+      "id": 256,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "finish",
+      "agent": "coordinator:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:30.945880+00:00"
+    },
+    {
+      "id": 257,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "revise",
+      "agent": "agent:generator:revenue",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:09.461669+00:00"
+    },
+    {
+      "id": 258,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "prepare_packet",
+      "agent": "coordinator:approval_packet",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:30.959796+00:00"
+    },
+    {
+      "id": 259,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "await_approval",
+      "agent": "human:Tom Callahan",
+      "status": "interrupted",
+      "started_at": "2026-11-24T22:55:30.976234+00:00"
+    },
+    {
+      "id": 260,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2",
+      "node": "await_departments",
+      "agent": "coordinator:await_departments",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:30.991795+00:00"
+    },
+    {
+      "id": 261,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2",
+      "node": "await_departments",
+      "agent": "coordinator:await_departments",
+      "status": "interrupted",
+      "started_at": "2026-11-24T22:55:31.010481+00:00"
+    },
+    {
+      "id": 262,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "await_approval",
+      "agent": "human:Tom Callahan",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:31.046012+00:00"
+    },
+    {
+      "id": 263,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "record_decision",
+      "agent": "coordinator:record_decision",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:31.049426+00:00"
+    },
+    {
+      "id": 264,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "await_closure",
+      "agent": "coordinator:await_closure",
+      "status": "interrupted",
+      "started_at": "2026-11-24T22:55:31.067227+00:00"
+    },
+    {
+      "id": 265,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2",
+      "node": "await_departments",
+      "agent": "coordinator:await_departments",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:31.077834+00:00"
+    },
+    {
+      "id": 266,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2",
+      "node": "await_departments",
+      "agent": "coordinator:await_departments",
+      "status": "interrupted",
+      "started_at": "2026-11-24T22:55:31.091126+00:00"
+    },
+    {
+      "id": 267,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:compliance",
+      "node": "await_approval",
+      "agent": "human:Claire Whitfield",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:31.123043+00:00"
+    },
+    {
+      "id": 268,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:compliance",
+      "node": "record_decision",
+      "agent": "coordinator:record_decision",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:31.126759+00:00"
+    },
+    {
+      "id": 269,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:compliance",
+      "node": "await_closure",
+      "agent": "coordinator:await_closure",
+      "status": "interrupted",
+      "started_at": "2026-11-24T22:55:31.137091+00:00"
+    },
+    {
+      "id": 270,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2",
+      "node": "await_departments",
+      "agent": "coordinator:await_departments",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:31.144148+00:00"
+    },
+    {
+      "id": 271,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2",
+      "node": "arbitrate",
+      "agent": "arbiter:rules (BRIEFING §7)",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:31.152777+00:00"
+    },
+    {
+      "id": 272,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2",
+      "node": "synthesize",
+      "agent": "agent:final_document_synthesizer",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:31.165441+00:00"
+    },
+    {
+      "id": 273,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:revenue",
+      "node": "await_closure",
+      "agent": "coordinator:await_closure",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:31.193938+00:00"
+    },
+    {
+      "id": 274,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:clinical",
+      "node": "await_closure",
+      "agent": "coordinator:await_closure",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:31.195799+00:00"
+    },
+    {
+      "id": 275,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2:compliance",
+      "node": "await_closure",
+      "agent": "coordinator:await_closure",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:31.197241+00:00"
+    },
+    {
+      "id": 276,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2",
+      "node": "close_branches",
+      "agent": "coordinator:dispatch",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:31.187645+00:00"
+    },
+    {
+      "id": 277,
+      "thread_id": "rfp-a728206c-21df-4b3c-a438-3befaa2b49d2",
+      "node": "close",
+      "agent": "coordinator",
+      "status": "ok",
+      "started_at": "2026-11-24T22:55:31.213442+00:00"
+    }
+  ]
+}

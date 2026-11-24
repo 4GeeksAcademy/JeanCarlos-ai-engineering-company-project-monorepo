@@ -157,4 +157,18 @@ button.secondary { background: white; color: #105b76; border-color: #105b76; }
 .rfp-card { border: 1px solid #ccd5de; border-radius: 8px; padding: .8rem 1rem; }
 .rfp-card h4 { margin: 0 0 .2rem; }
 .rfp-card h5 { margin: .8rem 0 .2rem; }
+.rfp-esperando_aprobacion { background: #f3ecfb; color: #5b2d8f; border-color: #cfb6ea; }
+.rfp-terminado, .rfp-ap-approved { background: #e6f4ea; color: #1f6b3a; border-color: #a6d3b3; }
+.rfp-ap-request_changes { background: #fdf3e1; color: #7a4b00; border-color: #e8c983; }
+.rfp-ap-rejected { background: #fdecea; color: #8a1c13; border-color: #f0b3ad; }
+.rfp-approval { border-top: 1px dashed #ccd5de; margin-top: .8rem; padding-top: .6rem; }
+.rfp-decide { display: grid; gap: .5rem; }
+.rfp-decide label, .rfp-arbitration label { display: grid; gap: .2rem; font-size: .9rem; }
+.rfp-decide textarea, .rfp-arbitration textarea { width: 100%; box-sizing: border-box; font: inherit; }
+.rfp-actions { display: flex; flex-wrap: wrap; gap: .4rem; }
+.rfp-secondary { background: #fff; color: #104c63; border: 1px solid #104c63; }
+.rfp-arbitration { display: grid; gap: .5rem; margin-top: 1rem; }
+.rfp-arbitration h3 { margin: 0; }
+.rfp-document { max-height: 40rem; }
+.rfp-trace { margin-top: 1rem; }
 @media (max-width: 600px) { .rfp-meta { grid-template-columns: 1fr; } }

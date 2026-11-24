@@ -14,6 +14,8 @@ clear it before any generator runs (BRIEFING: the phi-detected trigger is a hard
 
 from __future__ import annotations
 
+from .departments import DEPARTMENTS
+
 CONTRACT = "rfp_intake.handoff/v1"
 
 
@@ -70,6 +72,8 @@ def build_response_handoff(ticket, sections, max_iterations: int) -> dict:
     department travels with its generated content AND its structured EvaluationResult; sections
     that exhausted the iteration limit go as needs_human_review — never removed."""
     intake = ticket.handoff or {}
+    order = list(DEPARTMENTS)
+    sections = sorted(sections, key=lambda s: order.index(s.department_id))  # BRIEFING order, as the final document
     return {
         "contract": RESPONSE_CONTRACT,
         "ticket_id": ticket.ticket_id,

@@ -221,7 +221,8 @@ def allowed_figures(*texts: Any) -> set[str]:
 
 
 def evaluate_compliance(department_id: str, draft: str, *, country: str | None, allowed: set[str],
-                        phi_categories: list[str] | None = None) -> ComplianceEval:
+                        phi_categories: list[str] | None = None, forbidden: dict[str, str] | None = None) -> ComplianceEval:
+    """`forbidden`: figures that an arbiter replaced (Part 3), e.g. {"3000": "the covered population is now 2000"}."""
     violations: list[Violation] = []
     checked = ["HC-PHI-01", "HC-CUR-01", "HC-CMP-01", "HC-FIG-01", "HC-FMT-01"]
 
@@ -277,6 +278,10 @@ def evaluate_compliance(department_id: str, draft: str, *, country: str | None, 
         violations.append(Violation(rule_id="HC-FIG-01", message="Figures not found in the RFP analysis or HealthCore "
                                     f"data: {', '.join(invented[:8])}. Remove them or replace them with "
                                     "'[to be confirmed]' and add an open question."))
+    superseded = sorted(n for n in agents.numbers_in(draft) if n in (forbidden or {}))
+    for figure in superseded:
+        violations.append(Violation(rule_id="HC-FIG-01", message=f"{figure} no longer applies: {forbidden[figure]}. "
+                                    f"Remove every mention of {figure}."))
 
     # HC-FMT-01 — the department's format
     fmt = guidelines.section_format(department_id, country)

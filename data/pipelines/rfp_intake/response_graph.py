@@ -35,6 +35,7 @@ from .document import paragraphs
 from .generators import GENERATORS
 from .handoff import CONTRACT as INTAKE_CONTRACT
 from .handoff import build_response_handoff
+from .tracing import traced
 
 logger = logging.getLogger("api.rfp_intake")
 
@@ -114,7 +115,8 @@ def evaluate_relevance(state: SectionState) -> SectionState:
 def evaluate_compliance(state: SectionState) -> SectionState:
     ctx = state["ctx"]
     result = evaluators.evaluate_compliance(ctx["department_id"], state["draft"], country=ctx["metadata"].get("client_country"),
-                                            allowed=set(ctx["allowed_figures"]), phi_categories=state.get("draft_phi"))
+                                            allowed=set(ctx["allowed_figures"]), phi_categories=state.get("draft_phi"),
+                                            forbidden=ctx.get("forbidden_figures"))
     return {"compliance": result.model_dump(by_alias=True)}
 
 
@@ -152,14 +154,22 @@ def finish(state: SectionState, config: RunnableConfig) -> SectionState:
     return {"status": status}
 
 
+def _department(state: dict) -> str:
+    return state["ctx"]["department_id"]
+
+
 def build_section_graph():
     builder = StateGraph(SectionState)
-    builder.add_node("generate", generate)
-    builder.add_node("evaluate_readability", evaluate_readability)
-    builder.add_node("evaluate_relevance", evaluate_relevance)
-    builder.add_node("evaluate_compliance", evaluate_compliance)
-    builder.add_node("judge", judge)
-    builder.add_node("finish", finish)
+    nodes = {
+        "generate": (lambda s: f"agent:generator:{_department(s)}", generate),
+        "evaluate_readability": (lambda s: f"evaluator:readability:{_department(s)}", evaluate_readability),
+        "evaluate_relevance": (lambda s: f"agent:evaluator:relevance:{_department(s)}", evaluate_relevance),
+        "evaluate_compliance": (lambda s: f"evaluator:compliance:{_department(s)}", evaluate_compliance),
+        "judge": (lambda s: f"judge:{_department(s)}", judge),
+        "finish": (lambda s: f"coordinator:{_department(s)}", finish),
+    }
+    for name, (agent, fn) in nodes.items():
+        builder.add_node(name, traced(agent, fn, node=name))
     builder.add_edge(START, "generate")
     builder.add_conditional_edges("generate", after_generate,
                                   ["evaluate_readability", "evaluate_relevance", "evaluate_compliance", "finish"])
@@ -219,11 +229,16 @@ def fan_out(state: ResponseState) -> list[Send]:
 _section_graph = None
 
 
-def section(ctx: dict, config: RunnableConfig) -> ResponseState:
+def section_graph():
+    """The generator → evaluators loop of one section (also used by Part 3 to revise a section)."""
     global _section_graph
     if _section_graph is None:
         _section_graph = build_section_graph()
-    result = _section_graph.invoke({"ctx": ctx, "iteration": 0}, config=config)
+    return _section_graph
+
+
+def section(ctx: dict, config: RunnableConfig) -> ResponseState:
+    result = section_graph().invoke({"ctx": ctx, "iteration": 0}, config=config)
     return {"sections": [{"department_id": ctx["department_id"], "status": result["status"],
                           "iterations": result.get("iteration", 0)}]}
 
@@ -241,9 +256,9 @@ def finalize(state: ResponseState, config: RunnableConfig) -> ResponseState:
 
 def build_graph():
     builder = StateGraph(ResponseState)
-    builder.add_node("prepare", prepare)
-    builder.add_node("section", section)
-    builder.add_node("finalize", finalize)
+    builder.add_node("prepare", traced("coordinator", prepare, node="prepare"))
+    builder.add_node("section", traced(lambda ctx: f"section:{ctx['department_id']}", section, node="section"))
+    builder.add_node("finalize", traced("coordinator", finalize, node="finalize"))
     builder.add_edge(START, "prepare")
     builder.add_conditional_edges("prepare", fan_out, ["section"])
     builder.add_edge("section", "finalize")

@@ -1,0 +1,120 @@
+ 392 23:09:49.784 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:intake      convert_document     tool:pdf_to_markdown
+ 393 23:09:49.866 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:intake      screen_phi           guardrail:phi
+ 394 23:09:49.876 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:intake      classify             agent:classifier
+ 395 23:09:53.932 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:intake      extract_metadata     agent:extractor
+ 396 23:09:54.829 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:intake      orchestrate          agent:orchestrator
+ 397 23:09:56.475 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:intake      department_worker    agent:worker:compliance
+ 398 23:09:56.472 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:intake      department_worker    agent:worker:revenue
+ 399 23:09:56.474 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:intake      department_worker    agent:worker:clinical
+ 400 23:10:07.756 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:intake      synthesize           agent:synthesizer
+ 401 23:10:09.676 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  prepare              coordinator
+ 402 23:10:09.682 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  generate             agent:generator:revenue
+ 403 23:10:12.053 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_compliance  evaluator:compliance:revenue
+ 404 23:10:12.055 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_readability evaluator:readability:revenue
+ 405 23:10:09.683 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  generate             agent:generator:compliance
+ 406 23:10:12.237 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_compliance  evaluator:compliance:compliance
+ 407 23:10:12.238 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_readability evaluator:readability:compliance
+ 408 23:10:12.239 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_relevance   agent:evaluator:relevance:compliance
+ 409 23:10:12.966 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  judge                judge:compliance
+ 410 23:10:12.973 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  finish               coordinator:compliance
+ 411 23:10:09.683 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  section              section:compliance
+ 412 23:10:12.056 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_relevance   agent:evaluator:relevance:revenue
+ 413 23:10:15.480 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  judge                judge:revenue
+ 414 23:10:15.487 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  generate             agent:generator:revenue
+ 415 23:10:17.657 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_compliance  evaluator:compliance:revenue
+ 416 23:10:17.658 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_readability evaluator:readability:revenue
+ 417 23:10:17.658 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_relevance   agent:evaluator:relevance:revenue
+ 418 23:10:19.030 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  judge                judge:revenue
+ 419 23:10:19.038 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  generate             agent:generator:revenue
+ 420 23:10:20.712 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_compliance  evaluator:compliance:revenue
+ 421 23:10:20.712 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_readability evaluator:readability:revenue
+ 422 23:10:20.713 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_relevance   agent:evaluator:relevance:revenue
+ 423 23:10:21.993 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  judge                judge:revenue
+ 424 23:10:22.001 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  finish               coordinator:revenue
+ 425 23:10:09.681 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  section              section:revenue
+ 426 23:10:09.682 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  generate             agent:generator:clinical
+ 427 23:10:26.786 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_compliance  evaluator:compliance:clinical
+ 428 23:10:26.787 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_readability evaluator:readability:clinical
+ 429 23:10:26.788 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_relevance   agent:evaluator:relevance:clinical
+ 430 23:10:35.868 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  judge                judge:clinical
+ 431 23:10:35.879 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  generate             agent:generator:clinical
+ 432 23:10:45.848 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_compliance  evaluator:compliance:clinical
+ 433 23:10:45.849 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_readability evaluator:readability:clinical
+ 434 23:10:45.849 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_relevance   agent:evaluator:relevance:clinical
+ 435 23:10:54.228 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  judge                judge:clinical
+ 436 23:10:54.237 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  generate             agent:generator:clinical
+ 437 23:10:56.142 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_compliance  evaluator:compliance:clinical
+ 438 23:10:56.142 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_readability evaluator:readability:clinical
+ 439 23:10:56.143 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  evaluate_relevance   agent:evaluator:relevance:clinical
+ 440 23:10:57.623 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  judge                judge:clinical
+ 441 23:10:57.631 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  finish               coordinator:clinical
+ 442 23:10:09.682 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  section              section:clinical
+ 443 23:10:57.640 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:generation  finalize             coordinator
+ 444 23:10:57.661 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             open_approval        coordinator
+ 445 23:10:57.666 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             arbitrate            arbiter:rules (BRIEFING §7)
+ 446 23:10:57.680 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     prepare_packet       coordinator:approval_packet
+ 447 23:10:57.692 interrupted rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     await_approval       human:Tom Callahan
+ 448 23:10:57.683 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:compliance  prepare_packet       coordinator:approval_packet
+ 449 23:10:57.681 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    prepare_packet       coordinator:approval_packet
+ 450 23:10:57.703 interrupted rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    await_approval       human:Dr. Marcus Reid
+ 451 23:10:57.703 interrupted rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:compliance  await_approval       human:Claire Whitfield
+ 452 23:10:57.676 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             dispatch             coordinator:dispatch
+ 453 23:10:57.714 interrupted rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             await_departments    coordinator:await_departments
+ 454 23:11:00.777 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    await_approval       human:Dr. Marcus Reid
+ 455 23:11:00.780 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    record_decision      coordinator:record_decision
+ 456 23:11:00.800 interrupted rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    await_closure        coordinator:await_closure
+ 457 23:11:00.811 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     await_approval       human:Tom Callahan
+ 458 23:11:00.815 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             await_departments    coordinator:await_departments
+ 459 23:11:00.815 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     record_decision      coordinator:record_decision
+ 460 23:11:00.838 interrupted rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     await_closure        coordinator:await_closure
+ 461 23:11:00.836 interrupted rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             await_departments    coordinator:await_departments
+ 462 23:11:00.858 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:compliance  await_approval       human:Claire Whitfield
+ 463 23:11:00.862 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             await_departments    coordinator:await_departments
+ 464 23:11:00.864 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:compliance  record_decision      coordinator:record_decision
+ 465 23:11:00.882 interrupted rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:compliance  await_closure        coordinator:await_closure
+ 466 23:11:00.879 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             await_departments    coordinator:await_departments
+ 467 23:11:00.896 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             arbitrate            arbiter:rules (BRIEFING §7)
+ 468 23:11:00.916 interrupted rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             arbiter_decision     human:Tom Callahan
+ 469 23:11:02.790 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             arbiter_decision     human:Tom Callahan
+ 470 23:11:02.815 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    await_closure        coordinator:await_closure
+ 471 23:11:02.817 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     await_closure        coordinator:await_closure
+ 472 23:11:02.847 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     generate             agent:generator:revenue
+ 473 23:11:07.162 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     evaluate_compliance  evaluator:compliance:revenue
+ 474 23:11:07.163 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     evaluate_readability evaluator:readability:revenue
+ 475 23:11:07.163 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     evaluate_relevance   agent:evaluator:relevance:revenue
+ 476 23:11:08.231 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     judge                judge:revenue
+ 477 23:11:02.845 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    generate             agent:generator:clinical
+ 478 23:11:11.381 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    evaluate_compliance  evaluator:compliance:clinical
+ 479 23:11:11.381 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    evaluate_readability evaluator:readability:clinical
+ 480 23:11:11.381 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    evaluate_relevance   agent:evaluator:relevance:clinical
+ 481 23:11:12.870 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    judge                judge:clinical
+ 482 23:11:12.879 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    finish               coordinator:clinical
+ 483 23:11:02.830 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    revise               agent:generator:clinical
+ 484 23:11:12.888 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    prepare_packet       coordinator:approval_packet
+ 485 23:11:12.899 interrupted rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    await_approval       human:Dr. Marcus Reid
+ 486 23:11:08.238 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     generate             agent:generator:revenue
+ 487 23:11:17.847 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     evaluate_compliance  evaluator:compliance:revenue
+ 488 23:11:17.848 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     evaluate_readability evaluator:readability:revenue
+ 489 23:11:17.848 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     evaluate_relevance   agent:evaluator:relevance:revenue
+ 490 23:11:18.699 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     judge                judge:revenue
+ 491 23:11:18.706 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     finish               coordinator:revenue
+ 492 23:11:02.831 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     revise               agent:generator:revenue
+ 493 23:11:18.716 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     prepare_packet       coordinator:approval_packet
+ 494 23:11:18.727 interrupted rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     await_approval       human:Tom Callahan
+ 495 23:11:02.805 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             dispatch             coordinator:dispatch
+ 496 23:11:18.737 interrupted rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             await_departments    coordinator:await_departments
+ 497 23:11:23.079 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     await_approval       human:Tom Callahan
+ 498 23:11:23.083 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     record_decision      coordinator:record_decision
+ 499 23:11:23.099 interrupted rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     await_closure        coordinator:await_closure
+ 500 23:11:23.116 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    await_approval       human:Dr. Marcus Reid
+ 501 23:11:23.113 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             await_departments    coordinator:await_departments
+ 502 23:11:23.129 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             await_departments    coordinator:await_departments
+ 503 23:11:23.118 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    record_decision      coordinator:record_decision
+ 504 23:11:23.145 interrupted rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    await_closure        coordinator:await_closure
+ 505 23:11:23.142 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             arbitrate            arbiter:rules (BRIEFING §7)
+ 506 23:11:23.155 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             synthesize           agent:final_document_synthesizer
+ 507 23:11:23.196 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:compliance  await_closure        coordinator:await_closure
+ 508 23:11:23.194 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:clinical    await_closure        coordinator:await_closure
+ 509 23:11:23.199 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058:revenue     await_closure        coordinator:await_closure
+ 510 23:11:23.185 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             close_branches       coordinator:dispatch
+ 511 23:11:23.228 ok          rfp-3bae79ed-e775-4626-8ef6-fe12fdd1e058             close                coordinator
