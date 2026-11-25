@@ -1,0 +1,4 @@
+[demo model] streaming 99 words
+[demo model] stream closed: ABORTED after 64/99 words
+[demo model] streaming 74 words
+[demo model] stream closed: completed

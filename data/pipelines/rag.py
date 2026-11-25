@@ -136,12 +136,53 @@ def build_messages(question: str, context: list[dict], system_prompt: str | None
     return [{"role": "system", "content": system_prompt or SYSTEM_PROMPT}, {"role": "user", "content": user}]
 
 
+class GenerationCancelled(RuntimeError):
+    """The user interrupted a streamed generation: the model stream was closed mid-answer."""
+
+
+def _token_stream():
+    """(writer, cancel) when this call runs inside an agent run streamed with LangGraph's `custom`
+    mode and `stream_tokens` (the WebSocket chat); None otherwise (REST, pipelines, tests)."""
+    try:
+        from langgraph.config import get_config, get_stream_writer
+
+        configurable = get_config().get("configurable") or {}
+    except Exception:  # not inside a LangGraph run
+        return None
+    if not configurable.get("stream_tokens"):
+        return None
+    return get_stream_writer(), configurable.get("generation_cancel")
+
+
 def _chat(messages: list[dict[str, str]]) -> str:
-    """Call the generation model (chat completions)."""
-    response = llm_client().chat.completions.create(
-        model=settings().generation_model, messages=messages, temperature=TEMPERATURE,
-    )
-    content = response.choices[0].message.content
+    """Call the generation model (chat completions). Inside a streamed agent run every token is
+    emitted as it is generated (`writer({"token": ...})`), and a cancel request closes the model
+    stream at once — the generation stops, it is not just ignored (GenerationCancelled)."""
+    live = _token_stream()
+    if live is None:
+        response = llm_client().chat.completions.create(
+            model=settings().generation_model, messages=messages, temperature=TEMPERATURE,
+        )
+        content = response.choices[0].message.content
+    else:
+        writer, cancel = live
+        stream = llm_client().chat.completions.create(
+            model=settings().generation_model, messages=messages, temperature=TEMPERATURE, stream=True,
+        )
+        parts: list[str] = []
+        try:
+            for chunk in stream:
+                if cancel is not None and cancel.is_set():
+                    raise GenerationCancelled("the user interrupted the generation")
+                delta = chunk.choices[0].delta.content if chunk.choices else None
+                if delta:
+                    parts.append(delta)
+                    writer({"token": delta})
+        finally:
+            close = getattr(stream, "close", None)  # closes the HTTP stream: the gateway stops generating
+            if close:
+                close()
+        content = "".join(parts)
     if not content or not content.strip():
         raise RuntimeError("the generation model returned an empty answer")
     return content.strip()

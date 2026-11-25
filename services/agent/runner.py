@@ -117,6 +117,43 @@ class AgentRuntime:
             raise self._failed(run_id, error) from error
         return self._finish(run_id, state)
 
+    def stream_run(self, question: str, run_id: str, *, conversation_id: str, actor: str | None,
+                   on_token, cancel) -> AgentResult:
+        """Same run as run(), streamed (WebSocket chat): LangGraph `custom` mode carries every token
+        the generation model produces (data/pipelines/rag.py) to `on_token`, and `values` the
+        state. `cancel` (threading.Event) aborts: the model stream is closed by the node that is
+        generating, and no further node is scheduled. Raises GenerationCancelled when aborted."""
+        from data.pipelines.rag import GenerationCancelled
+
+        from .memory.store import get_store
+
+        safe_question, phi = self.screen(question)
+        pending = get_store().pending(conversation_id)
+        inputs = {"question": safe_question, "run_id": run_id, "conversation_id": conversation_id,
+                  "actor": actor or "unknown", "phi_categories": phi,
+                  "pending_proposal": ({"id": pending["id"], "kind": pending["kind"], "content": pending["content"]}
+                                       if pending else None)}
+        config = {"configurable": {"thread_id": run_id, "stream_tokens": True, "generation_cancel": cancel}}
+        self.tracer.start_run(run_id, safe_question)
+        state: dict[str, Any] | None = None
+        try:
+            for mode, chunk in self.graph.stream(inputs, config, stream_mode=["custom", "values"]):
+                if cancel.is_set():
+                    raise GenerationCancelled("the user interrupted the generation")
+                if mode == "custom" and isinstance(chunk, dict) and "token" in chunk:
+                    on_token(chunk["token"])
+                elif mode == "values":
+                    state = chunk
+        except GenerationCancelled:
+            self.tracer.finish_run(run_id, "interrupted", error="interrupted by the user")
+            raise
+        except Exception as error:
+            if cancel.is_set():
+                self.tracer.finish_run(run_id, "interrupted", error="interrupted by the user")
+                raise GenerationCancelled("the user interrupted the generation") from error
+            raise self._failed(run_id, error) from error
+        return self._finish(run_id, state or {})
+
     def resume(self, run_id: str) -> AgentResult:
         """Continue a failed run from its last checkpoint: completed nodes are not run again."""
         snapshot = self.graph.get_state(self.config(run_id))

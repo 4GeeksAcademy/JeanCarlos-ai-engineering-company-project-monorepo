@@ -187,3 +187,21 @@ button.secondary { background: white; color: #105b76; border-color: #105b76; }
 @keyframes rfp-arrive { from { transform: translateY(-6px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .rfp-arrival { animation: none; } }
 @media (max-width: 600px) { .rfp-meta { grid-template-columns: 1fr; } }
+
+/* Compliance assistant chat (WebSocket, token streaming + interrupt) */
+.chat-panel { display: grid; gap: .8rem; }
+.chat-header { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
+.chat-header .chat-secondary { margin-left: auto; }
+.chat-secondary { background: #fff; color: #104c63; border: 1px solid #104c63; }
+.chat-log { display: grid; gap: .6rem; max-height: 60vh; overflow-y: auto; padding: .4rem; background: #f7f9fb; border: 1px solid #dde5ec; border-radius: 8px; }
+.chat-bubble { max-width: 85%; padding: .6rem .8rem; border-radius: 10px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.chat-user { justify-self: end; background: #104c63; color: #fff; }
+.chat-assistant { justify-self: start; background: #fff; border: 1px solid #ccd5de; }
+.chat-interrupted { border-style: dashed; border-color: #e8c983; background: #fffaf0; color: #4b4b4b; }
+.chat-failed { border-color: #f0b3ad; background: #fdecea; }
+.chat-tag { display: inline-block; margin-top: .3rem; font-size: .78rem; font-weight: 600; color: #7a4b00; background: #fdf3e1; border: 1px solid #e8c983; border-radius: 999px; padding: 0 .5rem; }
+.chat-caret { display: inline-block; margin-left: 1px; animation: chat-blink 1s steps(2, start) infinite; }
+.chat-interrupt { background: #9a5b00; }
+@keyframes chat-blink { to { visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .chat-caret { animation: none; } }
+@media (max-width: 600px) { .chat-bubble { max-width: 100%; } }

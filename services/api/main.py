@@ -15,6 +15,7 @@ from . import realtime
 from .routes import auth, auth_password, knowledge, profiles, rfp, suppliers, tasks, telemetry, users
 from .routers import incidents, inventory
 from services.reporting.router import router as reporting_router
+from services.agent.chat.router import router as agent_chat_router
 from services.agent.router import router as agent_router
 from .schemas.errors import ErrorResponse, ValidationErrorResponse, ValidationIssue
 from .services.email import reset_expiration_minutes
@@ -165,4 +166,5 @@ app.include_router(tasks.router)
 app.include_router(incidents.router)
 app.include_router(knowledge.router)
 app.include_router(agent_router)
+app.include_router(agent_chat_router, prefix="/agent")  # WebSocket chat of the Compliance assistant
 app.include_router(rfp.router)

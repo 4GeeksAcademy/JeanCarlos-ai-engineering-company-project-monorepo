@@ -10,6 +10,7 @@ const upstreamPaths = {
   reporting: "/reporting",
   knowledge: "/knowledge",
   rfp: "/api/rfp",
+  agentChat: "/agent/chat",
 } as const;
 
 export async function proxyApi(

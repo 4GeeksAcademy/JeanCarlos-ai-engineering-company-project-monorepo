@@ -7,6 +7,7 @@
   only: it contains retrieved sections and scores, which coordinators never see).
 - GET /agent/memory: audit view of the agent memory (admins only).
 - GET /agent/guardrails/summary: guardrail activations by guard, action and failure type (admins).
+- /agent/chat/*: the same agent over WebSocket, token by token, with interrupt (services/agent/chat).
 
 Errors never expose internals: a rejected question is a 422 with the graph's message, a
 failure in any node is a 503 with the run id so the trace can be looked up.
