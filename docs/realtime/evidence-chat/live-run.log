@@ -1,0 +1,29 @@
+[1.0 s] staff WebSocket abierto: ws://127.0.0.1:8000/agent/chat/ws?session_id=…
+[1.1 s] staff conectado a chat_2c0a1f2ffab6
+[1.7 s] supervisor WebSocket abierto: ws://127.0.0.1:8000/agent/chat/ws?session_id=…
+[1.7 s] supervisora: Sesión chat_2c0a1f2ffab6 · observando (solo lectura)
+[6.8 s] longitud de la respuesta en pantalla mientras llega: 1 → 6 → 18 → 31 → 39 → 43 → 53 → 63 → 71 → 78 → 84 → 97 → 103 → 110 → 120 → 133 → 143 → 148 → 158 → 167 → 187 → 191 → 196 → 209 → 212 → 230 → 233 → 242 → 253 → 256 → 267
+[6.9 s] staff → interrupt_requested
+[14.2 s] mensaje interrumpido: 277 caracteres, sin cambios 1,5 s después
+[14.2 s] burbujas staff: chat-user chat-complete | chat-assistant chat-interrupted | chat-user chat-complete | chat-assistant chat-complete
+[14.3 s] burbujas supervisora: chat-user chat-complete | chat-assistant chat-interrupted | chat-user chat-complete | chat-assistant chat-complete
+[14.4 s] badge staff: ● En vivo
+[14.6 s] supervisor WebSocket cerrado
+[14.6 s] staff WebSocket cerrado
+[14.9 s] badge staff: Sin conexión · reintento 1 en 2 s
+[15.9 s] badge staff: Sin conexión · reintento 2 en 2 s
+[17.4 s] badge staff: Sin conexión · reintento 3 en 4 s
+[21.0 s] badge staff: Sin conexión · reintento 4 en 9 s
+[27.6 s] supervisor WebSocket abierto: ws://127.0.0.1:8000/agent/chat/ws?session_id=…
+[29.3 s] staff WebSocket abierto: ws://127.0.0.1:8000/agent/chat/ws?session_id=…
+[29.3 s] staff reconectado: 4 mensajes en pantalla
+[29.4 s] staff WebSocket cerrado
+[29.4 s] staff WebSocket abierto: ws://127.0.0.1:8000/agent/chat/ws?session_id=…
+[29.9 s] tras recargar la página: 4 mensajes
+  chat-user chat-complete: ¿Qué permite HIPAA sobre compartir infor
+  chat-assistant chat-interrupted: Bajo HIPAA, en Estados Unidos el persona
+  chat-user chat-complete: espera, mi pregunta era sobre UK GDPR, n
+  chat-assistant chat-complete: Según UK GDPR, en Reino Unido los datos 
+[30.0 s] staff: ["session_snapshot","user_message","generation_started","token_chunk","interrupt_requested","generation_interrupted","user_message","generation_started","token_chunk","generation_completed","session_snapshot"]
+[30.0 s] supervisora recibió 97 token_chunk; staff 97
+[30.0 s] done

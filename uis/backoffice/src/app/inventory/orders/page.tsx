@@ -2,6 +2,7 @@
 
 import { listOrders } from "@/lib/inventory";
 import { useInventoryResource } from "@/lib/useInventoryResource";
+import { departments } from "@/types/inventory";
 
 export default function OrdersPage() {
   const { data: orders, state, error, retry } = useInventoryResource(
@@ -14,7 +15,8 @@ export default function OrdersPage() {
     ...orders.outbound.map((order) => ({
       ...order,
       kind: "Salida",
-      detail: order.consumption_type === "clinical_use" ? "Uso clínico" : "Caducidad o desperdicio",
+      detail: `${order.consumption_type === "clinical_use" ? "Uso clínico" : "Caducidad o desperdicio"}` +
+        (order.department ? ` · ${departments.find((item) => item.value === order.department)?.label}` : ""),
     })),
   ].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)) : [];
 

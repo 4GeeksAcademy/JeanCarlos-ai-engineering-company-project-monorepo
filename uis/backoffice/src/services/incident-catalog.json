@@ -1,0 +1,156 @@
+{
+  "branches": [
+    {
+      "value": "central",
+      "label": "Central — Austin Main Clinic"
+    },
+    {
+      "value": "austin_north",
+      "label": "Austin — North"
+    },
+    {
+      "value": "dallas_uptown",
+      "label": "Dallas Uptown"
+    },
+    {
+      "value": "houston_med_center",
+      "label": "Houston Medical Center"
+    },
+    {
+      "value": "san_antonio_west",
+      "label": "San Antonio West"
+    },
+    {
+      "value": "miami_brickell",
+      "label": "Miami Brickell"
+    },
+    {
+      "value": "miami_doral",
+      "label": "Miami Doral"
+    },
+    {
+      "value": "orlando_east",
+      "label": "Orlando East"
+    },
+    {
+      "value": "tampa_bay",
+      "label": "Tampa Bay"
+    },
+    {
+      "value": "atlanta_midtown",
+      "label": "Atlanta Midtown"
+    },
+    {
+      "value": "savannah",
+      "label": "Savannah"
+    },
+    {
+      "value": "london_city",
+      "label": "London City"
+    },
+    {
+      "value": "london_west",
+      "label": "London West End"
+    },
+    {
+      "value": "manchester_central",
+      "label": "Manchester Central"
+    }
+  ],
+  "categories": [
+    {
+      "value": "clinical_equipment",
+      "label": "Clinical equipment",
+      "description": "Failure or problem with clinical equipment (no patient data)"
+    },
+    {
+      "value": "it_system",
+      "label": "IT system",
+      "description": "Technology failure: EHR, patient portal, billing, integrations"
+    },
+    {
+      "value": "billing_error",
+      "label": "Billing error",
+      "description": "Error in the billing process or claims coding"
+    },
+    {
+      "value": "compliance_breach",
+      "label": "Compliance breach",
+      "description": "Possible regulatory breach (HIPAA / UK GDPR) — no patient identifiers"
+    },
+    {
+      "value": "patient_experience",
+      "label": "Patient experience",
+      "description": "Appointment, communication or waiting-time issue (no patient identifiers)"
+    },
+    {
+      "value": "staff_issue",
+      "label": "Staff issue",
+      "description": "Absence, conflict or pending mandatory training"
+    },
+    {
+      "value": "facility_issue",
+      "label": "Facility issue",
+      "description": "Water, electricity, climate control or cleaning"
+    },
+    {
+      "value": "referral_issue",
+      "label": "Referral issue",
+      "description": "Problem in the referral process between clinics"
+    },
+    {
+      "value": "other",
+      "label": "Other",
+      "description": "Any incident that does not fit the categories above"
+    }
+  ],
+  "statuses": [
+    {
+      "value": "open",
+      "label": "Open"
+    },
+    {
+      "value": "in_progress",
+      "label": "In progress"
+    },
+    {
+      "value": "resolved",
+      "label": "Resolved"
+    },
+    {
+      "value": "discarded",
+      "label": "Discarded"
+    }
+  ],
+  "origins": [
+    {
+      "value": "customer",
+      "label": "Customer (patient or representative)"
+    },
+    {
+      "value": "branch",
+      "label": "Branch (clinic staff)"
+    },
+    {
+      "value": "internal",
+      "label": "Internal (technology, compliance, management)"
+    }
+  ],
+  "transitions": {
+    "open": [
+      "in_progress",
+      "discarded"
+    ],
+    "in_progress": [
+      "resolved",
+      "discarded"
+    ],
+    "resolved": [],
+    "discarded": []
+  },
+  "limits": {
+    "title_max_length": 120,
+    "description_min_length": 5,
+    "description_max_length": 4000
+  }
+}
