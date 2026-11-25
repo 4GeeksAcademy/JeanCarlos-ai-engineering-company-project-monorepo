@@ -88,7 +88,7 @@ export default function SuppliersPage() {
         <p>HealthCore Digital</p>
         <h1>Directorio de proveedores</h1>
         <p>Gestion de servicios, tarifas mensuales y acuerdos de cumplimiento.</p>
-        <p><Link href="/account/change-password">Cambiar contraseña</Link> · <Link href="/inventory/products">Inventario</Link></p>
+        <p><Link href="/account/change-password">Cambiar contraseña</Link> · <Link href="/inventory/products">Inventario</Link> · <Link href="/incidents">Incidents</Link></p>
       </header>
       <section className="panel" aria-labelledby="directory-title">
         <h2 id="directory-title">Proveedores</h2>

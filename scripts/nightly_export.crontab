@@ -1,0 +1,9 @@
+# Ticket DEV-53: nightly telemetry job (CSV backup of yesterday + business pipeline).
+# Runs in the dedicated `scheduler` container (docker-compose.yml) with supercronic, TZ=UTC.
+#
+# 05:00 UTC every day:
+# - "yesterday" (previous UTC calendar day) is closed, and browser beacons and retries
+#   from the night have had 5 hours to arrive;
+# - same slot as the pipeline schedule in data/pipelines/PIPELINE_DESIGN.md §7.
+# Never runs inside the FastAPI process.
+0 5 * * * python scripts/nightly_export.py
