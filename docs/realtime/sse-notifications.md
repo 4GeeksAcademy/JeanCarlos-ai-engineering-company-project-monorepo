@@ -41,8 +41,8 @@ Además de `rfp_ticket_created`, el stream usa otros eventos con nombre y un com
 
 | Evento | Para qué |
 | --- | --- |
-| `stream_ready` | Confirma la conexión e indica desde qué id se reanuda y cuántos eventos se van a reenviar (`replayed`) |
-| `resync_required` | El hueco es demasiado grande para reenviarlo (más de 100) o el `Last-Event-ID` es desconocido: el cliente vuelve a leer la lista una vez |
+| `stream_ready` | Confirma la conexión e indica desde qué id se reanuda y cuántos eventos se van a reenviar (`replayed`). Lleva `id:` con ese cursor |
+| `resync_required` | El hueco es demasiado grande para reenviarlo (más de 100) o el `Last-Event-ID` es desconocido: el cliente vuelve a leer la lista una vez. Lleva `id:` con el evento más reciente, para que no se repita |
 | `session_expired` | El JWT caducó: el servidor cierra el stream |
 | `: keep-alive` (comentario) | Cada 15 s, para que proxies y el watchdog del cliente vean la conexión viva |
 
@@ -97,6 +97,17 @@ La estrategia es **`Last-Event-ID` con reposición en el servidor**, y **lectura
 **Por qué funciona:**
 - Cada evento está en `rfp_event` y su `id` es el `id:` del SSE. El cliente guarda el último `id:` recibido y lo manda en cada reconexión, incluso después de intentos fallidos.
 - El servidor reenvía los eventos posteriores (hasta 100) antes de seguir en vivo. Como están en PostgreSQL, sobreviven a un reinicio de la API.
+
+**El cursor existe desde el primer frame** (corrección tras la revisión del PR #31). `stream_ready` y `resync_required` llevan `id:` con el cursor del servidor, y el cliente también lo toma de `data.last_event_id` como respaldo.
+
+Antes, un dashboard que se desconectaba sin haber recibido ningún `rfp_ticket_created` no tenía `Last-Event-ID`. Al reconectar arrancaba «desde ahora» y las RFP registradas durante el corte no aparecían hasta recargar. Además, después de un `resync_required` el cursor no avanzaba y el resync se podía repetir. Ahora:
+- un corte justo después de conectar reconecta con el cursor de `stream_ready`;
+- un resync deja el cursor en el evento más reciente.
+
+Lo cubren:
+- `test_a_cut_before_the_first_event_still_recovers_what_arrived_during_the_cut` y `test_resync_moves_the_cursor_so_it_is_not_repeated` (servidor);
+- tres tests del cliente en `sse-client.test.mts`;
+- una verificación en vivo ([`evidence/live-run-cut-before-first-event.log`](evidence/live-run-cut-before-first-event.log)): reconexión con `Last-Event-ID=12` sin haber recibido ningún evento, las 2 RFP del corte recuperadas, sin recargar y sin duplicados.
 
 **Los dos huecos que no cubre la reposición:**
 - **Primera conexión:** el stream arranca en el evento más reciente y el dashboard vuelve a leer la lista al recibir `stream_ready`. Así no se pierde lo que se registró entre la carga de la página y la apertura del stream.
@@ -155,8 +166,8 @@ Ver [`evidence/README.md`](evidence/README.md), con capturas, logs y el texto ca
 ## Cómo probar
 
 ```bash
-uv run python -m pytest tests/realtime -v                    # servidor real, texto en la red (11)
-node --test tests/realtime/sse-client.test.mts                 # cliente: parser, backoff, Last-Event-ID, dedup (5)
+uv run python -m pytest tests/realtime -v                    # servidor real, texto en la red (13)
+node --test tests/realtime/sse-client.test.mts                 # cliente: parser, backoff, Last-Event-ID, dedup (8)
 
 # a mano contra la API local (sin token: 401)
 curl -N http://127.0.0.1:8000/api/rfp/events

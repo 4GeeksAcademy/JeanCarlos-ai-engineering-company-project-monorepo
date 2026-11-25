@@ -8,7 +8,9 @@
 // Reconnection: exponential backoff with jitter (1 s, 2 s, 4 s … up to 30 s), reset once the server
 // confirms the stream (`stream_ready`). A watchdog aborts a connection that has been silent for
 // longer than three heartbeats (a half-open TCP connection after a network cut never errors on its
-// own). Every reconnection sends Last-Event-ID, so the server replays what was missed. A 401 stops
+// own). Every reconnection sends Last-Event-ID — taken from the `id:` of every frame, including
+// stream_ready / resync_required, so there is a cursor from the first frame on — and the server
+// replays what was missed. A 401 stops
 // the loop: the session has expired and retrying would not help.
 //
 // No framework imports: the same module runs in the browser and in tests/realtime (node --test).
@@ -56,6 +58,16 @@ export class SseParser {
   /** The cursor the server gave last (sent back as Last-Event-ID). */
   get lastEventId(): string | undefined {
     return this.id;
+  }
+}
+
+/** `last_event_id` of a stream_ready / resync_required payload, as a Last-Event-ID value. */
+export function cursorOf(frame: SseFrame): string | undefined {
+  try {
+    const value = (JSON.parse(frame.data) as { last_event_id?: unknown }).last_event_id;
+    return typeof value === "number" && Number.isInteger(value) && value >= 0 ? String(value) : undefined;
+  } catch {
+    return undefined;
   }
 }
 
@@ -134,6 +146,12 @@ export function openEventStream(options: StreamOptions): EventStream {
         arm();
         for (const frame of parser.feed(value)) {
           if (frame.id !== undefined) lastEventId = frame.id;
+          else if (frame.event === "stream_ready" || frame.event === "resync_required") {
+            // the cursor the server resumes from: kept even if no ticket event ever arrives on this
+            // connection, so a cut right after connecting still reconnects with Last-Event-ID
+            const cursor = cursorOf(frame);
+            if (cursor !== undefined) lastEventId = cursor;
+          }
           if (frame.event === "stream_ready") {
             attempt = 0; // the server confirmed the stream: the next failure starts the backoff again
             status({ state: "open", attempt });
