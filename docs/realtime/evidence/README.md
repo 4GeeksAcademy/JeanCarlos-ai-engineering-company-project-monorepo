@@ -44,6 +44,16 @@ Extracto de [`live-run.log`](live-run.log) y [`live-run-driver.log`](live-run-dr
 - **Sin duplicados:** 24 filas, 24 únicas; 3 avisos, 3 únicos.
 - Las peticiones al stream con su `Last-Event-ID` están en [`sse-stream-requests.json`](sse-stream-requests.json).
 
+## 2 bis. Corte antes del primer evento (tras la revisión del PR #31)
+
+[`sse-5-cut-before-first-event.png`](sse-5-cut-before-first-event.png) · [`live-run-cut-before-first-event.log`](live-run-cut-before-first-event.log)
+
+1. El dashboard conecta y **no recibe ningún** `rfp_ticket_created`.
+2. La API cae y se registran 2 RFP por la CLI.
+3. El cliente reintenta con **`Last-Event-ID=12`**, el cursor que trajo `stream_ready` en su `id:`. Antes de la corrección no enviaba cursor.
+4. Al volver la API, las 2 RFP aparecen marcadas «recuperada tras reconexión».
+5. Sin recargar la página y sin duplicados: 26 filas, 26 únicas.
+
 ## 3. El texto en la red
 
 [`wire-replay.txt`](wire-replay.txt) contiene dos llamadas con `curl` a la API:

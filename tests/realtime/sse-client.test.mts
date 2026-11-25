@@ -112,6 +112,62 @@ test("after a network cut the client backs off, reconnects with Last-Event-ID an
   assert.ok(statuses.some((s) => s.state === "open" && s.attempt === 0)); // reset once the stream is confirmed
 });
 
+// Review of PR #31: the cursor must survive a cut that happens before the first rfp_ticket_created.
+const readyWithId = (last: number, replayed: number) =>
+  `retry: 3000\n\nid: ${last}\nevent: stream_ready\ndata: {"last_event_id":${last},"replayed":${replayed},"heartbeat_seconds":15}\n\n`;
+
+test("a cut before the first event reconnects with the cursor of stream_ready and recovers the missed tickets", async () => {
+  const requests: Record<string, string>[] = [];
+  const shown: string[] = [];
+  const fetchImpl = (async (_url: string, init: RequestInit) => {
+    requests.push({ ...(init.headers as Record<string, string>) });
+    if (requests.length === 1) return sseResponse([readyWithId(5, 0)], "error", init.signal!); // no ticket, then the cut
+    return sseResponse([readyWithId(5, 2), created(6, 1), created(7, 2)], "open", init.signal!);
+  }) as typeof fetch;
+  const stream = openEventStream({
+    url: "/api/rfp/events", fetchImpl, backoff: { baseMs: 5, maxMs: 5, jitter: 0 },
+    onEvent: (frame) => { const t = parseTicketCreated(frame); if (t) shown.push(t.rfp_id); },
+  });
+  await until(() => shown.length === 2);
+  stream.close();
+  assert.equal(requests[0]["Last-Event-ID"], undefined); // a fresh page: no cursor yet
+  assert.equal(requests[1]["Last-Event-ID"], "5"); // before the fix: undefined → the 2 tickets were lost
+  assert.deepEqual(shown, ["RFP-20261125-000001", "RFP-20261125-000002"]);
+});
+
+test("the cursor is also taken from data.last_event_id when a control event has no id line", async () => {
+  const requests: Record<string, string>[] = [];
+  const fetchImpl = (async (_url: string, init: RequestInit) => {
+    requests.push({ ...(init.headers as Record<string, string>) });
+    return sseResponse([ready(9, 0)], requests.length === 1 ? "error" : "open", init.signal!); // ready() has no `id:`
+  }) as typeof fetch;
+  const stream = openEventStream({ url: "/api/rfp/events", fetchImpl, backoff: { baseMs: 5, maxMs: 5, jitter: 0 }, onEvent: () => {} });
+  await until(() => requests.length === 2);
+  stream.close();
+  assert.equal(requests[1]["Last-Event-ID"], "9");
+});
+
+test("resync_required moves the cursor, so the next reconnection does not resync again", async () => {
+  const requests: Record<string, string>[] = [];
+  const events: string[] = [];
+  const fetchImpl = (async (_url: string, init: RequestInit) => {
+    requests.push({ ...(init.headers as Record<string, string>) });
+    if (requests.length === 1) {
+      return sseResponse([readyWithId(3, 0), 'id: 12\nevent: resync_required\ndata: {"reason":"gap_too_large","last_event_id":12}\n\n'],
+        "error", init.signal!);
+    }
+    return sseResponse([readyWithId(12, 0)], "open", init.signal!);
+  }) as typeof fetch;
+  const stream = openEventStream({
+    url: "/api/rfp/events", fetchImpl, lastEventId: "3", backoff: { baseMs: 5, maxMs: 5, jitter: 0 },
+    onEvent: (frame) => events.push(frame.event),
+  });
+  await until(() => requests.length === 2 && events.filter((e) => e === "stream_ready").length === 2);
+  stream.close();
+  assert.equal(requests[1]["Last-Event-ID"], "12"); // not the stale 3 that caused the resync
+  assert.equal(events.filter((e) => e === "resync_required").length, 1);
+});
+
 test("a silent connection (half-open after a cut) is aborted by the watchdog and reconnected", async () => {
   let calls = 0;
   const fetchImpl = (async (_url: string, init: RequestInit) => {

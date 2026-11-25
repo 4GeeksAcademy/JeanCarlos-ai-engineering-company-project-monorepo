@@ -24,6 +24,10 @@ listening to the old process. `install_shutdown_hook` wraps the process's SIGTER
 (uvicorn's): every stream ends at once, the process exits, and the clients reconnect (backoff +
 Last-Event-ID) to the new one without losing anything. When the gap is larger than REPLAY_LIMIT (or its
 Last-Event-ID is unknown), the server sends `resync_required` and the client re-reads the list once.
+
+`stream_ready` and `resync_required` carry an `id:` too (the cursor the stream resumes from), so the
+client has a Last-Event-ID from the first frame — even if the connection drops before any ticket
+arrives, the next connection replays what was registered during the cut.
 """
 
 from __future__ import annotations
@@ -219,10 +223,13 @@ async def stream(engine: Engine, last_event_id: int | None, expires_at: datetime
             else:
                 cursor = last_event_id
         yield "retry: 3000\n\n"
+        # `id:` on the control events too: the client holds a cursor from the very first frame, so a
+        # connection cut before any rfp_ticket_created still resumes from here (no silent gap)
         yield frame("stream_ready", {"last_event_id": cursor, "replayed": len(replay),
-                                     "heartbeat_seconds": heartbeat_seconds()})
+                                     "heartbeat_seconds": heartbeat_seconds()}, cursor)
         if resync:
-            yield frame("resync_required", {"reason": resync, "last_event_id": latest})
+            # the client re-reads the list once and continues from `latest`: no repeated resync
+            yield frame("resync_required", {"reason": resync, "last_event_id": latest}, latest)
             cursor = latest
         for row in replay:
             yield frame(row["event"], row["data"], row["id"])

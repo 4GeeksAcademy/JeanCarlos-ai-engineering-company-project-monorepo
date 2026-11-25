@@ -1,0 +1,18 @@
+[2.1 s] dashboard → GET /api/rfp/events Last-Event-ID=—
+[2.1 s] dashboard → GET /api/rfp/events Last-Event-ID=—
+[2.2 s] dashboard conectado, sin ningún rfp_ticket_created recibido todavía
+[3.6 s] dashboard → GET /api/rfp/events Last-Event-ID=12
+[5.8 s] dashboard → GET /api/rfp/events Last-Event-ID=12
+[10.0 s] dashboard → GET /api/rfp/events Last-Event-ID=12
+[18.2 s] dashboard → GET /api/rfp/events Last-Event-ID=12
+[19.6 s] aviso: Nueva RFP · requiere procesamientorecuperada tras reconexión |  | RFP-20261125-3EBA90 · Meridian Manufacturing, Inc. (US) · occupational_health · Analizando |  | Registrada 11:53:19 · recibida 11:53:24 |  | Ver ticket | Descartar aviso
+[19.6 s] aviso: Nueva RFP · requiere procesamientorecuperada tras reconexión |  | RFP-20261125-055B5C · Thames Valley University (UK) · referral_network · Analizando |  | Registrada 11:53:17 · recibida 11:53:24 |  | Ver ticket | Descartar aviso
+[19.6 s] filas: 26, únicas: 26; recargas de la página durante la prueba: 0
+[19.7 s] done
+[driver] 11:53:09 API down
+[driver] 11:53:17 CLI registers healthcore-request-2.pdf while the dashboard is offline
+ticket RFP-20261125-055B5C → analisis_completo
+[driver] 11:53:19 CLI registers healthcore-request-1.pdf while the dashboard is offline
+ticket RFP-20261125-3EBA90 → analisis_completo
+api up
+[driver] 11:53:22 API back

@@ -19,8 +19,9 @@ Transfer-Encoding: chunked
 
 retry: 3000
 
+id: 10
 event: stream_ready
-data: {"last_event_id":10,"replayed":2,"heartbeat_seconds":15.0}
+data: {"last_event_id":10,"replayed":4,"heartbeat_seconds":15.0}
 
 id: 11
 event: rfp_ticket_created
@@ -29,4 +30,20 @@ data: {"ticket_id":"80fee564-05da-4b89-a4e7-7c59cfc33944","rfp_id":"RFP-20261125
 id: 12
 event: rfp_ticket_created
 data: {"ticket_id":"ebb003f0-1489-4831-a697-c35b95a48524","rfp_id":"RFP-20261125-EBB003","client_name":"Meridian Manufacturing, Inc.","client_country":"US","program_type":"occupational_health","status":"analizando","created_at":"2026-11-25T08:52:36.370491Z"}
+
+id: 13
+event: rfp_ticket_created
+data: {"ticket_id":"055b5cc3-6ca6-4540-b58c-67e33da3a567","rfp_id":"RFP-20261125-055B5C","client_name":"Thames Valley University","client_country":"UK","program_type":"referral_network","status":"analizando","created_at":"2026-11-25T10:53:17.855096Z"}
+
+id: 14
+event: rfp_ticket_created
+data: {"ticket_id":"3eba906c-7ca0-4577-a1f3-269cf41744a4","rfp_id":"RFP-20261125-3EBA90","client_name":"Meridian Manufacturing, Inc.","client_country":"US","program_type":"occupational_health","status":"analizando","created_at":"2026-11-25T10:53:19.821915Z"}
+
+
+$ curl -N -H "Authorization: Bearer <JWT>" http://127.0.0.1:8000/api/rfp/events      # sin cursor: stream_ready lleva id: (el cursor)
+retry: 3000
+
+id: 14
+event: stream_ready
+data: {"last_event_id":14,"replayed":0,"heartbeat_seconds":15.0}
 

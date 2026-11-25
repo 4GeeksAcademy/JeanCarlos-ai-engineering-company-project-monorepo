@@ -244,6 +244,48 @@ def test_reconnecting_with_last_event_id_replays_what_was_missed_without_duplica
         second.close()
 
 
+def test_a_cut_before_the_first_event_still_recovers_what_arrived_during_the_cut(server, headers, engine, model):  # noqa: F811
+    """Review of PR #31: a client that never received an rfp_ticket_created had no Last-Event-ID, so
+    the tickets registered while it was disconnected were lost until a reload. stream_ready now
+    carries `id:` (the cursor), so the client has one from the very first frame."""
+    before = intake(engine, FORMAL)  # history that a fresh dashboard already has in its list
+    first = SseReader(server, headers)
+    try:
+        ready = first.next("stream_ready")
+        assert ready["id"] == str(events.latest_id(engine))  # the cursor, in the SSE framing itself
+        assert json.loads(ready["data"])["last_event_id"] == int(ready["id"])
+        assert first.collect(0.5) == [] or all(f.get("event") != "rfp_ticket_created" for f in first.collect(0.1))
+    finally:
+        first.close()  # cut before any rfp_ticket_created arrived
+    missed = [intake(engine, INFORMAL), intake(engine, FORMAL)]  # registered during the cut
+
+    second = SseReader(server, headers, last_event_id=ready["id"])  # what the client now sends back
+    try:
+        resumed = json.loads(second.next("stream_ready")["data"])
+        assert resumed["replayed"] == 2
+        replayed = [json.loads(second.next("rfp_ticket_created")["data"])["ticket_id"] for _ in missed]
+        assert replayed == missed and before not in replayed  # exactly the missed ones, nothing twice
+    finally:
+        second.close()
+
+
+def test_resync_moves_the_cursor_so_it_is_not_repeated(server, headers, engine, model):  # noqa: F811
+    intake(engine, FORMAL)
+    stream = SseReader(server, headers, last_event_id="9999")  # a cursor the server does not know
+    try:
+        stream.next("stream_ready")
+        resync = stream.next("resync_required")
+        assert resync["id"] == str(events.latest_id(engine)) == str(json.loads(resync["data"])["last_event_id"])
+    finally:
+        stream.close()
+    again = SseReader(server, headers, last_event_id=resync["id"])  # the cursor the client keeps after the resync
+    try:
+        assert json.loads(again.next("stream_ready")["data"])["replayed"] == 0
+        assert [f for f in again.collect(0.8) if f.get("event") == "resync_required"] == []  # no second resync
+    finally:
+        again.close()
+
+
 def test_an_unknown_last_event_id_asks_the_client_to_resync(server, headers):
     stream = SseReader(server, headers, last_event_id="9999")
     try:
