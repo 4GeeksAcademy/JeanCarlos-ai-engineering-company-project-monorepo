@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
+import jwt
+from jwt import PyJWTError as JWTError
 from tinydb import Query, TinyDB
 
 from ..database import get_database
@@ -27,7 +28,7 @@ def get_current_user(
             token,
             settings.secret,
             algorithms=[settings.algorithm],
-            options={"require_exp": True, "require_iat": True, "require_sub": True},
+            options={"require": ["exp", "iat", "sub"]},
         )
     except JWTError as exc:
         raise unauthorized from exc
@@ -49,6 +50,18 @@ def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+def get_authenticated_user(request: Request, token: Annotated[str, Depends(oauth2_scheme)]) -> User:
+    """Same check as get_current_user, but the TinyDB lock is held only while the user is
+    read, not for the whole request. For long-running endpoints that do not touch TinyDB
+    afterwards (RAG, agent): otherwise they block every other request for seconds, and a
+    call from the agent's tools back into this API could never authenticate (deadlock)."""
+    with request.app.state.database_lock:
+        return get_current_user(token, request.app.state.database)
+
+
+AuthenticatedUser = Annotated[User, Depends(get_authenticated_user)]
 
 
 def require_admin(user: CurrentUser) -> User:

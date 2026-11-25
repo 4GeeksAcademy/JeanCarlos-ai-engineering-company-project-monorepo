@@ -2,7 +2,8 @@ from json import JSONDecodeError
 import logging
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
-from jose import JWTError, jwt
+import jwt
+from jwt import PyJWTError as JWTError
 from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
 from tinydb import Query
@@ -51,7 +52,7 @@ def reset_password(payload: ResetPassword, database: Database):
     try:
         claims = jwt.decode(
             payload.token, settings.secret, algorithms=[settings.algorithm],
-            options={"require_exp": True, "require_iat": True, "require_sub": True},
+            options={"require": ["exp", "iat", "sub"]},
         )
     except JWTError as exc:
         raise invalid from exc

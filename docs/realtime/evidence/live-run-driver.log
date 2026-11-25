@@ -1,0 +1,7 @@
+[driver] 09:52:26 API down
+[driver] 09:52:34 CLI registers healthcore-request-2.pdf while the dashboard is offline
+ticket RFP-20261125-80FEE5 → analisis_completo
+[driver] 09:52:35 CLI registers healthcore-request-1.pdf while the dashboard is offline
+ticket RFP-20261125-EBB003 → analisis_completo
+api up
+[driver] 09:52:38 API back

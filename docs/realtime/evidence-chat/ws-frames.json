@@ -1,0 +1,1476 @@
+{
+ "session": "chat_2c0a1f2ffab6",
+ "staff": [
+  {
+   "t": 1.05,
+   "event": "session_snapshot",
+   "status": "active",
+   "role": "participant",
+   "messages": 0
+  },
+  {
+   "t": 1.72,
+   "event": "user_message",
+   "message_id": "msg_83179601e0e3"
+  },
+  {
+   "t": 1.73,
+   "event": "generation_started",
+   "message_id": "msg_d3190b22d526"
+  },
+  {
+   "t": 3.67,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 1,
+   "token_chars": 3
+  },
+  {
+   "t": 3.75,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 2,
+   "token_chars": 2
+  },
+  {
+   "t": 3.82,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 3,
+   "token_chars": 12
+  },
+  {
+   "t": 3.89,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 4,
+   "token_chars": 3
+  },
+  {
+   "t": 3.97,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 5,
+   "token_chars": 10
+  },
+  {
+   "t": 4.04,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 6,
+   "token_chars": 8
+  },
+  {
+   "t": 4.12,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 7,
+   "token_chars": 4
+  },
+  {
+   "t": 4.19,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 8,
+   "token_chars": 3
+  },
+  {
+   "t": 4.26,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 9,
+   "token_chars": 7
+  },
+  {
+   "t": 4.34,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 10,
+   "token_chars": 10
+  },
+  {
+   "t": 4.41,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 11,
+   "token_chars": 5
+  },
+  {
+   "t": 4.49,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 12,
+   "token_chars": 3
+  },
+  {
+   "t": 4.56,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 13,
+   "token_chars": 7
+  },
+  {
+   "t": 4.63,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 14,
+   "token_chars": 6
+  },
+  {
+   "t": 4.7,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 15,
+   "token_chars": 3
+  },
+  {
+   "t": 4.77,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 16,
+   "token_chars": 10
+  },
+  {
+   "t": 4.85,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 17,
+   "token_chars": 6
+  },
+  {
+   "t": 4.92,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 18,
+   "token_chars": 4
+  },
+  {
+   "t": 4.99,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 19,
+   "token_chars": 3
+  },
+  {
+   "t": 5.07,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 20,
+   "token_chars": 10
+  },
+  {
+   "t": 5.13,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 21,
+   "token_chars": 9
+  },
+  {
+   "t": 5.21,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 22,
+   "token_chars": 4
+  },
+  {
+   "t": 5.28,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 23,
+   "token_chars": 10
+  },
+  {
+   "t": 5.35,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 24,
+   "token_chars": 5
+  },
+  {
+   "t": 5.42,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 25,
+   "token_chars": 7
+  },
+  {
+   "t": 5.5,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 26,
+   "token_chars": 3
+  },
+  {
+   "t": 5.57,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 27,
+   "token_chars": 9
+  },
+  {
+   "t": 5.64,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 28,
+   "token_chars": 10
+  },
+  {
+   "t": 5.71,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 29,
+   "token_chars": 10
+  },
+  {
+   "t": 5.79,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 30,
+   "token_chars": 4
+  },
+  {
+   "t": 5.86,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 31,
+   "token_chars": 5
+  },
+  {
+   "t": 5.93,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 32,
+   "token_chars": 5
+  },
+  {
+   "t": 6.01,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 33,
+   "token_chars": 8
+  },
+  {
+   "t": 6.08,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 34,
+   "token_chars": 3
+  },
+  {
+   "t": 6.16,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 35,
+   "token_chars": 13
+  },
+  {
+   "t": 6.23,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 36,
+   "token_chars": 5
+  },
+  {
+   "t": 6.31,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 37,
+   "token_chars": 3
+  },
+  {
+   "t": 6.38,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 38,
+   "token_chars": 9
+  },
+  {
+   "t": 6.45,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 39,
+   "token_chars": 2
+  },
+  {
+   "t": 6.53,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 40,
+   "token_chars": 9
+  },
+  {
+   "t": 6.64,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 41,
+   "token_chars": 3
+  },
+  {
+   "t": 6.67,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 42,
+   "token_chars": 9
+  },
+  {
+   "t": 6.74,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 43,
+   "token_chars": 2
+  },
+  {
+   "t": 6.82,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 44,
+   "token_chars": 5
+  },
+  {
+   "t": 6.88,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 45,
+   "token_chars": 6
+  },
+  {
+   "t": 6.91,
+   "event": "interrupt_requested"
+  },
+  {
+   "t": 6.91,
+   "event": "generation_interrupted",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 45,
+   "status": "interrupted"
+  },
+  {
+   "t": 6.96,
+   "event": "user_message",
+   "message_id": "msg_bc32ca5515d4"
+  },
+  {
+   "t": 6.96,
+   "event": "generation_started",
+   "message_id": "msg_69264396aeda"
+  },
+  {
+   "t": 8.91,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 1,
+   "token_chars": 4
+  },
+  {
+   "t": 8.99,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 2,
+   "token_chars": 2
+  },
+  {
+   "t": 9.06,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 3,
+   "token_chars": 4
+  },
+  {
+   "t": 9.13,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 4,
+   "token_chars": 10
+  },
+  {
+   "t": 9.2,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 5,
+   "token_chars": 4
+  },
+  {
+   "t": 9.28,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 6,
+   "token_chars": 9
+  },
+  {
+   "t": 9.35,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 7,
+   "token_chars": 3
+  },
+  {
+   "t": 9.43,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 8,
+   "token_chars": 5
+  },
+  {
+   "t": 9.5,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 9,
+   "token_chars": 10
+  },
+  {
+   "t": 9.57,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 10,
+   "token_chars": 4
+  },
+  {
+   "t": 9.65,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 11,
+   "token_chars": 8
+  },
+  {
+   "t": 9.72,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 12,
+   "token_chars": 6
+  },
+  {
+   "t": 9.8,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 13,
+   "token_chars": 4
+  },
+  {
+   "t": 9.87,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 14,
+   "token_chars": 7
+  },
+  {
+   "t": 9.94,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 15,
+   "token_chars": 3
+  },
+  {
+   "t": 10.01,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 16,
+   "token_chars": 11
+  },
+  {
+   "t": 10.09,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 17,
+   "token_chars": 6
+  },
+  {
+   "t": 10.16,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 18,
+   "token_chars": 3
+  },
+  {
+   "t": 10.24,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 19,
+   "token_chars": 5
+  },
+  {
+   "t": 10.31,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 20,
+   "token_chars": 11
+  },
+  {
+   "t": 10.39,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 21,
+   "token_chars": 10
+  },
+  {
+   "t": 10.46,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 22,
+   "token_chars": 9
+  },
+  {
+   "t": 10.53,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 23,
+   "token_chars": 3
+  },
+  {
+   "t": 10.61,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 24,
+   "token_chars": 9
+  },
+  {
+   "t": 10.68,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 25,
+   "token_chars": 4
+  },
+  {
+   "t": 10.75,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 26,
+   "token_chars": 4
+  },
+  {
+   "t": 10.83,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 27,
+   "token_chars": 14
+  },
+  {
+   "t": 10.9,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 28,
+   "token_chars": 14
+  },
+  {
+   "t": 10.97,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 29,
+   "token_chars": 17
+  },
+  {
+   "t": 11.05,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 30,
+   "token_chars": 2
+  },
+  {
+   "t": 11.12,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 31,
+   "token_chars": 8
+  },
+  {
+   "t": 11.2,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 32,
+   "token_chars": 3
+  },
+  {
+   "t": 11.27,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 33,
+   "token_chars": 11
+  },
+  {
+   "t": 11.35,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 34,
+   "token_chars": 4
+  },
+  {
+   "t": 11.42,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 35,
+   "token_chars": 7
+  },
+  {
+   "t": 11.5,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 36,
+   "token_chars": 3
+  },
+  {
+   "t": 11.57,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 37,
+   "token_chars": 9
+  },
+  {
+   "t": 11.64,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 38,
+   "token_chars": 2
+  },
+  {
+   "t": 11.71,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 39,
+   "token_chars": 3
+  },
+  {
+   "t": 11.79,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 40,
+   "token_chars": 4
+  },
+  {
+   "t": 11.86,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 41,
+   "token_chars": 3
+  },
+  {
+   "t": 11.93,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 42,
+   "token_chars": 3
+  },
+  {
+   "t": 12.01,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 43,
+   "token_chars": 7
+  },
+  {
+   "t": 12.08,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 44,
+   "token_chars": 3
+  },
+  {
+   "t": 12.15,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 45,
+   "token_chars": 3
+  },
+  {
+   "t": 12.22,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 46,
+   "token_chars": 16
+  },
+  {
+   "t": 12.29,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 47,
+   "token_chars": 6
+  },
+  {
+   "t": 12.37,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 48,
+   "token_chars": 3
+  },
+  {
+   "t": 12.45,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 49,
+   "token_chars": 5
+  },
+  {
+   "t": 12.52,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 50,
+   "token_chars": 3
+  },
+  {
+   "t": 12.59,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 51,
+   "token_chars": 12
+  },
+  {
+   "t": 12.61,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 52,
+   "token_chars": 120
+  },
+  {
+   "t": 12.61,
+   "event": "generation_completed",
+   "message_id": "msg_69264396aeda",
+   "sequence": 52,
+   "status": "complete"
+  },
+  {
+   "t": 29.32,
+   "event": "session_snapshot",
+   "status": "active",
+   "role": "participant",
+   "messages": 4
+  },
+  {
+   "t": 29.42,
+   "event": "session_snapshot",
+   "status": "active",
+   "role": "participant",
+   "messages": 4
+  }
+ ],
+ "supervisor": [
+  {
+   "t": 1.68,
+   "event": "session_snapshot",
+   "status": "active",
+   "role": "observer",
+   "messages": 0
+  },
+  {
+   "t": 1.72,
+   "event": "user_message",
+   "message_id": "msg_83179601e0e3"
+  },
+  {
+   "t": 1.72,
+   "event": "generation_started",
+   "message_id": "msg_d3190b22d526"
+  },
+  {
+   "t": 3.67,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 1,
+   "token_chars": 3
+  },
+  {
+   "t": 3.75,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 2,
+   "token_chars": 2
+  },
+  {
+   "t": 3.82,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 3,
+   "token_chars": 12
+  },
+  {
+   "t": 3.89,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 4,
+   "token_chars": 3
+  },
+  {
+   "t": 3.97,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 5,
+   "token_chars": 10
+  },
+  {
+   "t": 4.04,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 6,
+   "token_chars": 8
+  },
+  {
+   "t": 4.12,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 7,
+   "token_chars": 4
+  },
+  {
+   "t": 4.19,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 8,
+   "token_chars": 3
+  },
+  {
+   "t": 4.26,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 9,
+   "token_chars": 7
+  },
+  {
+   "t": 4.34,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 10,
+   "token_chars": 10
+  },
+  {
+   "t": 4.41,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 11,
+   "token_chars": 5
+  },
+  {
+   "t": 4.49,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 12,
+   "token_chars": 3
+  },
+  {
+   "t": 4.56,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 13,
+   "token_chars": 7
+  },
+  {
+   "t": 4.63,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 14,
+   "token_chars": 6
+  },
+  {
+   "t": 4.7,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 15,
+   "token_chars": 3
+  },
+  {
+   "t": 4.77,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 16,
+   "token_chars": 10
+  },
+  {
+   "t": 4.85,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 17,
+   "token_chars": 6
+  },
+  {
+   "t": 4.92,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 18,
+   "token_chars": 4
+  },
+  {
+   "t": 4.99,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 19,
+   "token_chars": 3
+  },
+  {
+   "t": 5.07,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 20,
+   "token_chars": 10
+  },
+  {
+   "t": 5.13,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 21,
+   "token_chars": 9
+  },
+  {
+   "t": 5.21,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 22,
+   "token_chars": 4
+  },
+  {
+   "t": 5.28,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 23,
+   "token_chars": 10
+  },
+  {
+   "t": 5.35,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 24,
+   "token_chars": 5
+  },
+  {
+   "t": 5.42,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 25,
+   "token_chars": 7
+  },
+  {
+   "t": 5.5,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 26,
+   "token_chars": 3
+  },
+  {
+   "t": 5.57,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 27,
+   "token_chars": 9
+  },
+  {
+   "t": 5.64,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 28,
+   "token_chars": 10
+  },
+  {
+   "t": 5.71,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 29,
+   "token_chars": 10
+  },
+  {
+   "t": 5.79,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 30,
+   "token_chars": 4
+  },
+  {
+   "t": 5.86,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 31,
+   "token_chars": 5
+  },
+  {
+   "t": 5.93,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 32,
+   "token_chars": 5
+  },
+  {
+   "t": 6.01,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 33,
+   "token_chars": 8
+  },
+  {
+   "t": 6.08,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 34,
+   "token_chars": 3
+  },
+  {
+   "t": 6.16,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 35,
+   "token_chars": 13
+  },
+  {
+   "t": 6.23,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 36,
+   "token_chars": 5
+  },
+  {
+   "t": 6.31,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 37,
+   "token_chars": 3
+  },
+  {
+   "t": 6.38,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 38,
+   "token_chars": 9
+  },
+  {
+   "t": 6.45,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 39,
+   "token_chars": 2
+  },
+  {
+   "t": 6.53,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 40,
+   "token_chars": 9
+  },
+  {
+   "t": 6.64,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 41,
+   "token_chars": 3
+  },
+  {
+   "t": 6.67,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 42,
+   "token_chars": 9
+  },
+  {
+   "t": 6.74,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 43,
+   "token_chars": 2
+  },
+  {
+   "t": 6.82,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 44,
+   "token_chars": 5
+  },
+  {
+   "t": 6.88,
+   "event": "token_chunk",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 45,
+   "token_chars": 6
+  },
+  {
+   "t": 6.89,
+   "event": "interrupt_requested"
+  },
+  {
+   "t": 6.89,
+   "event": "generation_interrupted",
+   "message_id": "msg_d3190b22d526",
+   "sequence": 45,
+   "status": "interrupted"
+  },
+  {
+   "t": 6.96,
+   "event": "user_message",
+   "message_id": "msg_bc32ca5515d4"
+  },
+  {
+   "t": 6.96,
+   "event": "generation_started",
+   "message_id": "msg_69264396aeda"
+  },
+  {
+   "t": 8.91,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 1,
+   "token_chars": 4
+  },
+  {
+   "t": 8.99,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 2,
+   "token_chars": 2
+  },
+  {
+   "t": 9.06,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 3,
+   "token_chars": 4
+  },
+  {
+   "t": 9.13,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 4,
+   "token_chars": 10
+  },
+  {
+   "t": 9.2,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 5,
+   "token_chars": 4
+  },
+  {
+   "t": 9.28,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 6,
+   "token_chars": 9
+  },
+  {
+   "t": 9.35,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 7,
+   "token_chars": 3
+  },
+  {
+   "t": 9.43,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 8,
+   "token_chars": 5
+  },
+  {
+   "t": 9.5,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 9,
+   "token_chars": 10
+  },
+  {
+   "t": 9.57,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 10,
+   "token_chars": 4
+  },
+  {
+   "t": 9.65,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 11,
+   "token_chars": 8
+  },
+  {
+   "t": 9.72,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 12,
+   "token_chars": 6
+  },
+  {
+   "t": 9.8,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 13,
+   "token_chars": 4
+  },
+  {
+   "t": 9.87,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 14,
+   "token_chars": 7
+  },
+  {
+   "t": 9.94,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 15,
+   "token_chars": 3
+  },
+  {
+   "t": 10.01,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 16,
+   "token_chars": 11
+  },
+  {
+   "t": 10.09,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 17,
+   "token_chars": 6
+  },
+  {
+   "t": 10.16,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 18,
+   "token_chars": 3
+  },
+  {
+   "t": 10.24,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 19,
+   "token_chars": 5
+  },
+  {
+   "t": 10.31,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 20,
+   "token_chars": 11
+  },
+  {
+   "t": 10.39,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 21,
+   "token_chars": 10
+  },
+  {
+   "t": 10.46,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 22,
+   "token_chars": 9
+  },
+  {
+   "t": 10.53,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 23,
+   "token_chars": 3
+  },
+  {
+   "t": 10.61,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 24,
+   "token_chars": 9
+  },
+  {
+   "t": 10.68,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 25,
+   "token_chars": 4
+  },
+  {
+   "t": 10.75,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 26,
+   "token_chars": 4
+  },
+  {
+   "t": 10.82,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 27,
+   "token_chars": 14
+  },
+  {
+   "t": 10.9,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 28,
+   "token_chars": 14
+  },
+  {
+   "t": 10.97,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 29,
+   "token_chars": 17
+  },
+  {
+   "t": 11.05,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 30,
+   "token_chars": 2
+  },
+  {
+   "t": 11.12,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 31,
+   "token_chars": 8
+  },
+  {
+   "t": 11.2,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 32,
+   "token_chars": 3
+  },
+  {
+   "t": 11.27,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 33,
+   "token_chars": 11
+  },
+  {
+   "t": 11.35,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 34,
+   "token_chars": 4
+  },
+  {
+   "t": 11.42,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 35,
+   "token_chars": 7
+  },
+  {
+   "t": 11.5,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 36,
+   "token_chars": 3
+  },
+  {
+   "t": 11.57,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 37,
+   "token_chars": 9
+  },
+  {
+   "t": 11.64,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 38,
+   "token_chars": 2
+  },
+  {
+   "t": 11.71,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 39,
+   "token_chars": 3
+  },
+  {
+   "t": 11.79,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 40,
+   "token_chars": 4
+  },
+  {
+   "t": 11.86,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 41,
+   "token_chars": 3
+  },
+  {
+   "t": 11.93,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 42,
+   "token_chars": 3
+  },
+  {
+   "t": 12.01,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 43,
+   "token_chars": 7
+  },
+  {
+   "t": 12.08,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 44,
+   "token_chars": 3
+  },
+  {
+   "t": 12.15,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 45,
+   "token_chars": 3
+  },
+  {
+   "t": 12.22,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 46,
+   "token_chars": 16
+  },
+  {
+   "t": 12.29,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 47,
+   "token_chars": 6
+  },
+  {
+   "t": 12.37,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 48,
+   "token_chars": 3
+  },
+  {
+   "t": 12.45,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 49,
+   "token_chars": 5
+  },
+  {
+   "t": 12.52,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 50,
+   "token_chars": 3
+  },
+  {
+   "t": 12.59,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 51,
+   "token_chars": 12
+  },
+  {
+   "t": 12.61,
+   "event": "token_chunk",
+   "message_id": "msg_69264396aeda",
+   "sequence": 52,
+   "token_chars": 120
+  },
+  {
+   "t": 12.61,
+   "event": "generation_completed",
+   "message_id": "msg_69264396aeda",
+   "sequence": 52,
+   "status": "complete"
+  },
+  {
+   "t": 27.66,
+   "event": "session_snapshot",
+   "status": "active",
+   "role": "observer",
+   "messages": 4
+  }
+ ]
+}

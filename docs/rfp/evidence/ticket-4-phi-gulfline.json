@@ -1,0 +1,478 @@
+{
+  "ticket_id": "b45c9623-9698-4793-b2bb-3e5d01148d87",
+  "error": null,
+  "ready_for_generation": false,
+  "status": "analisis_completo",
+  "classification": {
+    "is_rfp": true,
+    "confidence": 0.98,
+    "document_type": "formal_rfp",
+    "requester_role": "client",
+    "reasons": [
+      "Document is a formal Request for Proposal (RFP) with reference number, due date, and scope of work for occupational health services.",
+      "Issuing organization is a client (Gulfline Logistics) seeking a healthcare partner for employee occupational health program.",
+      "Content matches HealthCore's service offerings: occupational health exams, injury triage, and HIPAA compliance requirements."
+    ],
+    "decision": "accept",
+    "classifier": "model"
+  },
+  "created_at": "2026-11-24T00:02:39.713532+00:00",
+  "stage": "done",
+  "phi_detected": true,
+  "updated_at": "2026-11-24T00:03:26.000331+00:00",
+  "phi_categories": [
+    "clinical_summary",
+    "date_of_birth",
+    "diagnosis_field",
+    "medical_record_number",
+    "patient_name"
+  ],
+  "completed_at": "2026-11-24T00:03:25.996889+00:00",
+  "pdf_sha256": "1cbb4e770f606acb253d9b433fd4a995480d602fcc57d301d4e3740737b835ec",
+  "compliance_review_required": true,
+  "pdf_bytes": 1658,
+  "created_by": "06703c27-4594-4ec3-85b8-e639d548688a",
+  "synthesis": {
+    "summary": "Gulfline Logistics, empleador con 450 empleados, solicita servicios de salud ocupacional (exámenes pre-empleo y anuales, triaje de lesiones) en una clínica de Texas. El presupuesto anual es de USD 180,000-220,000. Debemos proponer una estructura de precios dentro de ese rango, confirmar el alcance clínico y la ubicación, y garantizar el cumplimiento de HIPAA mediante un BAA. Como responsable de Revenue Cycle, debes coordinar con Clinical y Compliance para alinear la propuesta antes del cierre del 30 de septiembre de 2026.",
+    "next_steps": [
+      "Revisión humana de Compliance (Claire Whitfield): la RFP incluía posible PHI, ya redactada; no avanzar a la generación de la propuesta hasta su aprobación.",
+      "Confirmar con el cliente si el modelo de precios debe ser por empleado al año (PEPY), por visita o tarifa fija, y si el presupuesto incluye todos los costos — Revenue Cycle",
+      "Solicitar a Clinical Operations que confirme la clínica específica en Texas, su capacidad para 450 exámenes anuales más triaje, el modelo de dotación y los componentes de los exámenes — Clinical Operations",
+      "Pedir a Compliance que prepare o revise la plantilla del BAA estándar de HealthCore, revise el contenido redactado en P11 para evitar PHI, y confirme salvaguardas para datos de salud ocupacional — Compliance and Data Governance",
+      "La RFP menciona «Procurement Office», que no es un departamento de HealthCore: canalizar vía Revenue Cycle (decidir)."
+    ],
+    "workstreams": [
+      {
+        "department_id": "revenue",
+        "department": "Revenue Cycle",
+        "owner": "Tom Callahan",
+        "owner_role": "Revenue Cycle Director",
+        "key_aspects": [
+          {
+            "aspect": "Budget range",
+            "detail": "The client has provided an annual budget range of USD 180,000-220,000 for occupational health services, which must be used to structure the pricing proposal.",
+            "source": "P10"
+          },
+          {
+            "aspect": "Pricing structure",
+            "detail": "A pricing structure needs to be proposed that fits within the budget range, likely based on per-employee or per-service fees, but the exact model is not specified.",
+            "source": "metadata"
+          }
+        ],
+        "requests": [
+          "Confirm whether the pricing should be per employee per year (PEPY), per visit, or a fixed annual fee, and propose a structure that aligns with the USD 180,000-220,000 budget for 450 employees.",
+          "Clarify if the budget includes all costs (e.g., administrative, clinical, compliance) or if there are additional fees for services like lab tests or vaccinations."
+        ],
+        "open_questions": [
+          "What is the expected service volume (e.g., number of visits, screenings, or treatments per year) to accurately price within the budget?",
+          "Are there any specific payment milestones or invoicing preferences (e.g., monthly, quarterly, annual)?"
+        ],
+        "worker": "model"
+      },
+      {
+        "department_id": "clinical",
+        "department": "Clinical Operations",
+        "owner": "Dr. Marcus Reid",
+        "owner_role": "Clinical Operations",
+        "key_aspects": [
+          {
+            "aspect": "Service scope",
+            "detail": "Pre-employment and annual occupational health exams for 450 employees, plus workplace injury triage at a Texas clinic.",
+            "source": "P8"
+          },
+          {
+            "aspect": "Location requirement",
+            "detail": "Services must be delivered at a Texas clinic (likely in Houston area based on employee location).",
+            "source": "P6"
+          },
+          {
+            "aspect": "Regulatory requirement",
+            "detail": "Vendor must sign a Business Associate Agreement (BAA) under HIPAA.",
+            "source": "P8"
+          }
+        ],
+        "requests": [
+          "Confirm which Texas clinic location will be used and its capacity for 450 annual exams plus injury triage.",
+          "Determine staffing model (e.g., nurse practitioner, physician, support staff) and schedule (e.g., full-time, part-time, or periodic clinics).",
+          "Clarify whether exams are performed on-site at the employer or at the clinic, and if mobile services are needed."
+        ],
+        "open_questions": [
+          "What is the annual turnover rate to estimate the number of pre-employment exams?",
+          "What specific components are required in the occupational health exams (e.g., physical, drug test, audiometry, spirometry)?",
+          "What are the expected hours of operation for the clinic and triage service?",
+          "Is there a preferred timeframe for completing annual exams (e.g., within a specific month)?",
+          "Are there any special requirements for injury triage (e.g., 24/7 availability, telemedicine option)?"
+        ],
+        "worker": "model"
+      },
+      {
+        "department_id": "compliance",
+        "department": "Compliance and Data Governance",
+        "owner": "Claire Whitfield",
+        "owner_role": "Chief Compliance Officer",
+        "key_aspects": [
+          {
+            "aspect": "Firma obligatoria de BAA bajo HIPAA",
+            "detail": "El cliente exige firmar un Business Associate Agreement (BAA) bajo HIPAA para los servicios de exámenes ocupacionales y triaje de lesiones.",
+            "source": "P8"
+          },
+          {
+            "aspect": "Revisión de PHI redactado en P11",
+            "detail": "El contenido redactado en P11 puede contener PHI y debe ser revisado por Compliance para garantizar que no se incluya información protegida en la propuesta.",
+            "source": "P11"
+          },
+          {
+            "aspect": "Datos de salud ocupacional sensibles",
+            "detail": "Los exámenes pre-empleo, anuales y el triaje de lesiones generan datos de salud de empleados que requieren salvaguardas técnicas y administrativas específicas bajo HIPAA.",
+            "source": "P8"
+          }
+        ],
+        "requests": [
+          "Preparar o revisar la plantilla del BAA estándar de HealthCore para firma bilateral con el cliente antes del cierre de la propuesta.",
+          "Realizar revisión manual del contenido redactado en P11 y confirmar por escrito que no hay PHI expuesta.",
+          "Confirmar que los flujos de datos cumplen la regla de minimización y limitación de usos (TPO) en el entorno de salud ocupacional."
+        ],
+        "open_questions": [
+          "¿El BAA debe usar la plantilla del cliente o la nuestra?",
+          "¿Existen subcontratistas que requieran cubrirse bajo el BAA?",
+          "¿Hay requisitos estatales de Texas adicionales en materia de privacidad de datos de salud?"
+        ],
+        "worker": "model"
+      }
+    ],
+    "conflicts": [],
+    "unmapped_requests": [
+      {
+        "mention": "Procurement Office",
+        "suggested_department": null,
+        "paragraph_ids": [
+          13
+        ]
+      }
+    ],
+    "synthesizer": "model",
+    "open_questions": [],
+    "orchestrator": "model"
+  },
+  "rfp_id": "RFP-20261124-B45C96",
+  "handoff": {
+    "contract": "rfp_intake.handoff/v1",
+    "ticket_id": "b45c9623-9698-4793-b2bb-3e5d01148d87",
+    "route": "compliance_review",
+    "next_status": "generando_borrador",
+    "metadata": {
+      "rfp_reference": "GL-OH-2026-014",
+      "client_name": "Gulfline Logistics, Inc.",
+      "client_type": "employer",
+      "client_country": "US",
+      "program_type": "occupational_health",
+      "program_types": [
+        "occupational_health"
+      ],
+      "covered_population": 450,
+      "population_unit": "employees",
+      "deadline": "2026-09-30",
+      "deadline_text": "September 30, 2026",
+      "budget_range": "USD 180,000 - 220,000 per year",
+      "contract_term": null,
+      "currency": "USD",
+      "regulation": "HIPAA",
+      "agreement_type": "BAA",
+      "departments_needed": [
+        "revenue",
+        "clinical",
+        "compliance"
+      ]
+    },
+    "currency": "USD",
+    "required_clauses": [
+      "BAA (Business Associate Agreement, HIPAA)"
+    ],
+    "workstreams": [
+      {
+        "department_id": "revenue",
+        "owner": "Tom Callahan",
+        "key_aspects": [
+          {
+            "aspect": "Budget range",
+            "detail": "The client has provided an annual budget range of USD 180,000-220,000 for occupational health services, which must be used to structure the pricing proposal.",
+            "source": "P10"
+          },
+          {
+            "aspect": "Pricing structure",
+            "detail": "A pricing structure needs to be proposed that fits within the budget range, likely based on per-employee or per-service fees, but the exact model is not specified.",
+            "source": "metadata"
+          }
+        ],
+        "requests": [
+          "Confirm whether the pricing should be per employee per year (PEPY), per visit, or a fixed annual fee, and propose a structure that aligns with the USD 180,000-220,000 budget for 450 employees.",
+          "Clarify if the budget includes all costs (e.g., administrative, clinical, compliance) or if there are additional fees for services like lab tests or vaccinations."
+        ],
+        "open_questions": [
+          "What is the expected service volume (e.g., number of visits, screenings, or treatments per year) to accurately price within the budget?",
+          "Are there any specific payment milestones or invoicing preferences (e.g., monthly, quarterly, annual)?"
+        ]
+      },
+      {
+        "department_id": "clinical",
+        "owner": "Dr. Marcus Reid",
+        "key_aspects": [
+          {
+            "aspect": "Service scope",
+            "detail": "Pre-employment and annual occupational health exams for 450 employees, plus workplace injury triage at a Texas clinic.",
+            "source": "P8"
+          },
+          {
+            "aspect": "Location requirement",
+            "detail": "Services must be delivered at a Texas clinic (likely in Houston area based on employee location).",
+            "source": "P6"
+          },
+          {
+            "aspect": "Regulatory requirement",
+            "detail": "Vendor must sign a Business Associate Agreement (BAA) under HIPAA.",
+            "source": "P8"
+          }
+        ],
+        "requests": [
+          "Confirm which Texas clinic location will be used and its capacity for 450 annual exams plus injury triage.",
+          "Determine staffing model (e.g., nurse practitioner, physician, support staff) and schedule (e.g., full-time, part-time, or periodic clinics).",
+          "Clarify whether exams are performed on-site at the employer or at the clinic, and if mobile services are needed."
+        ],
+        "open_questions": [
+          "What is the annual turnover rate to estimate the number of pre-employment exams?",
+          "What specific components are required in the occupational health exams (e.g., physical, drug test, audiometry, spirometry)?",
+          "What are the expected hours of operation for the clinic and triage service?",
+          "Is there a preferred timeframe for completing annual exams (e.g., within a specific month)?",
+          "Are there any special requirements for injury triage (e.g., 24/7 availability, telemedicine option)?"
+        ]
+      },
+      {
+        "department_id": "compliance",
+        "owner": "Claire Whitfield",
+        "key_aspects": [
+          {
+            "aspect": "Firma obligatoria de BAA bajo HIPAA",
+            "detail": "El cliente exige firmar un Business Associate Agreement (BAA) bajo HIPAA para los servicios de exámenes ocupacionales y triaje de lesiones.",
+            "source": "P8"
+          },
+          {
+            "aspect": "Revisión de PHI redactado en P11",
+            "detail": "El contenido redactado en P11 puede contener PHI y debe ser revisado por Compliance para garantizar que no se incluya información protegida en la propuesta.",
+            "source": "P11"
+          },
+          {
+            "aspect": "Datos de salud ocupacional sensibles",
+            "detail": "Los exámenes pre-empleo, anuales y el triaje de lesiones generan datos de salud de empleados que requieren salvaguardas técnicas y administrativas específicas bajo HIPAA.",
+            "source": "P8"
+          }
+        ],
+        "requests": [
+          "Preparar o revisar la plantilla del BAA estándar de HealthCore para firma bilateral con el cliente antes del cierre de la propuesta.",
+          "Realizar revisión manual del contenido redactado en P11 y confirmar por escrito que no hay PHI expuesta.",
+          "Confirmar que los flujos de datos cumplen la regla de minimización y limitación de usos (TPO) en el entorno de salud ocupacional."
+        ],
+        "open_questions": [
+          "¿El BAA debe usar la plantilla del cliente o la nuestra?",
+          "¿Existen subcontratistas que requieran cubrirse bajo el BAA?",
+          "¿Hay requisitos estatales de Texas adicionales en materia de privacidad de datos de salud?"
+        ]
+      }
+    ],
+    "conflicts": [],
+    "open_questions": [],
+    "phi": {
+      "detected": true,
+      "categories": [
+        "clinical_summary",
+        "date_of_birth",
+        "diagnosis_field",
+        "medical_record_number",
+        "patient_name"
+      ]
+    },
+    "document_ref": "rfp_ticket.document_markdown"
+  },
+  "metadata": {
+    "client_type": "employer",
+    "budget_range": "USD 180,000 - 220,000 per year",
+    "estimated_tokens": 195,
+    "extracted_at": "2026-11-24T00:02:57.796249+00:00",
+    "client_country": "US",
+    "contract_term": null,
+    "pdf_pages": 1,
+    "program_type": "occupational_health",
+    "currency": "USD",
+    "flesch_kincaid_grade": 10.59,
+    "program_types": [
+      "occupational_health"
+    ],
+    "regulation": "HIPAA",
+    "flesch_reading_ease": 40.61,
+    "ticket_id": "b45c9623-9698-4793-b2bb-3e5d01148d87",
+    "covered_population": 450,
+    "agreement_type": "BAA",
+    "gunning_fog": 8.56,
+    "population_unit": "employees",
+    "departments_needed": [
+      "revenue",
+      "clinical",
+      "compliance"
+    ],
+    "cost_band": "low",
+    "rfp_reference": "GL-OH-2026-014",
+    "deadline": "2026-09-30",
+    "open_questions": [],
+    "client_name": "Gulfline Logistics, Inc.",
+    "deadline_text": "September 30, 2026",
+    "word_count": 112,
+    "readability": {
+      "words": 112,
+      "sentences": 9,
+      "characters": 783,
+      "estimated_tokens": 195,
+      "pages": 1,
+      "flesch_kincaid_grade": 10.59,
+      "flesch_reading_ease": 40.61,
+      "gunning_fog": 8.56,
+      "smog": null,
+      "cost_band": "low",
+      "notes": [
+        "SMOG requiere 30 frases"
+      ]
+    }
+  },
+  "sections": [
+    {
+      "key_aspects": [
+        {
+          "aspect": "Budget range",
+          "detail": "The client has provided an annual budget range of USD 180,000-220,000 for occupational health services, which must be used to structure the pricing proposal.",
+          "source": "P10"
+        },
+        {
+          "aspect": "Pricing structure",
+          "detail": "A pricing structure needs to be proposed that fits within the budget range, likely based on per-employee or per-service fees, but the exact model is not specified.",
+          "source": "metadata"
+        }
+      ],
+      "ticket_id": "b45c9623-9698-4793-b2bb-3e5d01148d87",
+      "department_id": "revenue",
+      "open_questions": [
+        "What is the expected service volume (e.g., number of visits, screenings, or treatments per year) to accurately price within the budget?",
+        "Are there any specific payment milestones or invoicing preferences (e.g., monthly, quarterly, annual)?"
+      ],
+      "worker": "model",
+      "evaluation_results": {
+        "contains_phi": false
+      },
+      "approver": null,
+      "approved_at": null,
+      "owner": "Tom Callahan",
+      "id": 7,
+      "requests": [
+        "Confirm whether the pricing should be per employee per year (PEPY), per visit, or a fixed annual fee, and propose a structure that aligns with the USD 180,000-220,000 budget for 450 employees.",
+        "Clarify if the budget includes all costs (e.g., administrative, clinical, compliance) or if there are additional fees for services like lab tests or vaccinations."
+      ],
+      "excerpt_ids": [
+        10
+      ],
+      "draft_content": null,
+      "approval_status": "pending",
+      "created_at": "2026-11-24T00:03:06.797587+00:00"
+    },
+    {
+      "key_aspects": [
+        {
+          "aspect": "Service scope",
+          "detail": "Pre-employment and annual occupational health exams for 450 employees, plus workplace injury triage at a Texas clinic.",
+          "source": "P8"
+        },
+        {
+          "aspect": "Location requirement",
+          "detail": "Services must be delivered at a Texas clinic (likely in Houston area based on employee location).",
+          "source": "P6"
+        },
+        {
+          "aspect": "Regulatory requirement",
+          "detail": "Vendor must sign a Business Associate Agreement (BAA) under HIPAA.",
+          "source": "P8"
+        }
+      ],
+      "ticket_id": "b45c9623-9698-4793-b2bb-3e5d01148d87",
+      "department_id": "clinical",
+      "open_questions": [
+        "What is the annual turnover rate to estimate the number of pre-employment exams?",
+        "What specific components are required in the occupational health exams (e.g., physical, drug test, audiometry, spirometry)?",
+        "What are the expected hours of operation for the clinic and triage service?",
+        "Is there a preferred timeframe for completing annual exams (e.g., within a specific month)?",
+        "Are there any special requirements for injury triage (e.g., 24/7 availability, telemedicine option)?"
+      ],
+      "worker": "model",
+      "evaluation_results": {
+        "contains_phi": false
+      },
+      "approver": null,
+      "approved_at": null,
+      "owner": "Dr. Marcus Reid",
+      "id": 8,
+      "requests": [
+        "Confirm which Texas clinic location will be used and its capacity for 450 annual exams plus injury triage.",
+        "Determine staffing model (e.g., nurse practitioner, physician, support staff) and schedule (e.g., full-time, part-time, or periodic clinics).",
+        "Clarify whether exams are performed on-site at the employer or at the clinic, and if mobile services are needed."
+      ],
+      "excerpt_ids": [
+        6,
+        8
+      ],
+      "draft_content": null,
+      "approval_status": "pending",
+      "created_at": "2026-11-24T00:03:12.373858+00:00"
+    },
+    {
+      "key_aspects": [
+        {
+          "aspect": "Firma obligatoria de BAA bajo HIPAA",
+          "detail": "El cliente exige firmar un Business Associate Agreement (BAA) bajo HIPAA para los servicios de exámenes ocupacionales y triaje de lesiones.",
+          "source": "P8"
+        },
+        {
+          "aspect": "Revisión de PHI redactado en P11",
+          "detail": "El contenido redactado en P11 puede contener PHI y debe ser revisado por Compliance para garantizar que no se incluya información protegida en la propuesta.",
+          "source": "P11"
+        },
+        {
+          "aspect": "Datos de salud ocupacional sensibles",
+          "detail": "Los exámenes pre-empleo, anuales y el triaje de lesiones generan datos de salud de empleados que requieren salvaguardas técnicas y administrativas específicas bajo HIPAA.",
+          "source": "P8"
+        }
+      ],
+      "ticket_id": "b45c9623-9698-4793-b2bb-3e5d01148d87",
+      "department_id": "compliance",
+      "open_questions": [
+        "¿El BAA debe usar la plantilla del cliente o la nuestra?",
+        "¿Existen subcontratistas que requieran cubrirse bajo el BAA?",
+        "¿Hay requisitos estatales de Texas adicionales en materia de privacidad de datos de salud?"
+      ],
+      "worker": "model",
+      "evaluation_results": {
+        "contains_phi": false
+      },
+      "approver": null,
+      "approved_at": null,
+      "owner": "Claire Whitfield",
+      "id": 9,
+      "requests": [
+        "Preparar o revisar la plantilla del BAA estándar de HealthCore para firma bilateral con el cliente antes del cierre de la propuesta.",
+        "Realizar revisión manual del contenido redactado en P11 y confirmar por escrito que no hay PHI expuesta.",
+        "Confirmar que los flujos de datos cumplen la regla de minimización y limitación de usos (TPO) en el entorno de salud ocupacional."
+      ],
+      "excerpt_ids": [
+        8,
+        11
+      ],
+      "draft_content": null,
+      "approval_status": "pending",
+      "created_at": "2026-11-24T00:03:19.838573+00:00"
+    }
+  ]
+}

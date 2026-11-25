@@ -19,7 +19,9 @@ export default function LoginForm({ passwordChanged }: { passwordChanged: boolea
     try {
       const response = await authRequest("login", { username, password });
       if (!response.ok) {
-        setError(response.status === 401 ? "Credenciales incorrectas." : "No se pudo iniciar sesión.");
+        setError(response.status === 401 ? "Credenciales incorrectas."
+          : response.status === 429 ? "Demasiados intentos fallidos. Espera unos minutos antes de volver a intentarlo."
+          : "No se pudo iniciar sesión.");
         return;
       }
       router.push("/suppliers");

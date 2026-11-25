@@ -1,0 +1,1352 @@
+{
+  "ticket_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1",
+  "created_by": "06703c27-4594-4ec3-85b8-e639d548688a",
+  "handoff": {
+    "contract": "rfp_intake.handoff/v1",
+    "ticket_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1",
+    "route": "proposal_generation",
+    "next_status": "generando_borrador",
+    "metadata": {
+      "rfp_reference": null,
+      "client_name": "Thames Valley University",
+      "client_type": "university",
+      "client_country": "UK",
+      "program_type": "referral_network",
+      "program_types": [
+        "referral_network"
+      ],
+      "covered_population": 3000,
+      "population_unit": "students",
+      "deadline": null,
+      "deadline_text": "around August 28th",
+      "budget_range": null,
+      "contract_term": null,
+      "currency": "GBP",
+      "regulation": "UK GDPR",
+      "agreement_type": "DPA",
+      "departments_needed": [
+        "revenue",
+        "clinical",
+        "compliance"
+      ]
+    },
+    "currency": "GBP",
+    "required_clauses": [
+      "DPA (Data Processing Agreement, UK GDPR)"
+    ],
+    "workstreams": [
+      {
+        "department_id": "revenue",
+        "owner": "Tom Callahan",
+        "key_aspects": [
+          {
+            "aspect": "Pricing structure",
+            "detail": "Determine a pricing model (e.g., per-referral fee, bundled rate, or subscription) for the referral network covering 3,000 students.",
+            "source": "P4"
+          },
+          {
+            "aspect": "Payment terms in GBP",
+            "detail": "Define payment milestones, frequency, and method in GBP, aligned with the 25-day implementation timeline.",
+            "source": "metadata"
+          },
+          {
+            "aspect": "Financial risk and currency",
+            "detail": "Assess any currency risk (GBP is fixed) and ensure payment terms are clear for a UK-based university.",
+            "source": "metadata"
+          }
+        ],
+        "requests": [
+          "Prepare a pricing proposal (e.g., per-student, per-referral, or fixed fee) for the referral network.",
+          "Specify the currency (GBP) and any applicable taxes (e.g., VAT) in the payment structure."
+        ],
+        "open_questions": [
+          "What is the expected volume of referrals per month or per term?",
+          "Are there any additional costs (e.g., setup fee, administrative fee) beyond the referral pricing?",
+          "What is the preferred payment method (e.g., bank transfer, invoice)?"
+        ]
+      },
+      {
+        "department_id": "clinical",
+        "owner": "Dr. Marcus Reid",
+        "key_aspects": [
+          {
+            "aspect": "Referral network setup",
+            "detail": "Establish a referral partnership with a satellite clinic to provide specialist care access for 3,000 students on the main campus.",
+            "source": "P4"
+          },
+          {
+            "aspect": "Timeline",
+            "detail": "The network must be operational by August 28th, approximately 25 days from the RFP date.",
+            "source": "P5"
+          },
+          {
+            "aspect": "Staffing requirements",
+            "detail": "Need to assign clinical staff (e.g., referral coordinator, nurse) to manage student referrals and ensure timely access.",
+            "source": "P4"
+          },
+          {
+            "aspect": "Scheduling and location",
+            "detail": "Define appointment slots and identify a satellite clinic location convenient to the university campus.",
+            "source": "P5"
+          }
+        ],
+        "requests": [
+          "Identify which satellite clinic(s) can serve the university and assess current capacity to handle student referrals.",
+          "Propose a staffing plan including roles, hours, and coverage for the referral network.",
+          "Define scheduling parameters (e.g., appointment availability, turnaround time) and location requirements (proximity to campus)."
+        ],
+        "open_questions": [
+          "What is the expected volume of referrals per month (e.g., number of students needing specialist care)?",
+          "Which specialist types are most needed (e.g., mental health, dermatology, orthopedics)?",
+          "What are the desired operating hours and days for the referral clinic?",
+          "What is the current capacity and availability of the satellite clinic(s) near the university?",
+          "Is there a budget for additional staffing or clinic expansion?",
+          "What is the exact distance or travel time from campus to the proposed clinic?"
+        ]
+      },
+      {
+        "department_id": "compliance",
+        "owner": "Claire Whitfield",
+        "key_aspects": [
+          {
+            "aspect": "UK GDPR compliance for student health data",
+            "detail": "The proposal must include a Data Processing Agreement (DPA) and full compliance with UK GDPR, as the data involves sensitive health data of students.",
+            "source": "P6"
+          },
+          {
+            "aspect": "Sensitive data handling",
+            "detail": "Student health data is special category data under UK GDPR, requiring a lawful basis, data protection impact assessment (DPIA), and additional safeguards.",
+            "source": "P6"
+          }
+        ],
+        "requests": [
+          "Prepare a DPA template compliant with UK GDPR, including clauses on data processing, data subject rights, breach notification, and sub-processor management.",
+          "Confirm that the client has a Data Protection Officer (DPO) and that a DPIA will be conducted for the processing of student health data.",
+          "Ensure the proposal includes provisions for data minimization, purpose limitation, and retention periods as required by UK GDPR."
+        ],
+        "open_questions": [
+          "What specific categories of student health data will be processed?",
+          "What are the exact processing purposes and lawful basis under UK GDPR?",
+          "Will any third-party sub-processors be involved, and if so, what are their details?",
+          "What is the exact deadline for the proposal? (metadata says 'around August 28th' but no precise date)"
+        ]
+      }
+    ],
+    "conflicts": [],
+    "open_questions": [
+      {
+        "department_id": "revenue",
+        "question": "La RFP no indica presupuesto de referencia."
+      },
+      {
+        "department_id": "revenue",
+        "question": "Fecha límite sin año explícito («around August 28th»): confirmar la fecha exacta con el cliente."
+      }
+    ],
+    "phi": {
+      "detected": false,
+      "categories": []
+    },
+    "document_ref": "rfp_ticket.document_markdown"
+  },
+  "rfp_id": "RFP-20261124-890FBB",
+  "error": null,
+  "ready_for_generation": false,
+  "status": "needs_human_review",
+  "classification": {
+    "is_rfp": true,
+    "confidence": 0.95,
+    "document_type": "informal_request",
+    "requester_role": "client",
+    "reasons": [
+      "The document is an email from a university (Thames Valley University) requesting a proposal for a student health referral network partnership.",
+      "It specifies a desired timeline and compliance requirements (UK GDPR), indicating a formal business inquiry.",
+      "The requester is a potential client (university) seeking services from HealthCore."
+    ],
+    "decision": "accept",
+    "classifier": "model"
+  },
+  "response_handoff": {
+    "contract": "rfp_response.handoff/v1",
+    "ticket_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1",
+    "intake_contract": "rfp_intake.handoff/v1",
+    "next_status": "esperando_aprobación",
+    "client_country": "UK",
+    "currency": "GBP",
+    "required_clauses": [
+      "DPA (Data Processing Agreement, UK GDPR)"
+    ],
+    "max_iterations": 3,
+    "sections": [
+      {
+        "department_id": "revenue",
+        "owner": "Tom Callahan",
+        "approver": "Tom Callahan",
+        "status": "passed",
+        "iterations": 3,
+        "draft_content": "## Commercial Terms — Revenue Cycle\n\n### Pricing and currency\nWe propose a per-student, per-term subscription model for the referral network covering 3,000 students. The price is [amount to be confirmed by Revenue Cycle] GBP per student per term. This includes access to our satellite clinic network, referral coordination, and administrative support. All prices are quoted in GBP. No other currency applies. VAT may be applicable; we will confirm the VAT treatment once we understand the university’s tax status.\n\n### Payment structure\nPayment will be due in milestones aligned with the 25-day implementation timeline. The specific percentage split and due dates are [payment terms to be confirmed by Revenue Cycle]. Invoices will be issued in GBP. Payment method (e.g., bank transfer) is [payment terms to be confirmed by Revenue Cycle]. We do not offer early-payment discounts or late-payment penalties unless agreed in writing.\n\n### Contract term\nThe initial contract term is [contract term to be confirmed by Revenue Cycle]. We propose an annual renewal, subject to mutual agreement. Either party may terminate with [notice period to be confirmed by Revenue Cycle] days’ written notice.\n\n### Open questions\n- What is the expected volume of referrals per month or per term?\n- Are there any additional costs (e.g., setup fee, administrative fee) beyond the per-student pricing?\n- What is the preferred payment method (e.g., bank transfer, invoice)?\n- What is the desired contract term (e.g., one year, three years)?\n- What notice period for termination is acceptable?\n- What percentage of the total fee should be paid at each milestone?",
+        "evaluation_result": {
+          "section_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1:revenue",
+          "department_id": "revenue",
+          "iteration": 3,
+          "readability": {
+            "pass": true,
+            "score": 8.82,
+            "details": {
+              "words": 246,
+              "sentences": 20,
+              "max_grade": 14.0,
+              "min_reading_ease": 30.0,
+              "words_range": [
+                120,
+                550
+              ],
+              "long_sentences": [],
+              "issues": [],
+              "flesch_kincaid_grade": 8.82,
+              "flesch_reading_ease": 53.02,
+              "gunning_fog": 10.93
+            }
+          },
+          "relevance": {
+            "pass": true,
+            "score": 1.0,
+            "missing_aspects": [],
+            "covered_aspects": [
+              "Pricing structure",
+              "Payment terms in GBP",
+              "Financial risk and currency"
+            ],
+            "evaluator": "model",
+            "details": {
+              "unverified_evidence": [],
+              "gaps": {}
+            }
+          },
+          "compliance": {
+            "pass": true,
+            "rule_ids": [
+              "HC-PHI-01",
+              "HC-DPA-UK",
+              "HC-CUR-01",
+              "HC-CMP-01",
+              "HC-FIG-01",
+              "HC-FMT-01"
+            ],
+            "violations": [],
+            "contains_phi": false
+          },
+          "overall_pass": true,
+          "contains_phi": false,
+          "feedback_for_generator": "",
+          "evaluated_at": "2026-11-24T00:41:25.166028+00:00"
+        },
+        "contains_phi": false
+      },
+      {
+        "department_id": "clinical",
+        "owner": "Dr. Marcus Reid",
+        "approver": "Dr. Marcus Reid",
+        "status": "needs_human_review",
+        "iterations": 3,
+        "draft_content": "## Clinical Delivery — Clinical Operations\n\n### Sites and coverage\n\nHealthCore operates three UK clinics: two in London (uk-lon-001, uk-lon-002) and one in Manchester (uk-man-001). We propose a referral partnership with the London satellite clinic closest to Thames Valley University’s main campus. This clinic will provide specialist care access for 3,000 students. The exact clinic (uk-lon-001 or uk-lon-002) depends on travel time and capacity. We will confirm the location once we receive the university’s address and preferred travel distance.\n\n### Staffing and capacity\n\nWe will assign a referral coordinator and a registered nurse to manage student referrals. The coordinator handles scheduling, escalations, and communication. The nurse triages referrals and ensures timely access. Staff hours and coverage depend on expected referral volume. We do not assume current capacity. We must confirm available slots at the chosen clinic before committing to a staffing plan.\n\n### Clinical services\n\nThe referral network will follow HealthCore’s standard internal referral process. A primary care provider creates a referral in our system. The system routes it to the nearest available specialist clinic. The student receives appointment options. The target turnaround time is 11 days from referral creation to confirmed appointment. If a student does not receive options within 5 business days, the coordinator escalates to Dr. Marcus Reid. This process applies only to in-network specialists. Out-of-network referrals require manual handling and may take longer.\n\n### Open questions\n\n- What is the expected volume of referrals per month (e.g., number of students needing specialist care)?\n- Which specialist types are most needed (e.g., mental health, dermatology, orthopedics)?\n- What are the desired operating hours and days for the referral clinic?\n- What is the current capacity and availability of the satellite clinic(s) near the university?\n- Is there a budget for additional staffing or clinic expansion?\n- What is the exact distance or travel time from campus to the proposed clinic?\n- What is the university’s main campus address?",
+        "evaluation_result": {
+          "section_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1:clinical",
+          "department_id": "clinical",
+          "iteration": 3,
+          "readability": {
+            "pass": true,
+            "score": 9.89,
+            "details": {
+              "words": 315,
+              "sentences": 27,
+              "max_grade": 14.0,
+              "min_reading_ease": 30.0,
+              "words_range": [
+                120,
+                550
+              ],
+              "long_sentences": [],
+              "issues": [],
+              "flesch_kincaid_grade": 9.89,
+              "flesch_reading_ease": 45.01,
+              "gunning_fog": 12.45
+            }
+          },
+          "relevance": {
+            "pass": false,
+            "score": 0.5,
+            "missing_aspects": [
+              "Timeline",
+              "Scheduling and location"
+            ],
+            "covered_aspects": [
+              "Referral network setup",
+              "Staffing requirements"
+            ],
+            "evaluator": "model",
+            "details": {
+              "unverified_evidence": [],
+              "gaps": {
+                "Timeline": "No se menciona la fecha límite del 28 de agosto ni un plazo de 25 días para que la red esté operativa.",
+                "Scheduling and location": "No se definen horarios de citas ni se identifica una ubicación específica de la clínica satélite; solo se menciona que se confirmará la ubicación."
+              }
+            }
+          },
+          "compliance": {
+            "pass": true,
+            "rule_ids": [
+              "HC-PHI-01",
+              "HC-DPA-UK",
+              "HC-CUR-01",
+              "HC-CMP-01",
+              "HC-FIG-01",
+              "HC-FMT-01"
+            ],
+            "violations": [],
+            "contains_phi": false
+          },
+          "overall_pass": false,
+          "contains_phi": false,
+          "feedback_for_generator": "[relevance] Address the key aspect «Timeline» explicitly: No se menciona la fecha límite del 28 de agosto ni un plazo de 25 días para que la red esté operativa..\n[relevance] Address the key aspect «Scheduling and location» explicitly: No se definen horarios de citas ni se identifica una ubicación específica de la clínica satélite; solo se menciona que se confirmará la ubicación..",
+          "evaluated_at": "2026-11-24T00:41:20.862975+00:00"
+        },
+        "contains_phi": false
+      },
+      {
+        "department_id": "compliance",
+        "owner": "Claire Whitfield",
+        "approver": "Claire Whitfield",
+        "status": "passed",
+        "iterations": 1,
+        "draft_content": "## Data Protection and Compliance — Compliance and Data Governance\n\n### Regulatory framework\nWe will comply with UK GDPR for Thames Valley University. Student health data is special category data under Article 9. We will define a lawful basis. We will conduct a Data Protection Impact Assessment (DPIA). We will apply data minimization and purpose limitation. We will set retention periods. The client receives only aggregate, de-identified reports. No individual health records are shared.\n\n### Data Processing Agreement (DPA) under UK GDPR\nOur proposal includes a full DPA under Article 28. The DPA covers processing instructions, data subject rights, breach notification, and sub-processor management. We will confirm client’s Data Protection Officer. We will ensure all sub-processors meet UK GDPR standards. Breaches will be reported to the ICO within 72 hours. Pricing is quoted in GBP for this UK contract.\n\n### Compliance approval\nCompliance and Data Governance (Claire Whitfield) must approve this proposal before signing. Approval is mandatory. No deviation is allowed. We will coordinate internal procedures with Claire Whitfield prior to final submission.\n\n### Open questions\n- What specific categories of student health data will be processed?\n- What are the exact processing purposes and lawful basis under UK GDPR?\n- Will any third-party sub-processors be involved? If so, what are their details?\n- What is the exact deadline for the proposal? We noted “around August 28th” but need a precise date.",
+        "evaluation_result": {
+          "section_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1:compliance",
+          "department_id": "compliance",
+          "iteration": 1,
+          "readability": {
+            "pass": true,
+            "score": 7.96,
+            "details": {
+              "words": 207,
+              "sentences": 24,
+              "max_grade": 14.0,
+              "min_reading_ease": 30.0,
+              "words_range": [
+                120,
+                550
+              ],
+              "long_sentences": [],
+              "issues": [],
+              "flesch_kincaid_grade": 7.96,
+              "flesch_reading_ease": 52.93,
+              "gunning_fog": 8.45
+            }
+          },
+          "relevance": {
+            "pass": true,
+            "score": 1.0,
+            "missing_aspects": [],
+            "covered_aspects": [
+              "UK GDPR compliance for student health data",
+              "Sensitive data handling"
+            ],
+            "evaluator": "model",
+            "details": {
+              "unverified_evidence": [],
+              "gaps": {}
+            }
+          },
+          "compliance": {
+            "pass": true,
+            "rule_ids": [
+              "HC-PHI-01",
+              "HC-DPA-UK",
+              "HC-CUR-01",
+              "HC-CMP-01",
+              "HC-FIG-01",
+              "HC-FMT-01"
+            ],
+            "violations": [],
+            "contains_phi": false
+          },
+          "overall_pass": true,
+          "contains_phi": false,
+          "feedback_for_generator": "",
+          "evaluated_at": "2026-11-24T00:41:15.637119+00:00"
+        },
+        "contains_phi": false
+      }
+    ],
+    "needs_human_review": [
+      "clinical"
+    ],
+    "compliance_approval_required": true,
+    "signals": []
+  },
+  "stage": "generated",
+  "phi_detected": false,
+  "ready_for_approval": true,
+  "phi_categories": [],
+  "created_at": "2026-11-24T00:40:00.219524+00:00",
+  "pdf_sha256": "6d40cacdb52d23eb112c4ce2e74f95fa25e5f03d3e00da0820916aca74608caf",
+  "compliance_review_required": false,
+  "updated_at": "2026-11-24T00:41:25.188527+00:00",
+  "pdf_bytes": 2262,
+  "completed_at": "2026-11-24T00:40:56.276799+00:00",
+  "synthesis": {
+    "summary": "Thames Valley University solicita una red de derivación para 3,000 estudiantes, con implementación antes del 28 de agosto. El contrato será en GBP y debe cumplir UK GDPR. Tu rol es definir pricing y términos de pago; Clinical debe diseñar la red y staffing; Compliance debe preparar DPA y DPIA.",
+    "next_steps": [
+      "Preparar propuesta de pricing (por estudiante, por derivación o tarifa fija) y especificar moneda GBP e impuestos (VAT) — Revenue Cycle",
+      "Identificar clínica satélite cercana al campus y evaluar capacidad actual para atender derivaciones de estudiantes — Clinical Operations",
+      "Proponer plan de staffing (coordinador de derivaciones, enfermero) y definir horarios de citas y tiempo de respuesta — Clinical Operations",
+      "Preparar plantilla de DPA conforme a UK GDPR, incluyendo cláusulas de procesamiento, derechos del interesado, notificación de brechas y gestión de subprocesadores — Compliance and Data Governance",
+      "Confirmar que el cliente tiene DPO y que se realizará una DPIA para datos de salud de estudiantes — Compliance and Data Governance"
+    ],
+    "workstreams": [
+      {
+        "department_id": "revenue",
+        "department": "Revenue Cycle",
+        "owner": "Tom Callahan",
+        "owner_role": "Revenue Cycle Director",
+        "key_aspects": [
+          {
+            "aspect": "Pricing structure",
+            "detail": "Determine a pricing model (e.g., per-referral fee, bundled rate, or subscription) for the referral network covering 3,000 students.",
+            "source": "P4"
+          },
+          {
+            "aspect": "Payment terms in GBP",
+            "detail": "Define payment milestones, frequency, and method in GBP, aligned with the 25-day implementation timeline.",
+            "source": "metadata"
+          },
+          {
+            "aspect": "Financial risk and currency",
+            "detail": "Assess any currency risk (GBP is fixed) and ensure payment terms are clear for a UK-based university.",
+            "source": "metadata"
+          }
+        ],
+        "requests": [
+          "Prepare a pricing proposal (e.g., per-student, per-referral, or fixed fee) for the referral network.",
+          "Specify the currency (GBP) and any applicable taxes (e.g., VAT) in the payment structure."
+        ],
+        "open_questions": [
+          "What is the expected volume of referrals per month or per term?",
+          "Are there any additional costs (e.g., setup fee, administrative fee) beyond the referral pricing?",
+          "What is the preferred payment method (e.g., bank transfer, invoice)?"
+        ],
+        "worker": "model"
+      },
+      {
+        "department_id": "clinical",
+        "department": "Clinical Operations",
+        "owner": "Dr. Marcus Reid",
+        "owner_role": "Clinical Operations",
+        "key_aspects": [
+          {
+            "aspect": "Referral network setup",
+            "detail": "Establish a referral partnership with a satellite clinic to provide specialist care access for 3,000 students on the main campus.",
+            "source": "P4"
+          },
+          {
+            "aspect": "Timeline",
+            "detail": "The network must be operational by August 28th, approximately 25 days from the RFP date.",
+            "source": "P5"
+          },
+          {
+            "aspect": "Staffing requirements",
+            "detail": "Need to assign clinical staff (e.g., referral coordinator, nurse) to manage student referrals and ensure timely access.",
+            "source": "P4"
+          },
+          {
+            "aspect": "Scheduling and location",
+            "detail": "Define appointment slots and identify a satellite clinic location convenient to the university campus.",
+            "source": "P5"
+          }
+        ],
+        "requests": [
+          "Identify which satellite clinic(s) can serve the university and assess current capacity to handle student referrals.",
+          "Propose a staffing plan including roles, hours, and coverage for the referral network.",
+          "Define scheduling parameters (e.g., appointment availability, turnaround time) and location requirements (proximity to campus)."
+        ],
+        "open_questions": [
+          "What is the expected volume of referrals per month (e.g., number of students needing specialist care)?",
+          "Which specialist types are most needed (e.g., mental health, dermatology, orthopedics)?",
+          "What are the desired operating hours and days for the referral clinic?",
+          "What is the current capacity and availability of the satellite clinic(s) near the university?",
+          "Is there a budget for additional staffing or clinic expansion?",
+          "What is the exact distance or travel time from campus to the proposed clinic?"
+        ],
+        "worker": "model"
+      },
+      {
+        "department_id": "compliance",
+        "department": "Compliance and Data Governance",
+        "owner": "Claire Whitfield",
+        "owner_role": "Chief Compliance Officer",
+        "key_aspects": [
+          {
+            "aspect": "UK GDPR compliance for student health data",
+            "detail": "The proposal must include a Data Processing Agreement (DPA) and full compliance with UK GDPR, as the data involves sensitive health data of students.",
+            "source": "P6"
+          },
+          {
+            "aspect": "Sensitive data handling",
+            "detail": "Student health data is special category data under UK GDPR, requiring a lawful basis, data protection impact assessment (DPIA), and additional safeguards.",
+            "source": "P6"
+          }
+        ],
+        "requests": [
+          "Prepare a DPA template compliant with UK GDPR, including clauses on data processing, data subject rights, breach notification, and sub-processor management.",
+          "Confirm that the client has a Data Protection Officer (DPO) and that a DPIA will be conducted for the processing of student health data.",
+          "Ensure the proposal includes provisions for data minimization, purpose limitation, and retention periods as required by UK GDPR."
+        ],
+        "open_questions": [
+          "What specific categories of student health data will be processed?",
+          "What are the exact processing purposes and lawful basis under UK GDPR?",
+          "Will any third-party sub-processors be involved, and if so, what are their details?",
+          "What is the exact deadline for the proposal? (metadata says 'around August 28th' but no precise date)"
+        ],
+        "worker": "model"
+      }
+    ],
+    "conflicts": [],
+    "unmapped_requests": [],
+    "synthesizer": "model",
+    "open_questions": [
+      {
+        "department_id": "revenue",
+        "question": "La RFP no indica presupuesto de referencia."
+      },
+      {
+        "department_id": "revenue",
+        "question": "Fecha límite sin año explícito («around August 28th»): confirmar la fecha exacta con el cliente."
+      }
+    ],
+    "orchestrator": "model"
+  },
+  "metadata": {
+    "ticket_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1",
+    "covered_population": 3000,
+    "agreement_type": "DPA",
+    "gunning_fog": 13.33,
+    "population_unit": "students",
+    "departments_needed": [
+      "revenue",
+      "clinical",
+      "compliance"
+    ],
+    "cost_band": "low",
+    "rfp_reference": null,
+    "deadline": null,
+    "open_questions": [
+      {
+        "department_id": "revenue",
+        "question": "La RFP no indica presupuesto de referencia."
+      },
+      {
+        "department_id": "revenue",
+        "question": "Fecha límite sin año explícito («around August 28th»): confirmar la fecha exacta con el cliente."
+      }
+    ],
+    "client_name": "Thames Valley University",
+    "deadline_text": "around August 28th",
+    "word_count": 140,
+    "readability": {
+      "words": 140,
+      "sentences": 6,
+      "characters": 818,
+      "estimated_tokens": 204,
+      "pages": 1,
+      "flesch_kincaid_grade": 11.65,
+      "flesch_reading_ease": 51.42,
+      "gunning_fog": 13.33,
+      "smog": null,
+      "cost_band": "low",
+      "notes": [
+        "SMOG requiere 30 frases"
+      ]
+    },
+    "client_type": "university",
+    "budget_range": null,
+    "estimated_tokens": 204,
+    "extracted_at": "2026-11-24T00:40:27.398633+00:00",
+    "client_country": "UK",
+    "contract_term": null,
+    "pdf_pages": 1,
+    "program_type": "referral_network",
+    "currency": "GBP",
+    "flesch_kincaid_grade": 11.65,
+    "program_types": [
+      "referral_network"
+    ],
+    "regulation": "UK GDPR",
+    "flesch_reading_ease": 51.42
+  },
+  "sections": [
+    {
+      "ticket_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1",
+      "worker": "model",
+      "approver": null,
+      "department_id": "revenue",
+      "draft_content": "## Commercial Terms — Revenue Cycle\n\n### Pricing and currency\nWe propose a per-student, per-term subscription model for the referral network covering 3,000 students. The price is [amount to be confirmed by Revenue Cycle] GBP per student per term. This includes access to our satellite clinic network, referral coordination, and administrative support. All prices are quoted in GBP. No other currency applies. VAT may be applicable; we will confirm the VAT treatment once we understand the university’s tax status.\n\n### Payment structure\nPayment will be due in milestones aligned with the 25-day implementation timeline. The specific percentage split and due dates are [payment terms to be confirmed by Revenue Cycle]. Invoices will be issued in GBP. Payment method (e.g., bank transfer) is [payment terms to be confirmed by Revenue Cycle]. We do not offer early-payment discounts or late-payment penalties unless agreed in writing.\n\n### Contract term\nThe initial contract term is [contract term to be confirmed by Revenue Cycle]. We propose an annual renewal, subject to mutual agreement. Either party may terminate with [notice period to be confirmed by Revenue Cycle] days’ written notice.\n\n### Open questions\n- What is the expected volume of referrals per month or per term?\n- Are there any additional costs (e.g., setup fee, administrative fee) beyond the per-student pricing?\n- What is the preferred payment method (e.g., bank transfer, invoice)?\n- What is the desired contract term (e.g., one year, three years)?\n- What notice period for termination is acceptable?\n- What percentage of the total fee should be paid at each milestone?",
+      "approved_at": null,
+      "owner": "Tom Callahan",
+      "evaluation_results": {
+        "section_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1:revenue",
+        "department_id": "revenue",
+        "iteration": 3,
+        "readability": {
+          "pass": true,
+          "score": 8.82,
+          "details": {
+            "words": 246,
+            "sentences": 20,
+            "max_grade": 14.0,
+            "min_reading_ease": 30.0,
+            "words_range": [
+              120,
+              550
+            ],
+            "long_sentences": [],
+            "issues": [],
+            "flesch_kincaid_grade": 8.82,
+            "flesch_reading_ease": 53.02,
+            "gunning_fog": 10.93
+          }
+        },
+        "relevance": {
+          "pass": true,
+          "score": 1.0,
+          "missing_aspects": [],
+          "covered_aspects": [
+            "Pricing structure",
+            "Payment terms in GBP",
+            "Financial risk and currency"
+          ],
+          "evaluator": "model",
+          "details": {
+            "unverified_evidence": [],
+            "gaps": {}
+          }
+        },
+        "compliance": {
+          "pass": true,
+          "rule_ids": [
+            "HC-PHI-01",
+            "HC-DPA-UK",
+            "HC-CUR-01",
+            "HC-CMP-01",
+            "HC-FIG-01",
+            "HC-FMT-01"
+          ],
+          "violations": [],
+          "contains_phi": false
+        },
+        "overall_pass": true,
+        "contains_phi": false,
+        "feedback_for_generator": "",
+        "evaluated_at": "2026-11-24T00:41:25.166028+00:00"
+      },
+      "created_at": "2026-11-24T00:40:30.970912+00:00",
+      "key_aspects": [
+        {
+          "aspect": "Pricing structure",
+          "detail": "Determine a pricing model (e.g., per-referral fee, bundled rate, or subscription) for the referral network covering 3,000 students.",
+          "source": "P4"
+        },
+        {
+          "aspect": "Payment terms in GBP",
+          "detail": "Define payment milestones, frequency, and method in GBP, aligned with the 25-day implementation timeline.",
+          "source": "metadata"
+        },
+        {
+          "aspect": "Financial risk and currency",
+          "detail": "Assess any currency risk (GBP is fixed) and ensure payment terms are clear for a UK-based university.",
+          "source": "metadata"
+        }
+      ],
+      "generation_status": "passed",
+      "requests": [
+        "Prepare a pricing proposal (e.g., per-student, per-referral, or fixed fee) for the referral network.",
+        "Specify the currency (GBP) and any applicable taxes (e.g., VAT) in the payment structure."
+      ],
+      "iterations": 3,
+      "open_questions": [
+        "What is the expected volume of referrals per month or per term?",
+        "Are there any additional costs (e.g., setup fee, administrative fee) beyond the referral pricing?",
+        "What is the preferred payment method (e.g., bank transfer, invoice)?"
+      ],
+      "evaluation_history": [
+        {
+          "iteration": 1,
+          "draft": "## Commercial Terms — Revenue Cycle\n\n### Pricing and currency\nWe propose a per-student, per-term subscription model for the referral network covering 3,000 students. The price is [amount to be confirmed by Revenue Cycle] GBP per student per term. This includes access to our satellite clinic network, referral coordination, and administrative support. All prices are quoted in GBP (GBP). No other currency applies. VAT may be applicable; we will confirm the VAT treatment once we understand the university’s tax status.\n\n### Payment structure\nPayment will be due in two milestones aligned with the 25-day implementation timeline:\n- 50% upon contract signing.\n- 50% upon network go-live (target: August 28th).\n\nInvoices will be issued in GBP. Payment method (e.g., bank transfer) is [payment terms to be confirmed by Revenue Cycle]. We do not offer early-payment discounts or late-payment penalties unless agreed in writing.\n\n### Contract term\nThe initial contract term is [contract term to be confirmed by Revenue Cycle]. We propose an annual renewal, subject to mutual agreement. Either party may terminate with [notice period to be confirmed by Revenue Cycle] days’ written notice.\n\n### Open questions\n- What is the expected volume of referrals per month or per term?\n- Are there any additional costs (e.g., setup fee, administrative fee) beyond the per-student pricing?\n- What is the preferred payment method (e.g., bank transfer, invoice)?\n- What is the desired contract term (e.g., one year, three years)?\n- What notice period for termination is acceptable?",
+          "evaluation": {
+            "section_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1:revenue",
+            "department_id": "revenue",
+            "iteration": 1,
+            "readability": {
+              "pass": true,
+              "score": 8.89,
+              "details": {
+                "words": 232,
+                "sentences": 19,
+                "max_grade": 14.0,
+                "min_reading_ease": 30.0,
+                "words_range": [
+                  120,
+                  550
+                ],
+                "long_sentences": [],
+                "issues": [],
+                "flesch_kincaid_grade": 8.89,
+                "flesch_reading_ease": 52.23,
+                "gunning_fog": 10.4
+              }
+            },
+            "relevance": {
+              "pass": true,
+              "score": 1.0,
+              "missing_aspects": [],
+              "covered_aspects": [
+                "Pricing structure",
+                "Payment terms in GBP",
+                "Financial risk and currency"
+              ],
+              "evaluator": "model",
+              "details": {
+                "unverified_evidence": [],
+                "gaps": {}
+              }
+            },
+            "compliance": {
+              "pass": false,
+              "rule_ids": [
+                "HC-PHI-01",
+                "HC-DPA-UK",
+                "HC-CUR-01",
+                "HC-CMP-01",
+                "HC-FIG-01",
+                "HC-FMT-01"
+              ],
+              "violations": [
+                {
+                  "rule_id": "HC-FIG-01",
+                  "message": "Figures not found in the RFP analysis or HealthCore data: 50. Remove them or replace them with '[to be confirmed]' and add an open question."
+                }
+              ],
+              "contains_phi": false
+            },
+            "overall_pass": false,
+            "contains_phi": false,
+            "feedback_for_generator": "[compliance HC-FIG-01] Figures not found in the RFP analysis or HealthCore data: 50. Remove them or replace them with '[to be confirmed]' and add an open question.",
+            "evaluated_at": "2026-11-24T00:41:03.142770+00:00"
+          }
+        },
+        {
+          "iteration": 2,
+          "draft": "## Commercial Terms — Revenue Cycle\n\n### Pricing and currency\nWe propose a per-student, per-term subscription model for the referral network covering 3,000 students. The price is [amount to be confirmed by Revenue Cycle] GBP per student per term. This includes access to our satellite clinic network, referral coordination, and administrative support. All prices are quoted in GBP. No other currency applies. VAT may be applicable; we will confirm the VAT treatment once we understand the university’s tax status.\n\n### Payment structure\nPayment will be due in two milestones aligned with the 25-day implementation timeline:\n- 50% upon contract signing.\n- 50% upon network go-live (target: August 28th).\n\nInvoices will be issued in GBP. Payment method (e.g., bank transfer) is [payment terms to be confirmed by Revenue Cycle]. We do not offer early-payment discounts or late-payment penalties unless agreed in writing.\n\n### Contract term\nThe initial contract term is [contract term to be confirmed by Revenue Cycle]. We propose an annual renewal, subject to mutual agreement. Either party may terminate with [notice period to be confirmed by Revenue Cycle] days’ written notice.\n\n### Open questions\n- What is the expected volume of referrals per month or per term?\n- Are there any additional costs (e.g., setup fee, administrative fee) beyond the per-student pricing?\n- What is the preferred payment method (e.g., bank transfer, invoice)?\n- What is the desired contract term (e.g., one year, three years)?\n- What notice period for termination is acceptable?",
+          "evaluation": {
+            "section_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1:revenue",
+            "department_id": "revenue",
+            "iteration": 2,
+            "readability": {
+              "pass": true,
+              "score": 8.9,
+              "details": {
+                "words": 231,
+                "sentences": 19,
+                "max_grade": 14.0,
+                "min_reading_ease": 30.0,
+                "words_range": [
+                  120,
+                  550
+                ],
+                "long_sentences": [],
+                "issues": [],
+                "flesch_kincaid_grade": 8.9,
+                "flesch_reading_ease": 52.03,
+                "gunning_fog": 10.4
+              }
+            },
+            "relevance": {
+              "pass": true,
+              "score": 1.0,
+              "missing_aspects": [],
+              "covered_aspects": [
+                "Pricing structure",
+                "Payment terms in GBP",
+                "Financial risk and currency"
+              ],
+              "evaluator": "model",
+              "details": {
+                "unverified_evidence": [],
+                "gaps": {}
+              }
+            },
+            "compliance": {
+              "pass": false,
+              "rule_ids": [
+                "HC-PHI-01",
+                "HC-DPA-UK",
+                "HC-CUR-01",
+                "HC-CMP-01",
+                "HC-FIG-01",
+                "HC-FMT-01"
+              ],
+              "violations": [
+                {
+                  "rule_id": "HC-FIG-01",
+                  "message": "Figures not found in the RFP analysis or HealthCore data: 50. Remove them or replace them with '[to be confirmed]' and add an open question."
+                }
+              ],
+              "contains_phi": false
+            },
+            "overall_pass": false,
+            "contains_phi": false,
+            "feedback_for_generator": "[compliance HC-FIG-01] Figures not found in the RFP analysis or HealthCore data: 50. Remove them or replace them with '[to be confirmed]' and add an open question.",
+            "evaluated_at": "2026-11-24T00:41:08.279525+00:00"
+          }
+        },
+        {
+          "iteration": 3,
+          "draft": "## Commercial Terms — Revenue Cycle\n\n### Pricing and currency\nWe propose a per-student, per-term subscription model for the referral network covering 3,000 students. The price is [amount to be confirmed by Revenue Cycle] GBP per student per term. This includes access to our satellite clinic network, referral coordination, and administrative support. All prices are quoted in GBP. No other currency applies. VAT may be applicable; we will confirm the VAT treatment once we understand the university’s tax status.\n\n### Payment structure\nPayment will be due in milestones aligned with the 25-day implementation timeline. The specific percentage split and due dates are [payment terms to be confirmed by Revenue Cycle]. Invoices will be issued in GBP. Payment method (e.g., bank transfer) is [payment terms to be confirmed by Revenue Cycle]. We do not offer early-payment discounts or late-payment penalties unless agreed in writing.\n\n### Contract term\nThe initial contract term is [contract term to be confirmed by Revenue Cycle]. We propose an annual renewal, subject to mutual agreement. Either party may terminate with [notice period to be confirmed by Revenue Cycle] days’ written notice.\n\n### Open questions\n- What is the expected volume of referrals per month or per term?\n- Are there any additional costs (e.g., setup fee, administrative fee) beyond the per-student pricing?\n- What is the preferred payment method (e.g., bank transfer, invoice)?\n- What is the desired contract term (e.g., one year, three years)?\n- What notice period for termination is acceptable?\n- What percentage of the total fee should be paid at each milestone?",
+          "evaluation": {
+            "section_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1:revenue",
+            "department_id": "revenue",
+            "iteration": 3,
+            "readability": {
+              "pass": true,
+              "score": 8.82,
+              "details": {
+                "words": 246,
+                "sentences": 20,
+                "max_grade": 14.0,
+                "min_reading_ease": 30.0,
+                "words_range": [
+                  120,
+                  550
+                ],
+                "long_sentences": [],
+                "issues": [],
+                "flesch_kincaid_grade": 8.82,
+                "flesch_reading_ease": 53.02,
+                "gunning_fog": 10.93
+              }
+            },
+            "relevance": {
+              "pass": true,
+              "score": 1.0,
+              "missing_aspects": [],
+              "covered_aspects": [
+                "Pricing structure",
+                "Payment terms in GBP",
+                "Financial risk and currency"
+              ],
+              "evaluator": "model",
+              "details": {
+                "unverified_evidence": [],
+                "gaps": {}
+              }
+            },
+            "compliance": {
+              "pass": true,
+              "rule_ids": [
+                "HC-PHI-01",
+                "HC-DPA-UK",
+                "HC-CUR-01",
+                "HC-CMP-01",
+                "HC-FIG-01",
+                "HC-FMT-01"
+              ],
+              "violations": [],
+              "contains_phi": false
+            },
+            "overall_pass": true,
+            "contains_phi": false,
+            "feedback_for_generator": "",
+            "evaluated_at": "2026-11-24T00:41:25.166028+00:00"
+          }
+        }
+      ],
+      "excerpt_ids": [
+        4,
+        5
+      ],
+      "updated_at": "2026-11-24T00:41:25.177752+00:00",
+      "id": 13,
+      "approval_status": "pending"
+    },
+    {
+      "ticket_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1",
+      "worker": "model",
+      "approver": null,
+      "department_id": "clinical",
+      "draft_content": "## Clinical Delivery — Clinical Operations\n\n### Sites and coverage\n\nHealthCore operates three UK clinics: two in London (uk-lon-001, uk-lon-002) and one in Manchester (uk-man-001). We propose a referral partnership with the London satellite clinic closest to Thames Valley University’s main campus. This clinic will provide specialist care access for 3,000 students. The exact clinic (uk-lon-001 or uk-lon-002) depends on travel time and capacity. We will confirm the location once we receive the university’s address and preferred travel distance.\n\n### Staffing and capacity\n\nWe will assign a referral coordinator and a registered nurse to manage student referrals. The coordinator handles scheduling, escalations, and communication. The nurse triages referrals and ensures timely access. Staff hours and coverage depend on expected referral volume. We do not assume current capacity. We must confirm available slots at the chosen clinic before committing to a staffing plan.\n\n### Clinical services\n\nThe referral network will follow HealthCore’s standard internal referral process. A primary care provider creates a referral in our system. The system routes it to the nearest available specialist clinic. The student receives appointment options. The target turnaround time is 11 days from referral creation to confirmed appointment. If a student does not receive options within 5 business days, the coordinator escalates to Dr. Marcus Reid. This process applies only to in-network specialists. Out-of-network referrals require manual handling and may take longer.\n\n### Open questions\n\n- What is the expected volume of referrals per month (e.g., number of students needing specialist care)?\n- Which specialist types are most needed (e.g., mental health, dermatology, orthopedics)?\n- What are the desired operating hours and days for the referral clinic?\n- What is the current capacity and availability of the satellite clinic(s) near the university?\n- Is there a budget for additional staffing or clinic expansion?\n- What is the exact distance or travel time from campus to the proposed clinic?\n- What is the university’s main campus address?",
+      "approved_at": null,
+      "owner": "Dr. Marcus Reid",
+      "evaluation_results": {
+        "section_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1:clinical",
+        "department_id": "clinical",
+        "iteration": 3,
+        "readability": {
+          "pass": true,
+          "score": 9.89,
+          "details": {
+            "words": 315,
+            "sentences": 27,
+            "max_grade": 14.0,
+            "min_reading_ease": 30.0,
+            "words_range": [
+              120,
+              550
+            ],
+            "long_sentences": [],
+            "issues": [],
+            "flesch_kincaid_grade": 9.89,
+            "flesch_reading_ease": 45.01,
+            "gunning_fog": 12.45
+          }
+        },
+        "relevance": {
+          "pass": false,
+          "score": 0.5,
+          "missing_aspects": [
+            "Timeline",
+            "Scheduling and location"
+          ],
+          "covered_aspects": [
+            "Referral network setup",
+            "Staffing requirements"
+          ],
+          "evaluator": "model",
+          "details": {
+            "unverified_evidence": [],
+            "gaps": {
+              "Timeline": "No se menciona la fecha límite del 28 de agosto ni un plazo de 25 días para que la red esté operativa.",
+              "Scheduling and location": "No se definen horarios de citas ni se identifica una ubicación específica de la clínica satélite; solo se menciona que se confirmará la ubicación."
+            }
+          }
+        },
+        "compliance": {
+          "pass": true,
+          "rule_ids": [
+            "HC-PHI-01",
+            "HC-DPA-UK",
+            "HC-CUR-01",
+            "HC-CMP-01",
+            "HC-FIG-01",
+            "HC-FMT-01"
+          ],
+          "violations": [],
+          "contains_phi": false
+        },
+        "overall_pass": false,
+        "contains_phi": false,
+        "feedback_for_generator": "[relevance] Address the key aspect «Timeline» explicitly: No se menciona la fecha límite del 28 de agosto ni un plazo de 25 días para que la red esté operativa..\n[relevance] Address the key aspect «Scheduling and location» explicitly: No se definen horarios de citas ni se identifica una ubicación específica de la clínica satélite; solo se menciona que se confirmará la ubicación..",
+        "evaluated_at": "2026-11-24T00:41:20.862975+00:00"
+      },
+      "created_at": "2026-11-24T00:40:35.570148+00:00",
+      "key_aspects": [
+        {
+          "aspect": "Referral network setup",
+          "detail": "Establish a referral partnership with a satellite clinic to provide specialist care access for 3,000 students on the main campus.",
+          "source": "P4"
+        },
+        {
+          "aspect": "Timeline",
+          "detail": "The network must be operational by August 28th, approximately 25 days from the RFP date.",
+          "source": "P5"
+        },
+        {
+          "aspect": "Staffing requirements",
+          "detail": "Need to assign clinical staff (e.g., referral coordinator, nurse) to manage student referrals and ensure timely access.",
+          "source": "P4"
+        },
+        {
+          "aspect": "Scheduling and location",
+          "detail": "Define appointment slots and identify a satellite clinic location convenient to the university campus.",
+          "source": "P5"
+        }
+      ],
+      "generation_status": "needs_human_review",
+      "requests": [
+        "Identify which satellite clinic(s) can serve the university and assess current capacity to handle student referrals.",
+        "Propose a staffing plan including roles, hours, and coverage for the referral network.",
+        "Define scheduling parameters (e.g., appointment availability, turnaround time) and location requirements (proximity to campus)."
+      ],
+      "iterations": 3,
+      "open_questions": [
+        "What is the expected volume of referrals per month (e.g., number of students needing specialist care)?",
+        "Which specialist types are most needed (e.g., mental health, dermatology, orthopedics)?",
+        "What are the desired operating hours and days for the referral clinic?",
+        "What is the current capacity and availability of the satellite clinic(s) near the university?",
+        "Is there a budget for additional staffing or clinic expansion?",
+        "What is the exact distance or travel time from campus to the proposed clinic?"
+      ],
+      "evaluation_history": [
+        {
+          "iteration": 1,
+          "draft": "## Clinical Delivery — Clinical Operations\n\n### Sites and coverage\n\nHealthCore operates three clinics in the UK: two in London (uk-lon-001, uk-lon-002) and one in Manchester (uk-man-001). We propose to serve Thames Valley University students through the London clinic closest to the main campus. The exact satellite clinic will depend on travel time and capacity. We will confirm the best location once we know the university’s address and preferred travel distance.\n\n### Staffing and capacity\n\nWe will assign a referral coordinator and a registered nurse to manage student referrals. The coordinator handles scheduling, escalations, and communication. The nurse triages referrals and ensures timely access. Staff hours and coverage depend on expected referral volume. We do not assume current capacity. We must confirm available slots at the chosen clinic before committing to a staffing plan.\n\n### Clinical services\n\nThe referral network will follow HealthCore’s standard internal referral process. A primary care provider creates a referral in our system. The system routes it to the nearest available specialist clinic. The student receives appointment options. The target turnaround time is 11 days from referral creation to confirmed appointment. If a student does not receive options within 5 business days, the coordinator escalates to Dr. Marcus Reid. This process applies only to in-network specialists. Out-of-network referrals require manual handling and may take longer.\n\n### Open questions\n\n- What is the expected volume of referrals per month (e.g., number of students needing specialist care)?\n- Which specialist types are most needed (e.g., mental health, dermatology, orthopedics)?\n- What are the desired operating hours and days for the referral clinic?\n- What is the current capacity and availability of the satellite clinic(s) near the university?\n- Is there a budget for additional staffing or clinic expansion?\n- What is the exact distance or travel time from campus to the proposed clinic?\n- What is the university’s main campus address?",
+          "evaluation": {
+            "section_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1:clinical",
+            "department_id": "clinical",
+            "iteration": 1,
+            "readability": {
+              "pass": true,
+              "score": 9.82,
+              "details": {
+                "words": 301,
+                "sentences": 26,
+                "max_grade": 14.0,
+                "min_reading_ease": 30.0,
+                "words_range": [
+                  120,
+                  550
+                ],
+                "long_sentences": [],
+                "issues": [],
+                "flesch_kincaid_grade": 9.82,
+                "flesch_reading_ease": 45.5,
+                "gunning_fog": 12.36
+              }
+            },
+            "relevance": {
+              "pass": false,
+              "score": 0.25,
+              "missing_aspects": [
+                "Referral network setup",
+                "Timeline",
+                "Scheduling and location"
+              ],
+              "covered_aspects": [
+                "Staffing requirements"
+              ],
+              "evaluator": "model",
+              "details": {
+                "unverified_evidence": [],
+                "gaps": {
+                  "Referral network setup": "The section does not explicitly establish a referral partnership with a satellite clinic; it only proposes to use an existing London clinic and raises open questions about the satellite clinic.",
+                  "Timeline": "No timeline provided; the section does not address the required operational date of August 28th.",
+                  "Scheduling and location": "The section does not define appointment slots nor identify a specific satellite clinic location; it only proposes to confirm later."
+                }
+              }
+            },
+            "compliance": {
+              "pass": true,
+              "rule_ids": [
+                "HC-PHI-01",
+                "HC-DPA-UK",
+                "HC-CUR-01",
+                "HC-CMP-01",
+                "HC-FIG-01",
+                "HC-FMT-01"
+              ],
+              "violations": [],
+              "contains_phi": false
+            },
+            "overall_pass": false,
+            "contains_phi": false,
+            "feedback_for_generator": "[relevance] Address the key aspect «Referral network setup» explicitly: The section does not explicitly establish a referral partnership with a satellite clinic; it only proposes to use an existing London clinic and raises open questions about the satellite clinic..\n[relevance] Address the key aspect «Timeline» explicitly: No timeline provided; the section does not address the required operational date of August 28th..\n[relevance] Address the key aspect «Scheduling and location» explicitly: The section does not define appointment slots nor identify a specific satellite clinic location; it only proposes to confirm later..",
+            "evaluated_at": "2026-11-24T00:41:08.387365+00:00"
+          }
+        },
+        {
+          "iteration": 2,
+          "draft": "## Clinical Delivery — Clinical Operations\n\n### Sites and coverage\n\nHealthCore operates three UK clinics: two in London (uk-lon-001, uk-lon-002) and one in Manchester (uk-man-001). We propose a referral partnership with the London satellite clinic closest to Thames Valley University’s main campus. This clinic will provide specialist care access for 3,000 students. The exact clinic (uk-lon-001 or uk-lon-002) depends on travel time and capacity. We will confirm the location once we receive the university’s address and preferred travel distance.\n\n### Staffing and capacity\n\nWe will assign a referral coordinator and a registered nurse to manage student referrals. The coordinator handles scheduling, escalations, and communication. The nurse triages referrals and ensures timely access. Staff hours and coverage depend on expected referral volume. We do not assume current capacity. We must confirm available slots at the chosen clinic before committing to a staffing plan.\n\n### Clinical services\n\nThe referral network will follow HealthCore’s standard internal referral process. A primary care provider creates a referral in our system. The system routes it to the nearest available specialist clinic. The student receives appointment options. The target turnaround time is 11 days from referral creation to confirmed appointment. If a student does not receive options within 5 business days, the coordinator escalates to Dr. Marcus Reid. This process applies only to in-network specialists. Out-of-network referrals require manual handling and may take longer.\n\n### Open questions\n\n- What is the expected volume of referrals per month (e.g., number of students needing specialist care)?\n- Which specialist types are most needed (e.g., mental health, dermatology, orthopedics)?\n- What are the desired operating hours and days for the referral clinic?\n- What is the current capacity and availability of the satellite clinic(s) near the university?\n- Is there a budget for additional staffing or clinic expansion?\n- What is the exact distance or travel time from campus to the proposed clinic?\n- What is the university’s main campus address?",
+          "evaluation": {
+            "section_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1:clinical",
+            "department_id": "clinical",
+            "iteration": 2,
+            "readability": {
+              "pass": true,
+              "score": 9.89,
+              "details": {
+                "words": 315,
+                "sentences": 27,
+                "max_grade": 14.0,
+                "min_reading_ease": 30.0,
+                "words_range": [
+                  120,
+                  550
+                ],
+                "long_sentences": [],
+                "issues": [],
+                "flesch_kincaid_grade": 9.89,
+                "flesch_reading_ease": 45.01,
+                "gunning_fog": 12.45
+              }
+            },
+            "relevance": {
+              "pass": false,
+              "score": 0.5,
+              "missing_aspects": [
+                "Timeline",
+                "Scheduling and location"
+              ],
+              "covered_aspects": [
+                "Referral network setup",
+                "Staffing requirements"
+              ],
+              "evaluator": "model",
+              "details": {
+                "unverified_evidence": [],
+                "gaps": {
+                  "Timeline": "The section does not mention a timeline or the August 28th deadline. It does not commit to having the network operational by that date.",
+                  "Scheduling and location": "The section identifies a satellite clinic location but does not define appointment slots. It mentions confirming available slots later, but does not specify the number or timing of slots."
+                }
+              }
+            },
+            "compliance": {
+              "pass": true,
+              "rule_ids": [
+                "HC-PHI-01",
+                "HC-DPA-UK",
+                "HC-CUR-01",
+                "HC-CMP-01",
+                "HC-FIG-01",
+                "HC-FMT-01"
+              ],
+              "violations": [],
+              "contains_phi": false
+            },
+            "overall_pass": false,
+            "contains_phi": false,
+            "feedback_for_generator": "[relevance] Address the key aspect «Timeline» explicitly: The section does not mention a timeline or the August 28th deadline. It does not commit to having the network operational by that date..\n[relevance] Address the key aspect «Scheduling and location» explicitly: The section identifies a satellite clinic location but does not define appointment slots. It mentions confirming available slots later, but does not specify the number or timing of slots..",
+            "evaluated_at": "2026-11-24T00:41:15.129409+00:00"
+          }
+        },
+        {
+          "iteration": 3,
+          "draft": "## Clinical Delivery — Clinical Operations\n\n### Sites and coverage\n\nHealthCore operates three UK clinics: two in London (uk-lon-001, uk-lon-002) and one in Manchester (uk-man-001). We propose a referral partnership with the London satellite clinic closest to Thames Valley University’s main campus. This clinic will provide specialist care access for 3,000 students. The exact clinic (uk-lon-001 or uk-lon-002) depends on travel time and capacity. We will confirm the location once we receive the university’s address and preferred travel distance.\n\n### Staffing and capacity\n\nWe will assign a referral coordinator and a registered nurse to manage student referrals. The coordinator handles scheduling, escalations, and communication. The nurse triages referrals and ensures timely access. Staff hours and coverage depend on expected referral volume. We do not assume current capacity. We must confirm available slots at the chosen clinic before committing to a staffing plan.\n\n### Clinical services\n\nThe referral network will follow HealthCore’s standard internal referral process. A primary care provider creates a referral in our system. The system routes it to the nearest available specialist clinic. The student receives appointment options. The target turnaround time is 11 days from referral creation to confirmed appointment. If a student does not receive options within 5 business days, the coordinator escalates to Dr. Marcus Reid. This process applies only to in-network specialists. Out-of-network referrals require manual handling and may take longer.\n\n### Open questions\n\n- What is the expected volume of referrals per month (e.g., number of students needing specialist care)?\n- Which specialist types are most needed (e.g., mental health, dermatology, orthopedics)?\n- What are the desired operating hours and days for the referral clinic?\n- What is the current capacity and availability of the satellite clinic(s) near the university?\n- Is there a budget for additional staffing or clinic expansion?\n- What is the exact distance or travel time from campus to the proposed clinic?\n- What is the university’s main campus address?",
+          "evaluation": {
+            "section_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1:clinical",
+            "department_id": "clinical",
+            "iteration": 3,
+            "readability": {
+              "pass": true,
+              "score": 9.89,
+              "details": {
+                "words": 315,
+                "sentences": 27,
+                "max_grade": 14.0,
+                "min_reading_ease": 30.0,
+                "words_range": [
+                  120,
+                  550
+                ],
+                "long_sentences": [],
+                "issues": [],
+                "flesch_kincaid_grade": 9.89,
+                "flesch_reading_ease": 45.01,
+                "gunning_fog": 12.45
+              }
+            },
+            "relevance": {
+              "pass": false,
+              "score": 0.5,
+              "missing_aspects": [
+                "Timeline",
+                "Scheduling and location"
+              ],
+              "covered_aspects": [
+                "Referral network setup",
+                "Staffing requirements"
+              ],
+              "evaluator": "model",
+              "details": {
+                "unverified_evidence": [],
+                "gaps": {
+                  "Timeline": "No se menciona la fecha límite del 28 de agosto ni un plazo de 25 días para que la red esté operativa.",
+                  "Scheduling and location": "No se definen horarios de citas ni se identifica una ubicación específica de la clínica satélite; solo se menciona que se confirmará la ubicación."
+                }
+              }
+            },
+            "compliance": {
+              "pass": true,
+              "rule_ids": [
+                "HC-PHI-01",
+                "HC-DPA-UK",
+                "HC-CUR-01",
+                "HC-CMP-01",
+                "HC-FIG-01",
+                "HC-FMT-01"
+              ],
+              "violations": [],
+              "contains_phi": false
+            },
+            "overall_pass": false,
+            "contains_phi": false,
+            "feedback_for_generator": "[relevance] Address the key aspect «Timeline» explicitly: No se menciona la fecha límite del 28 de agosto ni un plazo de 25 días para que la red esté operativa..\n[relevance] Address the key aspect «Scheduling and location» explicitly: No se definen horarios de citas ni se identifica una ubicación específica de la clínica satélite; solo se menciona que se confirmará la ubicación..",
+            "evaluated_at": "2026-11-24T00:41:20.862975+00:00"
+          }
+        }
+      ],
+      "excerpt_ids": [
+        4,
+        5
+      ],
+      "updated_at": "2026-11-24T00:41:20.877630+00:00",
+      "id": 14,
+      "approval_status": "pending"
+    },
+    {
+      "ticket_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1",
+      "worker": "model",
+      "approver": null,
+      "department_id": "compliance",
+      "draft_content": "## Data Protection and Compliance — Compliance and Data Governance\n\n### Regulatory framework\nWe will comply with UK GDPR for Thames Valley University. Student health data is special category data under Article 9. We will define a lawful basis. We will conduct a Data Protection Impact Assessment (DPIA). We will apply data minimization and purpose limitation. We will set retention periods. The client receives only aggregate, de-identified reports. No individual health records are shared.\n\n### Data Processing Agreement (DPA) under UK GDPR\nOur proposal includes a full DPA under Article 28. The DPA covers processing instructions, data subject rights, breach notification, and sub-processor management. We will confirm client’s Data Protection Officer. We will ensure all sub-processors meet UK GDPR standards. Breaches will be reported to the ICO within 72 hours. Pricing is quoted in GBP for this UK contract.\n\n### Compliance approval\nCompliance and Data Governance (Claire Whitfield) must approve this proposal before signing. Approval is mandatory. No deviation is allowed. We will coordinate internal procedures with Claire Whitfield prior to final submission.\n\n### Open questions\n- What specific categories of student health data will be processed?\n- What are the exact processing purposes and lawful basis under UK GDPR?\n- Will any third-party sub-processors be involved? If so, what are their details?\n- What is the exact deadline for the proposal? We noted “around August 28th” but need a precise date.",
+      "approved_at": null,
+      "owner": "Claire Whitfield",
+      "evaluation_results": {
+        "section_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1:compliance",
+        "department_id": "compliance",
+        "iteration": 1,
+        "readability": {
+          "pass": true,
+          "score": 7.96,
+          "details": {
+            "words": 207,
+            "sentences": 24,
+            "max_grade": 14.0,
+            "min_reading_ease": 30.0,
+            "words_range": [
+              120,
+              550
+            ],
+            "long_sentences": [],
+            "issues": [],
+            "flesch_kincaid_grade": 7.96,
+            "flesch_reading_ease": 52.93,
+            "gunning_fog": 8.45
+          }
+        },
+        "relevance": {
+          "pass": true,
+          "score": 1.0,
+          "missing_aspects": [],
+          "covered_aspects": [
+            "UK GDPR compliance for student health data",
+            "Sensitive data handling"
+          ],
+          "evaluator": "model",
+          "details": {
+            "unverified_evidence": [],
+            "gaps": {}
+          }
+        },
+        "compliance": {
+          "pass": true,
+          "rule_ids": [
+            "HC-PHI-01",
+            "HC-DPA-UK",
+            "HC-CUR-01",
+            "HC-CMP-01",
+            "HC-FIG-01",
+            "HC-FMT-01"
+          ],
+          "violations": [],
+          "contains_phi": false
+        },
+        "overall_pass": true,
+        "contains_phi": false,
+        "feedback_for_generator": "",
+        "evaluated_at": "2026-11-24T00:41:15.637119+00:00"
+      },
+      "created_at": "2026-11-24T00:40:53.660581+00:00",
+      "key_aspects": [
+        {
+          "aspect": "UK GDPR compliance for student health data",
+          "detail": "The proposal must include a Data Processing Agreement (DPA) and full compliance with UK GDPR, as the data involves sensitive health data of students.",
+          "source": "P6"
+        },
+        {
+          "aspect": "Sensitive data handling",
+          "detail": "Student health data is special category data under UK GDPR, requiring a lawful basis, data protection impact assessment (DPIA), and additional safeguards.",
+          "source": "P6"
+        }
+      ],
+      "generation_status": "passed",
+      "requests": [
+        "Prepare a DPA template compliant with UK GDPR, including clauses on data processing, data subject rights, breach notification, and sub-processor management.",
+        "Confirm that the client has a Data Protection Officer (DPO) and that a DPIA will be conducted for the processing of student health data.",
+        "Ensure the proposal includes provisions for data minimization, purpose limitation, and retention periods as required by UK GDPR."
+      ],
+      "iterations": 1,
+      "open_questions": [
+        "What specific categories of student health data will be processed?",
+        "What are the exact processing purposes and lawful basis under UK GDPR?",
+        "Will any third-party sub-processors be involved, and if so, what are their details?",
+        "What is the exact deadline for the proposal? (metadata says 'around August 28th' but no precise date)"
+      ],
+      "evaluation_history": [
+        {
+          "iteration": 1,
+          "draft": "## Data Protection and Compliance — Compliance and Data Governance\n\n### Regulatory framework\nWe will comply with UK GDPR for Thames Valley University. Student health data is special category data under Article 9. We will define a lawful basis. We will conduct a Data Protection Impact Assessment (DPIA). We will apply data minimization and purpose limitation. We will set retention periods. The client receives only aggregate, de-identified reports. No individual health records are shared.\n\n### Data Processing Agreement (DPA) under UK GDPR\nOur proposal includes a full DPA under Article 28. The DPA covers processing instructions, data subject rights, breach notification, and sub-processor management. We will confirm client’s Data Protection Officer. We will ensure all sub-processors meet UK GDPR standards. Breaches will be reported to the ICO within 72 hours. Pricing is quoted in GBP for this UK contract.\n\n### Compliance approval\nCompliance and Data Governance (Claire Whitfield) must approve this proposal before signing. Approval is mandatory. No deviation is allowed. We will coordinate internal procedures with Claire Whitfield prior to final submission.\n\n### Open questions\n- What specific categories of student health data will be processed?\n- What are the exact processing purposes and lawful basis under UK GDPR?\n- Will any third-party sub-processors be involved? If so, what are their details?\n- What is the exact deadline for the proposal? We noted “around August 28th” but need a precise date.",
+          "evaluation": {
+            "section_id": "890fbbe3-1ad4-4b5e-80be-e9388a3fe3b1:compliance",
+            "department_id": "compliance",
+            "iteration": 1,
+            "readability": {
+              "pass": true,
+              "score": 7.96,
+              "details": {
+                "words": 207,
+                "sentences": 24,
+                "max_grade": 14.0,
+                "min_reading_ease": 30.0,
+                "words_range": [
+                  120,
+                  550
+                ],
+                "long_sentences": [],
+                "issues": [],
+                "flesch_kincaid_grade": 7.96,
+                "flesch_reading_ease": 52.93,
+                "gunning_fog": 8.45
+              }
+            },
+            "relevance": {
+              "pass": true,
+              "score": 1.0,
+              "missing_aspects": [],
+              "covered_aspects": [
+                "UK GDPR compliance for student health data",
+                "Sensitive data handling"
+              ],
+              "evaluator": "model",
+              "details": {
+                "unverified_evidence": [],
+                "gaps": {}
+              }
+            },
+            "compliance": {
+              "pass": true,
+              "rule_ids": [
+                "HC-PHI-01",
+                "HC-DPA-UK",
+                "HC-CUR-01",
+                "HC-CMP-01",
+                "HC-FIG-01",
+                "HC-FMT-01"
+              ],
+              "violations": [],
+              "contains_phi": false
+            },
+            "overall_pass": true,
+            "contains_phi": false,
+            "feedback_for_generator": "",
+            "evaluated_at": "2026-11-24T00:41:15.637119+00:00"
+          }
+        }
+      ],
+      "excerpt_ids": [
+        1,
+        6
+      ],
+      "updated_at": "2026-11-24T00:41:15.644687+00:00",
+      "id": 15,
+      "approval_status": "pending"
+    }
+  ]
+}

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from threading import Barrier
 
 import pytest
-from jose import jwt
+import jwt
 from resend.exceptions import ResendError
 from tinydb import Query
 from tinydb.table import Table

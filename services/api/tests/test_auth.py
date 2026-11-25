@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from jose import jwt
+import jwt
 from tinydb import Query
 
 from services.api.core.security import create_password_reset_token
@@ -67,3 +67,40 @@ def test_me_rejects_expired_reset_and_deleted_user_tokens(client, database, user
     headers = auth_headers(user)
     database.table("users").remove(Query().id == user["id"])
     assert client.get("/me", headers=headers).status_code == 401
+
+
+# ---------------------------------------------------------------- OWASP A07: brute-force protection
+
+
+def test_login_is_throttled_after_repeated_failures(client, user_factory):
+    """Before the fix the 50th wrong password still got a 401 and the next right one a token."""
+    user_factory(username="tom")
+    for _ in range(5):
+        assert client.post("/login", data={"username": "tom", "password": "wrong-password-1"}).status_code == 401
+    blocked = client.post("/login", data={"username": "TOM", "password": PASSWORD})  # even the right password
+    assert blocked.status_code == 429 and int(blocked.headers["Retry-After"]) > 0
+    assert "access_token" not in blocked.text
+    assert client.post("/login", data={"username": "unknown-user", "password": "x" * 9}).status_code == 401  # others unaffected
+
+
+def test_a_successful_login_clears_the_failures_and_the_window_expires(client, user_factory):
+    from services.api.core.login_throttle import LoginThrottle
+
+    user_factory(username="claire")
+    for _ in range(4):
+        client.post("/login", data={"username": "claire", "password": "wrong-password-1"})
+    assert client.post("/login", data={"username": "claire", "password": PASSWORD}).status_code == 200
+    assert client.post("/login", data={"username": "claire", "password": "wrong-password-1"}).status_code == 401  # count restarted
+
+    now = [1000.0]
+    throttle = LoginThrottle(max_failures=2, window_seconds=60, clock=lambda: now[0])
+    throttle.failed("x"), throttle.failed("x")
+    assert throttle.retry_after("x") == 61
+    now[0] += 61
+    assert throttle.retry_after("x") is None
+
+
+def test_api_docs_are_not_published_by_default(client):
+    """OWASP A05: /docs, /redoc and /openapi.json listed every route without authentication."""
+    for path in ("/docs", "/redoc", "/openapi.json"):
+        assert client.get(path).status_code == 404

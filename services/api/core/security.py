@@ -5,7 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from dotenv import load_dotenv
-from jose import jwt
+import jwt  # PyJWT (python-jose replaced: CVE-2026-85394 / ecdsa CVE-2024-23342)
 from passlib.hash import bcrypt
 
 from ..models.auth import User
