@@ -11,6 +11,7 @@ before the next one starts.
 
 from __future__ import annotations
 
+import logging
 import operator
 from typing import Annotated, Any, TypedDict
 
@@ -18,10 +19,12 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Send
 
-from . import agents, document, phi, store
+from . import agents, document, events, phi, store
 from .departments import DEPARTMENTS
 from .models import utcnow
 from .tracing import traced
+
+logger = logging.getLogger("api.rfp_intake")
 
 
 class IntakeState(TypedDict, total=False):
@@ -90,6 +93,12 @@ def extract_metadata(state: IntakeState, config: RunnableConfig) -> IntakeState:
     store.update_ticket(engine, state["ticket_id"], stage="extracting")
     metadata = agents.extract_metadata(state["markdown"])
     metrics = document.compute_metrics(state["markdown"], state.get("pages")).as_dict()
+    # Real time: a valid RFP has entered the flow (status analizando) → notify the dashboards now.
+    # A failure to notify never stops the intake; the dashboard still shows the ticket on its next read.
+    try:
+        events.publish_ticket_created(engine, state["ticket_id"], metadata)
+    except Exception as error:
+        logger.warning("rfp_event publish failed ticket_id=%s error=%s", state["ticket_id"], type(error).__name__)
     return {"metadata": metadata, "metrics": metrics}
 
 

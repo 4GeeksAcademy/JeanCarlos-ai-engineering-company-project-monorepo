@@ -171,4 +171,19 @@ button.secondary { background: white; color: #105b76; border-color: #105b76; }
 .rfp-arbitration h3 { margin: 0; }
 .rfp-document { max-height: 40rem; }
 .rfp-trace { margin-top: 1rem; }
+.rfp-live { border: 2px solid #1d6fb8; background: #f0f7fd; }
+.rfp-live h2 { margin-top: 0; color: #0f4f87; }
+.rfp-arrivals { list-style: none; padding: 0; margin: 0; display: grid; gap: .6rem; }
+.rfp-arrival { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .6rem; align-items: center; background: #fff;
+  border-left: 5px solid #1d6fb8; border-radius: 6px; padding: .6rem .8rem; animation: rfp-arrive .6s ease-out; }
+.rfp-arrival p { margin: .2rem 0; overflow-wrap: anywhere; }
+.rfp-recovered { margin-left: .4rem; background: #fff4e0; color: #7a4a00; border-color: #f0cf92; }
+.rfp-new { background: #e8f2fc; }
+.rfp-new-badge { background: #1d6fb8; color: #fff; border-color: #1d6fb8; }
+.rfp-live-badge { font-size: .8rem; font-weight: normal; border-radius: 999px; padding: .1rem .55rem; border: 1px solid #c9d3dc; color: #4b5d6b; vertical-align: middle; }
+.rfp-live-on { color: #1f6b3a; border-color: #a6d3b3; background: #e6f4ea; }
+.rfp-live-retry { color: #7a4b00; border-color: #e8c983; background: #fdf3e1; }
+.rfp-live-off { color: #8a1c13; border-color: #f0b3ad; background: #fdecea; }
+@keyframes rfp-arrive { from { transform: translateY(-6px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .rfp-arrival { animation: none; } }
 @media (max-width: 600px) { .rfp-meta { grid-template-columns: 1fr; } }

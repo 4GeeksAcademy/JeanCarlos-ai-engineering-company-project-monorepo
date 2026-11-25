@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { openEventStream, parseTicketCreated, TicketDeduper, type RfpTicketCreated, type StreamStatus } from "@/lib/sse";
 
 // RFP intake in ticket mode (HealthCore BRIEFING, Hito 9 Parte 1). Revenue Cycle uploads the PDF
 // (POST /api/rfp/tickets → 202 + ticket_id); the agentic flow runs in the background and this page
@@ -10,6 +11,12 @@ import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNod
 // in `esperando_aprobación` while each department's named approver approves, requests changes or
 // rejects its section (each on its own paused thread); the fixed arbiter of a BRIEFING §7 trigger
 // rules here too; with every approval the final document is generated (`terminado`).
+//
+// Real time (Sistemas en Tiempo Real, Parte 1): the page keeps one Server-Sent Events stream open
+// (fetch + ReadableStream, src/lib/sse.ts). A new RFP ticket arrives as `rfp_ticket_created`: it is
+// announced in its own "Nueva RFP" panel and inserted into the list from the event payload — no
+// reload, no refetch of the list per event. If the connection drops it reconnects with backoff and
+// Last-Event-ID (the API replays what was missed); tickets are deduplicated by ticket_id.
 
 type Status = "analizando" | "descartado" | "analisis_completo" | string;
 
@@ -141,19 +148,75 @@ export default function RfpIntakePage() {
   const fileInput = useRef<HTMLInputElement>(null);
 
   const [justQueued, setJustQueued] = useState(false);
+  const [live, setLive] = useState<StreamStatus>({ state: "connecting", attempt: 0 });
+  const [arrivals, setArrivals] = useState<Arrival[]>([]);
+  const [newIds, setNewIds] = useState<Set<string>>(() => new Set());
+  const [listError, setListError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
       const rows = (await readJson(await fetch("/api/rfp/tickets", { cache: "no-store" }))) as TicketRow[];
-      setTickets(rows);
+      // a ticket that arrived through the stream after this list was read is kept
+      setTickets((current) => [...current.filter((t) => !rows.some((r) => r.ticket_id === t.ticket_id)), ...rows]
+        .sort((a, b) => b.created_at.localeCompare(a.created_at)));
       // a ticket that just finished Part 1 is picked up by Part 2 automatically: keep polling briefly
       setJustQueued(rows.some((t) => t.status === "analisis_completo" && t.ready_for_generation
         && Date.now() - new Date(t.updated_at).getTime() < 60_000));
       if (selected) setDetail((await readJson(await fetch(`/api/rfp/tickets/${selected}`, { cache: "no-store" }))) as Ticket);
+      setListError(null); // the service is back: the warning goes away on its own
     } catch (error) {
-      setMessage({ kind: "error", text: error instanceof Error ? error.message : "Error al consultar los tickets." });
+      setListError(error instanceof Error ? error.message : "Error al consultar los tickets.");
     }
   }, [selected]);
+
+  const refreshRef = useRef(refresh);
+  useEffect(() => { refreshRef.current = refresh; }, [refresh]);
+
+  // One SSE stream for the whole page (src/lib/sse.ts: fetch + ReadableStream, backoff, Last-Event-ID).
+  useEffect(() => {
+    const deduper = new TicketDeduper();
+    let firstReady = true;
+    let replayLeft = 0;
+    const stream = openEventStream({
+      url: "/api/rfp/events",
+      onStatus: setLive,
+      onEvent: (frame) => {
+        if (frame.event === "stream_ready") {
+          replayLeft = (JSON.parse(frame.data) as { replayed: number }).replayed;
+          // first connection: read the list once more, so nothing registered between the page load
+          // and the stream start is lost; later reconnections rely on the Last-Event-ID replay
+          if (firstReady) void refreshRef.current();
+          firstReady = false;
+          return;
+        }
+        if (frame.event === "resync_required") return void refreshRef.current(); // the gap is too large to replay
+        const ticket = parseTicketCreated(frame);
+        if (!ticket) return;
+        const recovered = replayLeft > 0;
+        if (replayLeft > 0) replayLeft -= 1;
+        if (!deduper.accept(ticket.ticket_id)) return; // the same ticket is never announced twice
+        setArrivals((current) => [{ ...ticket, received_at: new Date().toISOString(), recovered }, ...current].slice(0, 8));
+        setNewIds((current) => new Set(current).add(ticket.ticket_id));
+        setTickets((current) => current.some((t) => t.ticket_id === ticket.ticket_id) ? current : [rowFromEvent(ticket), ...current]);
+      },
+    });
+    const online = () => stream.reconnectNow();
+    window.addEventListener("online", online);
+    return () => {
+      window.removeEventListener("online", online);
+      stream.close();
+    };
+  }, []);
+
+  function open(ticketId: string) {
+    setSelected(ticketId);
+    setArrivals((current) => current.filter((a) => a.ticket_id !== ticketId));
+    setNewIds((current) => {
+      const next = new Set(current);
+      next.delete(ticketId);
+      return next;
+    });
+  }
 
   const pending = justQueued || tickets.some((t) => RUNNING.has(t.status) && !STOPPED_STAGES.has(t.stage));
   useEffect(() => {
@@ -216,21 +279,44 @@ export default function RfpIntakePage() {
         {message && <p className={message.kind === "error" ? "error" : "rfp-ok"} role={message.kind === "error" ? "alert" : "status"}>{message.text}</p>}
       </section>
 
+      {arrivals.length > 0 && (
+        <section className="panel rfp-live" aria-label="Nuevas RFP" aria-live="polite">
+          <h2>Nuevas RFP en tiempo real</h2>
+          <ul className="rfp-arrivals">
+            {arrivals.map((a) => (
+              <li key={a.ticket_id} className="rfp-arrival">
+                <div>
+                  <strong>Nueva RFP · requiere procesamiento</strong>{a.recovered ? <span className="rfp-badge rfp-recovered">recuperada tras reconexión</span> : null}
+                  <p>{a.rfp_id} · {a.client_name ?? "cliente por confirmar"} ({a.client_country ?? "—"}) · {a.program_type ?? "programa por confirmar"} ·{" "}
+                    <span className="rfp-badge rfp-analizando">{STATUS_LABEL[a.status] ?? a.status}</span></p>
+                  <p className="rfp-muted">Registrada {new Date(a.created_at).toLocaleTimeString("es")} · recibida {new Date(a.received_at).toLocaleTimeString("es")}</p>
+                </div>
+                <div className="rfp-actions">
+                  <button type="button" onClick={() => open(a.ticket_id)}>Ver ticket</button>
+                  <button type="button" className="rfp-secondary" onClick={() => setArrivals((c) => c.filter((x) => x.ticket_id !== a.ticket_id))}>Descartar aviso</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="panel" aria-label="Tickets" aria-busy={pending}>
-        <h2>Tickets {pending && <small className="rfp-muted">· actualizando cada {POLL_MS / 1000} s</small>}</h2>
+        <h2>Tickets <LiveBadge status={live} /> {pending && <small className="rfp-muted">· progreso cada {POLL_MS / 1000} s</small>}</h2>
+        {listError && <p className="error" role="alert">{listError} Se reintenta automáticamente.</p>}
         {tickets.length === 0 ? <p className="rfp-muted">Aún no hay RFPs.</p> : (
           <div className="rfp-table-wrap">
             <table className="rfp-table">
               <thead><tr><th>Ticket</th><th>Cliente</th><th>País</th><th>Estado</th><th>Etapa</th><th /></tr></thead>
               <tbody>
                 {tickets.map((t) => (
-                  <tr key={t.ticket_id} className={t.ticket_id === selected ? "rfp-selected" : undefined}>
-                    <td>{t.rfp_id}</td>
+                  <tr key={t.ticket_id} className={[t.ticket_id === selected ? "rfp-selected" : "", newIds.has(t.ticket_id) ? "rfp-new" : ""].join(" ").trim() || undefined}>
+                    <td>{t.rfp_id} {newIds.has(t.ticket_id) && <span className="rfp-badge rfp-new-badge">Nueva</span>}</td>
                     <td>{t.client_name ?? "—"}</td>
                     <td>{t.client_country ?? "—"}</td>
                     <td><StatusBadge status={t.status} failed={["failed", "generation_failed", "approval_failed"].includes(t.stage)} phi={t.phi_detected} /></td>
                     <td>{STAGE_LABEL[t.stage] ?? t.stage}</td>
-                    <td><button type="button" className="rfp-link" onClick={() => setSelected(t.ticket_id)}>Ver</button></td>
+                    <td><button type="button" className="rfp-link" onClick={() => open(t.ticket_id)}>Ver</button></td>
                   </tr>
                 ))}
               </tbody>
@@ -244,6 +330,25 @@ export default function RfpIntakePage() {
       )}
     </main>
   );
+}
+
+type Arrival = RfpTicketCreated & { received_at: string; recovered: boolean };
+
+function rowFromEvent(t: RfpTicketCreated): TicketRow {
+  // the event is emitted right after the metadata extraction: the ticket is analizando / extracting
+  return { ticket_id: t.ticket_id, rfp_id: t.rfp_id, status: t.status, stage: "extracting", error: null, phi_detected: false,
+    ready_for_generation: false, updated_at: t.created_at, client_name: t.client_name, client_country: t.client_country,
+    created_at: t.created_at };
+}
+
+function LiveBadge({ status }: { status: StreamStatus }) {
+  if (status.state === "open") return <span className="rfp-live-badge rfp-live-on" role="status">● En vivo</span>;
+  if (status.state === "expired") return <span className="rfp-live-badge rfp-live-off" role="alert">Sesión expirada: vuelve a iniciar sesión</span>;
+  if (status.state === "reconnecting") {
+    const wait = status.retryInMs !== undefined ? ` en ${Math.ceil(status.retryInMs / 1000)} s` : "…";
+    return <span className="rfp-live-badge rfp-live-retry" role="status">Sin conexión en tiempo real · reintento {Math.max(1, status.attempt)}{wait}</span>;
+  }
+  return <span className="rfp-live-badge" role="status">Conectando…</span>;
 }
 
 function StatusBadge({ status, failed, phi }: { status: Status; failed: boolean; phi: boolean }) {

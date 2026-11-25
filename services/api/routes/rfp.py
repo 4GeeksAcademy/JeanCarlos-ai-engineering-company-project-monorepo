@@ -25,6 +25,9 @@ agentic flow lives in data/pipelines/rfp_intake/.
                                ruling of the fixed arbiter of a BRIEFING §7 trigger.
 - GET  /api/rfp/tickets/{id}/document   final document (JSON, or ?format=markdown).
 - GET  /api/rfp/tickets/{id}/trace      every node execution: agent, input, output, timestamps.
+- GET  /api/rfp/events         Server-Sent Events (text/event-stream), same JWT as the rest:
+                               `rfp_ticket_created` when a new RFP ticket enters the flow, with
+                               Last-Event-ID replay (see services/api/realtime.py).
 
 After a successful intake the generation starts automatically (RFP_AUTO_GENERATE=0 disables it),
 and after the generation the approval flow opens automatically (RFP_AUTO_APPROVAL=0 disables it).
@@ -37,8 +40,12 @@ import os
 from functools import lru_cache
 from typing import Annotated, Any
 
-from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, HTTPException, Path, UploadFile, status
-from fastapi.responses import PlainTextResponse
+import threading
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, Header, HTTPException, Path, UploadFile, status
+from fastapi.responses import PlainTextResponse, StreamingResponse
+from jose import jwt
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.exc import SQLAlchemyError
@@ -48,7 +55,8 @@ from data.pipelines.rfp_intake.approval_graph import NotReadyForApproval
 from data.pipelines.rfp_intake.departments import DEPARTMENT_IDS
 from data.pipelines.rfp_intake.response_graph import NotReadyForGeneration
 
-from ..core.dependencies import AuthenticatedUser
+from .. import realtime
+from ..core.dependencies import AuthenticatedUser, oauth2_scheme
 from ..database import get_inventory_engine
 
 logger = logging.getLogger("api.rfp_intake")
@@ -277,3 +285,49 @@ def get_final_document(ticket_id: TicketId, _user: AuthenticatedUser, engine: En
 def get_trace(ticket_id: TicketId, _user: AuthenticatedUser, engine: Engine_) -> list[dict[str, Any]]:
     _view_or_404(engine, ticket_id)
     return store.trace(engine, ticket_id)
+
+
+# ================================================================ real time: Server-Sent Events
+
+MAX_STREAMS_PER_USER = 5
+_streams: dict[str, int] = {}
+_streams_lock = threading.Lock()
+
+
+def _token_expiry(token: str) -> datetime | None:
+    """The JWT was already verified by AuthenticatedUser; the stream ends when it expires."""
+    try:
+        exp = jwt.get_unverified_claims(token).get("exp")
+    except Exception:  # noqa: BLE001 — verified above; a malformed claim only disables the cut-off
+        return None
+    return datetime.fromtimestamp(exp, tz=timezone.utc) if isinstance(exp, (int, float)) else None
+
+
+@router.get("/events", response_class=StreamingResponse)
+def rfp_events(user: AuthenticatedUser, token: Annotated[str, Depends(oauth2_scheme)], engine: Engine_,
+               last_event_id: Annotated[str | None, Header(alias="Last-Event-ID")] = None) -> StreamingResponse:
+    """Server-Sent Events for Revenue Cycle's dashboard. Named events, JSON `data:`, `id:` =
+    rfp_event.id (resume cursor), `: keep-alive` comments. Requires the backoffice JWT
+    (Authorization: Bearer); without it: 401 and no event."""
+    if not realtime.accepting():  # shutting down: the client retries against the next process
+        raise HTTPException(status_code=503, detail="El servicio se está reiniciando.")
+    with _streams_lock:
+        if _streams.get(user.id, 0) >= MAX_STREAMS_PER_USER:
+            raise HTTPException(status_code=429, detail="Demasiadas conexiones en tiempo real abiertas.")
+
+    async def body():
+        with _streams_lock:  # counted while the body runs, so a stream that never starts cannot leak a slot
+            _streams[user.id] = _streams.get(user.id, 0) + 1
+        try:
+            async for chunk in realtime.stream(engine, realtime.parse_last_event_id(last_event_id),
+                                               _token_expiry(token), str(user.id)):
+                yield chunk
+        finally:
+            with _streams_lock:
+                _streams[user.id] -= 1
+                if not _streams[user.id]:
+                    del _streams[user.id]
+
+    return StreamingResponse(body(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache, no-transform", "Connection": "keep-alive",
+                                      "X-Accel-Buffering": "no"})

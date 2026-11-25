@@ -14,6 +14,9 @@ grant usage, select on sequence public.rfp_department_section_id_seq to rfp_pipe
 grant select, insert, update, delete on public.rfp_final_document, public.rfp_trace, public.checkpoint_migrations,
   public.checkpoints, public.checkpoint_blobs, public.checkpoint_writes to rfp_pipeline;
 grant usage, select on sequence public.rfp_trace_id_seq to rfp_pipeline;
+-- real-time notifications (supabase/migrations/20261125020000_rfp_realtime_events.sql)
+grant select, insert on public.rfp_event to rfp_pipeline;
+grant usage, select on sequence public.rfp_event_id_seq to rfp_pipeline;
 -- RLS is enabled on the three tables: this role is the backend, so it gets full access to them only.
 create policy rfp_ticket_backend on public.rfp_ticket for all to rfp_pipeline using (true) with check (true);
 create policy rfp_metadata_backend on public.rfp_metadata for all to rfp_pipeline using (true) with check (true);
@@ -24,3 +27,4 @@ create policy checkpoint_migrations_backend on public.checkpoint_migrations for 
 create policy checkpoints_backend on public.checkpoints for all to rfp_pipeline using (true) with check (true);
 create policy checkpoint_blobs_backend on public.checkpoint_blobs for all to rfp_pipeline using (true) with check (true);
 create policy checkpoint_writes_backend on public.checkpoint_writes for all to rfp_pipeline using (true) with check (true);
+create policy rfp_event_backend on public.rfp_event for all to rfp_pipeline using (true) with check (true);

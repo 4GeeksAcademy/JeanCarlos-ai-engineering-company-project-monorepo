@@ -1,4 +1,4 @@
-name: Python tests (sales forecast, RAG, agent, memory, guardrails, RFP intake, MCP server)
+name: Python tests (sales forecast, RAG, agent, memory, guardrails, RFP intake, real-time, MCP server)
 
 on:
   push:
@@ -30,5 +30,12 @@ jobs:
         run: uv run python -m pytest tests/pipelines/test_agent_guardrails.py tests/pipelines/test_agent_guardrails_evidence.py services/api/tests/test_agent.py -v
       - name: RFP flow, parts 1-3 (intake, generation/evaluation loop, approval with interrupt + SQLite checkpointer, E2E; model stubbed)
         run: uv run python -m pytest tests/pipelines/test_rfp_intake.py tests/pipelines/test_rfp_response.py tests/pipelines/test_rfp_approval.py tests/pipelines/test_rfp_e2e.py services/api/tests/test_rfp.py -v
+      - name: Real-time RFP notifications, server (SSE on a real uvicorn server, raw text/event-stream)
+        run: uv run python -m pytest tests/realtime -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Real-time RFP notifications, client (fetch + ReadableStream, backoff, Last-Event-ID, dedup)
+        run: node --no-warnings --test tests/realtime/sse-client.test.mts
       - name: HealthCore MCP server (real server, test OAuth server, stand-in API)
         run: uv run python -m pytest tests/mcps -v

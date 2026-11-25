@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 
 from .database import get_inventory_engine, open_database
 from .core.security import get_settings
+from . import realtime
 from .routes import auth, auth_password, knowledge, profiles, rfp, suppliers, tasks, telemetry, users
 from .routers import incidents, inventory
 from services.reporting.router import router as reporting_router
@@ -46,9 +47,11 @@ async def lifespan(app: FastAPI):
     database = open_database()
     app.state.database = database
     app.state.database_lock = Lock()
+    realtime.install_shutdown_hook()  # SSE streams must not block a restart (services/api/realtime.py)
     try:
         yield
     finally:
+        realtime.shutdown_streams()
         database.close()
         if get_inventory_engine.cache_info().currsize:
             get_inventory_engine().dispose()

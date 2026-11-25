@@ -190,8 +190,23 @@ class RfpTrace(SQLModel, table=True):
     finished_at: datetime = Field(sa_type=DateTime(timezone=True))
 
 
+class RfpEvent(SQLModel, table=True):
+    """Real-time notifications (Sistemas en Tiempo Real, Parte 1). `id` is the SSE `id:` of the
+    event, so a client that reconnects with Last-Event-ID gets exactly what it missed. One row per
+    (event, ticket): re-processing a ticket never notifies twice. No PHI: only ticket fields."""
+    __tablename__ = "rfp_event"
+    __table_args__ = (UniqueConstraint("event", "ticket_id", name="rfp_event_unique"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    event: str = Field(index=True)  # rfp_ticket_created
+    ticket_id: str = Field(sa_column=Column(String(36), ForeignKey("rfp_ticket.ticket_id", ondelete="CASCADE"),
+                                            nullable=False, index=True))
+    payload: dict = Field(sa_type=JSON)
+    created_at: datetime = _ts()
+
+
 TABLES = [RfpTicket.__table__, RfpMetadata.__table__, RfpDepartmentSection.__table__, RfpFinalDocument.__table__,
-          RfpTrace.__table__]
+          RfpTrace.__table__, RfpEvent.__table__]
 
 
 def create_tables(engine) -> None:
