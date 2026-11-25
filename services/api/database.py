@@ -7,6 +7,7 @@ from pathlib import Path
 
 from fastapi import HTTPException, Request
 from dotenv import load_dotenv
+from data.pipelines.connections import require_tls
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, create_engine
@@ -49,7 +50,7 @@ def get_inventory_engine() -> Engine:
     url = make_url(database_url)
     if url.drivername not in {"postgres", "postgresql", "postgresql+psycopg"}:
         raise RuntimeError("DATABASE_URL must use PostgreSQL")
-    return create_engine(url.set(drivername="postgresql+psycopg"), pool_pre_ping=True)
+    return create_engine(require_tls(url.set(drivername="postgresql+psycopg")), pool_pre_ping=True)
 
 
 def get_db() -> Iterator[Session]:

@@ -1,0 +1,9 @@
+# Imágenes construidas desde el repo (después del cambio)
+api/worker/flower: uid=10001(app) gid=999(app) groups=999(app)
+ui (Next):        uid=1000(node) gid=1000(node) groups=1000(node),1000(node)
+API en el contenedor: GET /me → 401; GET /docs → 404
+usuario del proceso 1: app
+escritura en /data (volumen de estado): permitida
+escritura en /app (código): Permission denied
+
+# Antes, en el VPS (despliegue actual): docker inspect --format '{{.Config.User}}' healthcore-api-1 → '' (root)

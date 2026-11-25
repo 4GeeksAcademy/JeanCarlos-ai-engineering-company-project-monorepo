@@ -1,0 +1,48 @@
+# Servidor — DESPUÉS del endurecimiento (infra/hardening/harden.sh, por etapas)
+(La IP pública del VPS aparece como VPS_HOST; no se publica en el repositorio.)
+
+
+## verify.sh en el servidor (como deploy + sudo; ya no se puede entrar como root)
+== SSH
+PASS  PermitRootLogin no
+PASS  PasswordAuthentication no
+PASS  KbdInteractiveAuthentication no
+PASS  AllowUsers deploy
+PASS  MaxAuthTries <= 3
+== Operational user
+PASS  deploy exists and is not uid 0
+PASS  only root has uid 0
+PASS  deploy in sudo and healthcore
+PASS  deploy NOT in docker (root-equivalent)
+PASS  deploy has a key, mode 600
+== Firewall
+PASS  ufw active
+PASS  default deny incoming
+PASS  only SSH allowed
+PASS  only SSH listens on a public interface
+PASS  fail2ban sshd jail
+== Folder permissions
+PASS  /opt/healthcore is deploy:healthcore 750
+PASS  no world-readable file in /opt/healthcore (outside .git)
+PASS  /etc/healthcore is root:healthcore 750
+PASS  /var/log/healthcore is deploy:healthcore 750
+(verify.sh exit 0)
+
+== fail2ban sshd
+|  |- Currently failed:	5
+   |- Currently banned:	3
+   |- Total banned:	3
+== contenedores
+healthcore-ui-1 Up 7 days
+healthcore-api-1 Up 7 days
+healthcore-db-1 Up 7 days (healthy)
+
+## Desde fuera (mi equipo), con el proceso de prueba aún escuchando en 0.0.0.0:9999
+$ ssh -i bc_vps root@VPS_HOST whoami   # la misma clave que antes entraba como root
+  root@VPS_HOST: Permission denied (publickey).
+$ ssh -o PubkeyAuthentication=no deploy@VPS_HOST   # métodos que ofrece el servidor
+  deploy@VPS_HOST: Permission denied (publickey).
+$ nc -z -w 3 VPS_HOST 9999   # el proceso de prueba SIGUE escuchando en 0.0.0.0:9999
+  9999 bloqueado por el firewall
+$ nc -z -G 3 VPS_HOST <puerto>   (barrido de puertos habituales, desde fuera)
+  22=ABIERTO 80=cerrado 443=cerrado 3000=cerrado 3001=cerrado 5432=cerrado 6379=cerrado 8000=cerrado 9999=cerrado 18789=cerrado

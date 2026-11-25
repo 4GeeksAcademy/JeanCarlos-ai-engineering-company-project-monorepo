@@ -37,5 +37,9 @@ jobs:
           node-version: "24"
       - name: Real time, clients (SSE fetch + ReadableStream; WebSocket chat reducer + reconnection)
         run: node --no-warnings --test tests/realtime/sse-client.test.mts tests/realtime/chat-client.test.mts
+      - name: Security fixes of the OWASP Top 10 audit (login throttle, API docs off, RFP sign-off by account, DB TLS)
+        run: uv run python -m pytest services/api/tests/test_auth.py services/api/tests/test_password.py tests/pipelines/test_db_tls.py -v
+      - name: Dependency audit (pip-audit on the locked runtime dependencies)
+        run: uv export --frozen --no-hashes --no-dev > /tmp/requirements.txt && uvx pip-audit -r /tmp/requirements.txt
       - name: HealthCore MCP server (real server, test OAuth server, stand-in API)
         run: uv run python -m pytest tests/mcps -v

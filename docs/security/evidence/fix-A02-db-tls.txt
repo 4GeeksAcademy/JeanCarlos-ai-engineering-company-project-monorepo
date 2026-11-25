@@ -1,0 +1,4 @@
+# Conexión real a Supabase (pooler) — TELEMETRY_REPORT_DATABASE_URL sin sslmode en la URL
+sslmode aplicado por require_tls(): require
+cliente → pooler: ssl_in_use=True
+Sin require_tls la URL quedaba con sslmode=prefer (por defecto): psycopg aceptaría texto plano si el TLS se rechaza en el camino.

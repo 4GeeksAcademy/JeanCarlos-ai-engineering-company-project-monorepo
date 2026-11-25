@@ -25,6 +25,13 @@ agentic flow lives in data/pipelines/rfp_intake/.
                                ruling of the fixed arbiter of a BRIEFING §7 trigger.
 - GET  /api/rfp/tickets/{id}/document   final document (JSON, or ?format=markdown).
 - GET  /api/rfp/tickets/{id}/trace      every node execution: agent, input, output, timestamps.
+Who may decide (OWASP A01): the BRIEFING names one approver per department (Tom Callahan, Dr.
+Marcus Reid, Claire Whitfield); RFP_APPROVERS maps each department to the backoffice accounts of
+that person, e.g. {"revenue": ["tom.callahan"], "clinical": ["marcus.reid"], "compliance":
+["claire.whitfield"]}. A decision or an arbitration from any other account is a 403 — typing the
+approver's name is not enough — and the account is recorded as `submitted_by`. Unset: nobody can
+sign off (fail closed).
+
 - GET  /api/rfp/events         Server-Sent Events (text/event-stream), same JWT as the rest:
                                `rfp_ticket_created` when a new RFP ticket enters the flow, with
                                Last-Event-ID replay (see services/api/realtime.py).
@@ -45,11 +52,12 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, Header, HTTPException, Path, UploadFile, status
 from fastapi.responses import PlainTextResponse, StreamingResponse
-from jose import jwt
+import jwt
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.exc import SQLAlchemyError
 
+from data.pipelines.connections import require_tls
 from data.pipelines.rfp_intake import approval, approval_runner, response_runner, runner, store
 from data.pipelines.rfp_intake.approval_graph import NotReadyForApproval
 from data.pipelines.rfp_intake.departments import DEPARTMENT_IDS
@@ -70,7 +78,7 @@ def _dedicated_engine(url: str) -> Engine:
     parsed = make_url(url)
     if parsed.drivername not in {"postgres", "postgresql", "postgresql+psycopg"}:
         raise RuntimeError("RFP_DATABASE_URL must use PostgreSQL")
-    return create_engine(parsed.set(drivername="postgresql+psycopg"), pool_pre_ping=True)
+    return create_engine(require_tls(parsed.set(drivername="postgresql+psycopg")), pool_pre_ping=True)
 
 
 def get_rfp_engine() -> Engine:
@@ -193,6 +201,30 @@ def run_approval_in_background(engine: Engine, ticket_id: str, claimed: bool = F
         logger.error("rfp_approval crashed ticket_id=%s error=%s", ticket_id, type(error).__name__)
 
 
+def rfp_approvers() -> dict[str, set[str]]:
+    """RFP_APPROVERS (JSON): department → backoffice usernames allowed to decide for it."""
+    import json
+
+    try:
+        raw = json.loads(os.environ.get("RFP_APPROVERS", "") or "{}")
+    except ValueError:
+        logger.error("RFP_APPROVERS is not valid JSON: nobody can sign off")
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    return {str(d): {str(u).lower() for u in users} for d, users in raw.items() if isinstance(users, list)}
+
+
+def require_approver(user, department_id: str) -> None:
+    from data.pipelines.rfp_intake.departments import DEPARTMENTS
+
+    if user.username.lower() not in rfp_approvers().get(department_id, set()):
+        department = DEPARTMENTS[department_id]
+        logger.warning("rfp_approval refused department=%s by=%s (not a registered approver)", department_id, user.id)
+        raise HTTPException(status_code=403, detail=f"Tu cuenta no está registrada como aprobadora de {department.name} "
+                                                    f"(BRIEFING: decide {department.owner}).")
+
+
 def _decision_in_background(engine: Engine, ticket_id: str, department_id: str, decision: dict) -> None:
     try:
         approval_runner.submit_decision(engine, ticket_id, department_id, decision)
@@ -241,6 +273,8 @@ def submit_decision(ticket_id: TicketId, department_id: DepartmentId, user: Auth
     """The answer is validated BEFORE it can enter the graph; the resume (and a revision, which
     calls the model) runs in the background on the department's own thread."""
     _view_or_404(engine, ticket_id)
+    require_approver(user, department_id)  # the account, not the name typed in the body
+    body = {**body, "submitted_by": user.username}
     try:
         decision = approval_runner.check_decision(engine, ticket_id, department_id, body)
     except approval_runner.NotAwaitingDecision as error:
@@ -257,12 +291,14 @@ def submit_decision(ticket_id: TicketId, department_id: DepartmentId, user: Auth
 def submit_arbitration(ticket_id: TicketId, user: AuthenticatedUser, engine: Engine_, background: BackgroundTasks,
                        body: Annotated[dict[str, Any], Body()]) -> dict[str, Any]:
     _view_or_404(engine, ticket_id)
+    body = {**body, "submitted_by": user.username}
     try:
         decision = approval_runner.check_arbitration(engine, ticket_id, body)
     except approval_runner.NotAwaitingDecision as error:
         raise HTTPException(status_code=409, detail="No hay un arbitraje esperando decisión.") from error
     except approval.InvalidDecision as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+    require_approver(user, approval.TRIGGERS[decision.trigger].arbiter_department)  # the fixed arbiter's account
     background.add_task(_arbitration_in_background, engine, ticket_id, decision.model_dump())
     logger.info("rfp_approval arbitration queued ticket_id=%s trigger=%s by=%s", ticket_id, decision.trigger, user.id)
     return {"ticket_id": ticket_id, "trigger": decision.trigger, "resolution": decision.resolution, "queued": True}
@@ -297,7 +333,7 @@ _streams_lock = threading.Lock()
 def _token_expiry(token: str) -> datetime | None:
     """The JWT was already verified by AuthenticatedUser; the stream ends when it expires."""
     try:
-        exp = jwt.get_unverified_claims(token).get("exp")
+        exp = jwt.decode(token, options={"verify_signature": False}).get("exp")
     except Exception:  # noqa: BLE001 — verified above; a malformed claim only disables the cut-off
         return None
     return datetime.fromtimestamp(exp, tz=timezone.utc) if isinstance(exp, (int, float)) else None

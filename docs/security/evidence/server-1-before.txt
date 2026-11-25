@@ -1,0 +1,56 @@
+# Servidor — ANTES del endurecimiento (2026-11-25, bc-vps-278, Ubuntu 22.04)
+(La IP pública del VPS aparece como VPS_HOST; no se publica en el repositorio.)
+
+
+## verify.sh en el servidor (como root)
+== SSH
+FAIL  PermitRootLogin no
+FAIL  PasswordAuthentication no
+PASS  KbdInteractiveAuthentication no
+FAIL  AllowUsers deploy
+FAIL  MaxAuthTries <= 3
+== Operational user
+FAIL  deploy exists and is not uid 0
+PASS  only root has uid 0
+FAIL  deploy in sudo and healthcore
+PASS  deploy NOT in docker (root-equivalent)
+FAIL  deploy has a key, mode 600
+== Firewall
+FAIL  ufw active
+FAIL  default deny incoming
+FAIL  only SSH allowed
+PASS  only SSH listens on a public interface
+FAIL  fail2ban sshd jail
+== Folder permissions
+FAIL  /opt/healthcore is deploy:healthcore 750
+FAIL  no world-readable file in /opt/healthcore (outside .git)
+FAIL  /etc/healthcore is root:healthcore 750
+FAIL  /var/log/healthcore is deploy:healthcore 750
+(verify.sh exit 1)
+
+## Desde fuera (mi equipo)
+$ ssh -i bc_vps root@VPS_HOST whoami
+  root
+$ ssh -o PubkeyAuthentication=no root@VPS_HOST   # métodos que ofrece el servidor
+  root@VPS_HOST: Permission denied (publickey,password).
+$ nc -z -w 3 VPS_HOST 9999   # proceso de prueba escuchando en 0.0.0.0:9999
+Connection to VPS_HOST port 9999 [tcp/distinct] succeeded!
+  9999 ACCESIBLE desde Internet
+$ nc -z -w 3 VPS_HOST 22
+Connection to VPS_HOST port 22 [tcp/ssh] succeeded!
+  22 abierto
+
+## sshd efectivo (sshd -T) y estado del host en la inspección inicial
+permitrootlogin yes
+passwordauthentication yes
+x11forwarding yes
+maxauthtries 6
+usuarios con shell: root (único)
+ufw: Status: inactive · iptables -P INPUT ACCEPT · fail2ban: inactive
+contenedores (docker inspect .Config.User): healthcore-api-1 '' (root), healthcore-ui-1 '' (root)
+/opt/healthcore: root:root 755, ficheros 644 (legibles por todos)
+OpenClaw (gateway de modelos): /usr/bin/node …/openclaw … gateway --port 18789, usuario root, escucha 127.0.0.1
+
+## Fuerza bruta registrada en /var/log/auth.log* (zgrep)
+contraseñas fallidas: 192555 (contra root: 99255) · usuarios inexistentes: 88196
+logins aceptados: 16 por clave pública, 2 por contraseña (root)

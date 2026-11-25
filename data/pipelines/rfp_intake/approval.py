@@ -88,6 +88,7 @@ class ApprovalDecision(BaseModel):
     approver: str = Field(min_length=3, max_length=80)
     comment: str | None = Field(default=None, max_length=2000)
     confirmed_capacity: int | None = Field(default=None, gt=0, le=1_000_000)
+    submitted_by: str | None = Field(default=None, max_length=64)  # the authenticated account (set by the API)
 
 
 def _check_comment(comment: str | None, required: bool) -> None:
@@ -123,6 +124,7 @@ class ArbiterDecision(BaseModel):
     resolution: Literal["reduce_population", "add_sites", "discard", "request_new_run"]
     covered_population: int | None = Field(default=None, gt=0, le=1_000_000)
     comment: str | None = Field(default=None, max_length=2000)
+    submitted_by: str | None = Field(default=None, max_length=64)  # the authenticated account (set by the API)
 
 
 def validate_arbiter_decision(pending: dict | None, raw: Any) -> ArbiterDecision:

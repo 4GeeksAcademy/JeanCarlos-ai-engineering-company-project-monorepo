@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from json import JSONDecodeError
 import logging
+import os
 from threading import Lock
 from time import perf_counter
 from uuid import UUID, uuid4
@@ -12,6 +13,7 @@ from fastapi.responses import JSONResponse
 from .database import get_inventory_engine, open_database
 from .core.security import get_settings
 from . import realtime
+from .core.login_throttle import LoginThrottle
 from .routes import auth, auth_password, knowledge, profiles, rfp, suppliers, tasks, telemetry, users
 from .routers import incidents, inventory
 from services.reporting.router import router as reporting_router
@@ -48,6 +50,7 @@ async def lifespan(app: FastAPI):
     database = open_database()
     app.state.database = database
     app.state.database_lock = Lock()
+    app.state.login_throttle = LoginThrottle()  # brute-force protection of /login (OWASP A07)
     realtime.install_shutdown_hook()  # SSE streams must not block a restart (services/api/realtime.py)
     try:
         yield
@@ -59,7 +62,15 @@ async def lifespan(app: FastAPI):
             get_inventory_engine.cache_clear()
 
 
-app = FastAPI(title="HealthCore Supplier Directory", lifespan=lifespan)
+def api_docs_enabled() -> bool:
+    """Swagger/ReDoc/OpenAPI publish every route and schema without authentication (OWASP A05):
+    off unless explicitly enabled for local development (API_DOCS_ENABLED=1)."""
+    return os.environ.get("API_DOCS_ENABLED", "").strip().lower() in {"1", "true", "yes"}
+
+
+_docs = api_docs_enabled()
+app = FastAPI(title="HealthCore Supplier Directory", lifespan=lifespan, docs_url="/docs" if _docs else None,
+              redoc_url="/redoc" if _docs else None, openapi_url="/openapi.json" if _docs else None)
 
 
 @app.middleware("http")

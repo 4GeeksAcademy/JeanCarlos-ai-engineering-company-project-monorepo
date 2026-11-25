@@ -108,11 +108,14 @@ PY
   tail -n 4 "$STATE/seed.log"
 
   log "HealthCore API on :$API_PORT"
-  if ! curl -sf "http://127.0.0.1:${API_PORT}/docs" >/dev/null 2>&1; then
+  # /docs is off by default (OWASP A05): /me answers 401 as soon as the API is up
+  if [[ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${API_PORT}/me")" != "401" ]]; then
     nohup uv run uvicorn services.api.main:app --port "$API_PORT" > "$STATE/api.log" 2>&1 &
     echo $! > "$STATE/api.pid"
   fi
-  wait_for "http://127.0.0.1:${API_PORT}/docs" "The HealthCore API" 60
+  for _ in $(seq 1 60); do
+    [[ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${API_PORT}/me")" == "401" ]] && break; sleep 1
+  done
 
   log "Keycloak on :$KEYCLOAK_PORT (realm healthcore)"
   docker compose up -d keycloak >/dev/null

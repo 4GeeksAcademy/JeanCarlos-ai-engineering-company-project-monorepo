@@ -40,6 +40,8 @@ services:
       QDRANT_URL: http://qdrant:6333
       # LangGraph checkpoints and traces (SQLite) on the persistent api_data volume.
       AGENT_STATE_DIR: /data/agent
+      # RFP uploads: runtime artifact, in the volume owned by the API's unprivileged user.
+      RFP_RAW_DIR: /data/rfp
     depends_on:
       redis:
         condition: service_healthy

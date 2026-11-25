@@ -1,0 +1,10 @@
+# ANTES
+$ curl /docs → HTTP 200
+$ curl /redoc → HTTP 200
+$ curl /openapi.json → HTTP 200
+  /openapi.json expone 49 rutas sin autenticación
+
+# DESPUÉS (API_DOCS_ENABLED sin definir)
+$ curl /docs → HTTP 404
+$ curl /redoc → HTTP 404
+$ curl /openapi.json → HTTP 404

@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import ValidationError
+from data.pipelines.connections import require_tls
 from sqlalchemy import JSON, Column, DateTime, MetaData, String, Table, Uuid
 from sqlalchemy.dialects import postgresql, sqlite
 from sqlalchemy.dialects.postgresql import JSONB
@@ -56,7 +57,7 @@ def _engine_from_env(variable: str) -> Engine:
         raise RuntimeError(f"{variable} must use PostgreSQL")
     # prepare_threshold=None keeps psycopg compatible with Supabase's transaction pooler.
     return create_engine(
-        url.set(drivername="postgresql+psycopg"),
+        require_tls(url.set(drivername="postgresql+psycopg")),
         pool_pre_ping=True,
         connect_args={"prepare_threshold": None},
     )

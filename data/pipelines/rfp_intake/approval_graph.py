@@ -148,7 +148,8 @@ def record_decision(state: BranchState, config: RunnableConfig) -> BranchState:
     ticket_id, department_id, decision = state["ticket_id"], state["department_id"], state["decision"]
     action = decision["action"]
     section = store.section_row(engine, ticket_id, department_id)
-    entry = {"action": action, "by": decision.get("approver", "coordinator"), "comment": decision.get("comment"),
+    entry = {"action": action, "by": decision.get("approver", "coordinator"), "submitted_by": decision.get("submitted_by"),
+             "comment": decision.get("comment"),
              "confirmed_capacity": decision.get("confirmed_capacity"), "revision_round": section.revision_rounds,
              "at": _now()}
     if action == "approve":
@@ -312,6 +313,7 @@ def arbiter_decision(state: TicketState, config: RunnableConfig) -> TicketState:
     current = state.get("round", 0)
     evidence = pending["evidence"]
     entry = {"round": current + 1, "trigger": pending["trigger"], "arbiter": decision.arbiter, "decided_by": "human",
+             "submitted_by": decision.submitted_by,
              "rule": pending["rule"], "resolution": decision.resolution, "comment": decision.comment,
              "departments": pending["departments"], "evidence": evidence, "at": _now()}
     directives: dict[str, dict] = {}

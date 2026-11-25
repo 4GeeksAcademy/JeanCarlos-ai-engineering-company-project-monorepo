@@ -2,7 +2,8 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
+import jwt
+from jwt import PyJWTError as JWTError
 from tinydb import Query, TinyDB
 
 from ..database import get_database
@@ -27,7 +28,7 @@ def get_current_user(
             token,
             settings.secret,
             algorithms=[settings.algorithm],
-            options={"require_exp": True, "require_iat": True, "require_sub": True},
+            options={"require": ["exp", "iat", "sub"]},
         )
     except JWTError as exc:
         raise unauthorized from exc

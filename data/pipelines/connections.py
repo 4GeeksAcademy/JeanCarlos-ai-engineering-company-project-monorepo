@@ -23,6 +23,19 @@ from sqlalchemy.engine import Engine, make_url
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 _POSTGRES_DRIVERS = {"postgres", "postgresql", "postgresql+psycopg"}
+_LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", ""}
+
+
+def require_tls(url):
+    """OWASP A02: a PostgreSQL connection to a remote host (Supabase) must be encrypted. psycopg's
+    default sslmode=prefer silently falls back to plaintext if TLS is refused on the way; a remote
+    URL without an explicit sslmode gets sslmode=require. Local and Docker-network hosts (localhost,
+    single-label service names such as `db`) are left as they are; an explicit sslmode is respected."""
+    host = (url.host or "").lower()
+    local = host in _LOCAL_HOSTS or "." not in host and ":" not in host
+    if local or "sslmode" in url.query:
+        return url
+    return url.update_query_dict({"sslmode": "require"})
 
 
 class MissingConnection(RuntimeError):
@@ -55,7 +68,7 @@ def engine_for(url: str) -> Engine:
         raise MissingConnection("The pipeline only supports PostgreSQL connections")
     # prepare_threshold=None keeps psycopg compatible with Supabase's poolers.
     return create_engine(
-        parsed.set(drivername="postgresql+psycopg"),
+        require_tls(parsed.set(drivername="postgresql+psycopg")),
         pool_pre_ping=True,
         connect_args={"prepare_threshold": None},
     )

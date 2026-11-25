@@ -67,6 +67,7 @@ def test_generate_takes_a_ticket_from_the_part1_queue(client, headers, model, mo
 
 def test_approval_flow_through_the_api(client, headers, model, monkeypatch):  # noqa: F811
     monkeypatch.setenv("RFP_AUTO_APPROVAL", "0")
+    monkeypatch.setenv("RFP_APPROVERS", '{"revenue": ["tom"], "clinical": ["tom"], "compliance": ["tom"]}')
     ticket_id = upload(client, headers, FORMAL).json()["ticket_id"]
     base = f"/api/rfp/tickets/{ticket_id}"
     assert client.post(f"{base}/sections/revenue/decision", headers=headers,
@@ -107,3 +108,41 @@ def test_non_pdf_and_missing_session_are_rejected(client, headers):
                        files={"file": ("x.pdf", b"not a pdf", "application/pdf")}).status_code == 400
     assert client.get("/api/rfp/tickets").status_code == 401
     assert client.get("/api/rfp/tickets/00000000-0000-0000-0000-000000000000", headers=headers).status_code == 404
+
+
+# ---------------------------------------------------------------- OWASP A01: who may sign off a department
+
+
+def test_only_the_mapped_account_can_sign_off_a_department(client, headers, user_factory, auth_headers, model, monkeypatch):  # noqa: F811
+    """The BRIEFING approver of compliance is Claire Whitfield: typing her name is not enough, the
+    authenticated account must be one registered for that department (RFP_APPROVERS)."""
+    monkeypatch.setenv("RFP_AUTO_APPROVAL", "0")
+    monkeypatch.setenv("RFP_APPROVERS", '{"revenue": ["tom"], "clinical": ["marcus.reid"], "compliance": ["claire.whitfield"]}')
+    intruder = auth_headers(user_factory(username="intruso"))
+    claire = auth_headers(user_factory(username="claire.whitfield"))
+    ticket_id = upload(client, headers, FORMAL).json()["ticket_id"]
+    base = f"/api/rfp/tickets/{ticket_id}"
+    assert client.post(f"{base}/approval", headers=headers).status_code == 202
+    body = {"action": "approve", "approver": "Claire Whitfield", "comment": "ok"}
+    for who in (intruder, headers):  # an unregistered staff member, and the revenue approver
+        refused = client.post(f"{base}/sections/compliance/decision", headers=who, json=body)
+        assert refused.status_code == 403 and "Compliance" in refused.json()["detail"]
+    state = client.get(f"{base}/approval", headers=headers).json()
+    assert state["departments"]["compliance"]["approval_status"] == "pending"  # nothing was signed
+    forged = {**body, "submitted_by": "someone-else"}  # the client cannot choose who is recorded
+    assert client.post(f"{base}/sections/compliance/decision", headers=claire, json=forged).status_code == 202
+    ticket = client.get(base, headers=headers).json()
+    compliance = next(s for s in ticket["sections"] if s["department_id"] == "compliance")
+    assert compliance["approval_status"] == "approved"
+    assert compliance["decision_history"][-1]["submitted_by"] == "claire.whitfield"
+
+
+def test_without_a_configured_approver_nobody_can_sign_off(client, headers, model, monkeypatch):  # noqa: F811
+    monkeypatch.setenv("RFP_AUTO_APPROVAL", "0")
+    monkeypatch.delenv("RFP_APPROVERS", raising=False)
+    ticket_id = upload(client, headers, FORMAL).json()["ticket_id"]
+    base = f"/api/rfp/tickets/{ticket_id}"
+    client.post(f"{base}/approval", headers=headers)
+    response = client.post(f"{base}/sections/revenue/decision", headers=headers,
+                           json={"action": "approve", "approver": "Tom Callahan"})
+    assert response.status_code == 403  # fail closed
