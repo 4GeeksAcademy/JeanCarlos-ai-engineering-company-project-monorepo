@@ -183,13 +183,17 @@ export default function RfpIntakePage() {
       onEvent: (frame) => {
         if (frame.event === "stream_ready") {
           replayLeft = (JSON.parse(frame.data) as { replayed: number }).replayed;
-          // first connection: read the list once more, so nothing registered between the page load
-          // and the stream start is lost; later reconnections rely on the Last-Event-ID replay
+          // the only connection without a cursor is the first one: read the list once more so nothing
+          // registered between the page load and the stream start is lost. From this frame on the
+          // client holds the cursor (stream_ready carries `id:`), so every reconnection — even a cut
+          // before the first ticket — sends Last-Event-ID and gets the replay of what it missed.
           if (firstReady) void refreshRef.current();
           firstReady = false;
           return;
         }
-        if (frame.event === "resync_required") return void refreshRef.current(); // the gap is too large to replay
+        // the gap is too large to replay: read the list once; the cursor moved to the newest event
+        // (resync_required carries `id:`), so the next reconnection does not ask to resync again
+        if (frame.event === "resync_required") return void refreshRef.current();
         const ticket = parseTicketCreated(frame);
         if (!ticket) return;
         const recovered = replayLeft > 0;
