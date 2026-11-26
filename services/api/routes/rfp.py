@@ -50,7 +50,7 @@ from typing import Annotated, Any
 import threading
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, Header, HTTPException, Path, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, Header, HTTPException, Path, Request, UploadFile, status
 from fastapi.responses import PlainTextResponse, StreamingResponse
 import jwt
 from sqlalchemy import create_engine
@@ -65,6 +65,7 @@ from data.pipelines.rfp_intake.response_graph import NotReadyForGeneration
 
 from .. import realtime
 from ..core.dependencies import AuthenticatedUser, oauth2_scheme
+from ..core.rate_limit import enforce
 from ..database import get_inventory_engine
 
 logger = logging.getLogger("api.rfp_intake")
@@ -126,8 +127,9 @@ def run_generation_in_background(engine: Engine, ticket_id: str, retry: bool = F
 
 
 @router.post("/tickets", status_code=status.HTTP_202_ACCEPTED)
-async def upload_rfp(user: AuthenticatedUser, engine: Engine_, background: BackgroundTasks,
+async def upload_rfp(user: AuthenticatedUser, engine: Engine_, background: BackgroundTasks, request: Request,
                      file: Annotated[UploadFile, File(description="RFP en PDF")]) -> dict[str, Any]:
+    enforce(request, "rfp", user.id)  # one upload = ~10 model calls (classifier … generators, evaluators)
     content = await file.read(store.MAX_PDF_BYTES + 1)
     try:
         ticket = store.receive(engine, content, created_by=str(user.id))
@@ -162,9 +164,10 @@ def get_rfp_ticket(ticket_id: TicketId, _user: AuthenticatedUser, engine: Engine
 
 @router.post("/tickets/{ticket_id}/generate", status_code=status.HTTP_202_ACCEPTED)
 def generate_proposal(ticket_id: TicketId, user: AuthenticatedUser, engine: Engine_, background: BackgroundTasks,
-                      retry: bool = False) -> dict[str, Any]:
+                      request: Request, retry: bool = False) -> dict[str, Any]:
     """The ticket is claimed here, synchronously (one conditional UPDATE → generando_borrador), so
     the 202 already reflects the new status and two clicks can never generate it twice."""
+    enforce(request, "rfp", user.id)
     try:
         if store.ticket_view(engine, ticket_id) is None:
             raise HTTPException(status_code=404, detail="Ticket not found")
@@ -269,7 +272,8 @@ def open_approval(ticket_id: TicketId, user: AuthenticatedUser, engine: Engine_,
 
 @router.post("/tickets/{ticket_id}/sections/{department_id}/decision", status_code=status.HTTP_202_ACCEPTED)
 def submit_decision(ticket_id: TicketId, department_id: DepartmentId, user: AuthenticatedUser, engine: Engine_,
-                    background: BackgroundTasks, body: Annotated[dict[str, Any], Body()]) -> dict[str, Any]:
+                    background: BackgroundTasks, request: Request,
+                    body: Annotated[dict[str, Any], Body()]) -> dict[str, Any]:
     """The answer is validated BEFORE it can enter the graph; the resume (and a revision, which
     calls the model) runs in the background on the department's own thread."""
     _view_or_404(engine, ticket_id)
@@ -281,6 +285,8 @@ def submit_decision(ticket_id: TicketId, department_id: DepartmentId, user: Auth
         raise HTTPException(status_code=409, detail=f"La sección {department_id} no está esperando aprobación.") from error
     except approval.InvalidDecision as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+    if decision.action == "request_changes":  # sends the section back to its generator: model calls
+        enforce(request, "rfp", user.id)
     background.add_task(_decision_in_background, engine, ticket_id, department_id, decision.model_dump())
     logger.info("rfp_approval decision queued ticket_id=%s department=%s action=%s by=%s", ticket_id, department_id,
                 decision.action, user.id)

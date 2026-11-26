@@ -1,11 +1,14 @@
+import logging
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from tinydb import Query
 
-from ..core.dependencies import Database, require_admin
+from ..core.dependencies import CurrentUser, Database, require_admin
 from ..core.security import hash_password
 from ..models.auth import Role, User, UserCreate, UserListItem, UserResponse, UserUpdate
+
+audit_logger = logging.getLogger("api.audit")
 
 router = APIRouter(
     prefix="/users", tags=["users"], dependencies=[Depends(require_admin)]
@@ -90,8 +93,10 @@ def update_user(user_id: str, payload: UserUpdate, database: Database):
 
 
 @router.delete("/{user_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(user_id: str, database: Database):
+def delete_user(user_id: str, database: Database, admin: CurrentUser):
     record = find_user(database, user_id)
     ensure_other_admin(database, record)
     database.table("profiles").remove(Query().user_id == user_id)
     database.table("users").remove(Query().id == user_id)
+    # irreversible: audited (who and which record — ids only, never personal data) — BRIEFING §5
+    audit_logger.warning("irreversible action=delete_user target=%s by=%s role=%s", user_id, admin.id, admin.role.value)

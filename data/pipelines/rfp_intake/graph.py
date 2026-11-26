@@ -19,7 +19,7 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Send
 
-from . import agents, document, events, phi, store
+from . import agents, document, events, injection, phi, store
 from .departments import DEPARTMENTS
 from .models import utcnow
 from .tracing import traced
@@ -30,9 +30,10 @@ logger = logging.getLogger("api.rfp_intake")
 class IntakeState(TypedDict, total=False):
     ticket_id: str
     pdf_path: str
-    markdown: str  # PHI-redacted Markdown: the only form of the document the agents see
+    markdown: str  # PHI-redacted, injection-screened Markdown: the only form of the document the agents see
     pages: int | None
     phi: dict[str, Any]
+    injection: dict[str, Any]  # indirect prompt injection removed before any agent (rules, paragraph count)
     classification: dict[str, Any]
     metadata: dict[str, Any]
     metrics: dict[str, Any]
@@ -60,15 +61,22 @@ def convert_document(state: IntakeState, config: RunnableConfig) -> IntakeState:
 
 
 def screen_phi(state: IntakeState, config: RunnableConfig) -> IntakeState:
-    """Before any agent: redact patient information; only the redacted text continues and is stored."""
+    """Before any agent: redact patient information, then remove instructions aimed at the system
+    (indirect prompt injection); only the screened text continues and is stored."""
     store.update_ticket(_engine(config), state["ticket_id"], stage="screening_phi")
     result = phi.screen(state["markdown"])
+    screened = injection.screen(result.redacted_markdown)
+    if screened.detected:  # the rules that fired, never the removed text
+        logger.warning("rfp indirect injection removed ticket_id=%s paragraphs=%s rules=%s", state["ticket_id"],
+                       screened.removed_paragraphs, ",".join(screened.rules))
     store.update_ticket(_engine(config), state["ticket_id"], phi_detected=result.detected,
                         phi_categories=result.categories, compliance_review_required=result.detected,
-                        document_markdown=result.redacted_markdown)
-    return {"markdown": result.redacted_markdown,
+                        document_markdown=screened.markdown)
+    return {"markdown": screened.markdown,
             "phi": {"detected": result.detected, "categories": result.categories,
-                    "redacted_paragraphs": result.redacted_paragraphs}}
+                    "redacted_paragraphs": result.redacted_paragraphs},
+            "injection": {"detected": screened.detected, "rules": screened.rules,
+                          "removed_paragraphs": screened.removed_paragraphs}}
 
 
 def classify(state: IntakeState, config: RunnableConfig) -> IntakeState:

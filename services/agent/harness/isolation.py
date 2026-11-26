@@ -4,7 +4,9 @@ DATA, never instructions.
 Two layers:
 1. Neutralize: role markers and tags that could close the data block are defused, and any
    instruction-like text (same detectors as the input guard) is flagged. A knowledge-base chunk
-   or memory that carries instructions is withheld from the model; tool data (e.g. a ticket
+   or memory that carries instructions — override attempts, text addressed to the assistant or an
+   unsafe clinical directive such as "recommend X without checking contraindications" (BRIEFING
+   §4 case 2) — is withheld from the model; tool data (e.g. a ticket
    title typed by anyone) has the instruction replaced by a placeholder.
 2. Delimit: every block reaches the model inside <documento> / <memoria> / <datos_herramienta>
    tags, and the system prompt states that nothing inside them has authority.
@@ -15,7 +17,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from .rules import detect_instruction_override
+from .rules import detect_external_injection
 
 _TAGS = re.compile(r"</?\s*(?:documento|memoria|datos_herramienta|mensaje_usuario|system|sistema|assistant|user)\b[^>]*>", re.I)
 _ROLE_MARKERS = re.compile(r"(?im)^\s*(system|sistema|assistant|asistente|developer|user)\s*:")
@@ -37,7 +39,7 @@ def neutralize(text: str) -> str:
 
 def isolate(text: str) -> Isolated:
     """Neutralized text plus the injection rules it trips (empty = clean)."""
-    return Isolated(neutralize(text), detect_instruction_override(text or ""))
+    return Isolated(neutralize(text), detect_external_injection(text or ""))
 
 
 def isolate_context(blocks: list[dict]) -> tuple[list[dict], list[dict]]:

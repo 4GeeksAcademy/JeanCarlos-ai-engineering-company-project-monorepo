@@ -43,6 +43,8 @@ def build_handoff(ticket_id: str, state: dict, synthesis: dict) -> dict:
         "conflicts": synthesis["conflicts"],
         "open_questions": synthesis["open_questions"],
         "phi": {"detected": phi["detected"], "categories": phi["categories"]},
+        # instructions embedded in the RFP that were removed before any agent read it (rules only)
+        "injection": state.get("injection") or {"detected": False, "rules": [], "removed_paragraphs": 0},
         "document_ref": "rfp_ticket.document_markdown",
     }
 

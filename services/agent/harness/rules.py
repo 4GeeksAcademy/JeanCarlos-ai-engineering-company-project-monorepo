@@ -99,6 +99,49 @@ def detect_instruction_override(text: str) -> list[str]:
     return sorted({name for name, rule in _OVERRIDE_RULES for candidate in candidates if candidate and rule.search(candidate)})
 
 
+# ---------------------------------------------------------------- directives embedded in external content
+# Indirect prompt injection (BRIEFING §3 RAG row, §4 case 2): a protocol, a memory, a tool result or an
+# uploaded RFP should DESCRIBE things; text that addresses the assistant or orders an unsafe clinical
+# behaviour is an attempt to steer the model through data. Only for external content — never applied
+# to what a staff member types.
+
+_CLINICAL_CHECK = (r"(?:contraindicacion\w*|alergia\w*|interaccion\w*|dosis|historial|revision\s+medica|"
+                   r"contraindication\w*|allerg\w*|interaction\w*|dosage|medical\s+review|physician\s+review)")
+_EMBEDDED_RULES: list[tuple[str, re.Pattern[str]]] = [
+    ("addressed_to_assistant", re.compile(
+        r"\b(?:nota|instruccion(?:es)?|mensaje|aviso)\s+(?:para|al|a\s+la)\s+(?:el\s+)?(?:asistente|ia|modelo|chatbot|agente|llm)\b|"
+        r"\b(?:note|instructions?|message)\s+(?:to|for)\s+(?:the\s+)?(?:assistant|ai|model|chatbot|agent|llm)\b|"
+        r"\b(?:asistente|ai\s+assistant|assistant|ia|llm)\s*[:,]\s*(?:debes|tienes\s+que|you\s+must|always|siempre)\b", _F)),
+    ("unsafe_clinical_directive", re.compile(
+        r"\b(?:recomienda\w*|receta\w*|prescrib\w*|indica\w*|administra\w*|recommend\w*|suggest\w*|give)\b"
+        r"[^.\n]{0,80}\b(?:sin|without|skipping|omitiendo|ignoring)\s+(?:revisar|comprobar|verificar|consultar|check\w*|review\w*|"
+        r"verify\w*|consult\w*|las|los|the)?\s*(?:las|los|the|any)?\s*" + _CLINICAL_CHECK, _F)),
+    ("forced_answer", re.compile(
+        r"\b(?:responde|contesta|di|dile|afirma)\s+siempre\s+que\b|\balways\s+(?:answer|respond|reply|say|tell\s+\w+)\s+that\b", _F)),
+]
+
+
+_NEGATED = re.compile(r"\b(?:never|nunca|jamas|no|not|don't|do\s+not|must\s+not|no\s+se\s+debe|prohibido)\W+(?:\w+\W+){0,2}$", _F)
+
+
+def detect_embedded_directives(text: str) -> list[str]:
+    """Rules fired by directives hidden in external content (documents, memories, tool data, RFPs).
+    A negated directive ("never prescribe without reviewing allergies") is a safety rule, not one."""
+    candidate = plain(text or "")
+    fired = set()
+    for name, rule in _EMBEDDED_RULES:
+        for match in rule.finditer(candidate):
+            if not _NEGATED.search(candidate[max(0, match.start() - 40):match.start()]):
+                fired.add(name)
+                break
+    return sorted(fired)
+
+
+def detect_external_injection(text: str) -> list[str]:
+    """Everything that disqualifies external content as data: override attempts + embedded directives."""
+    return sorted(set(detect_instruction_override(text or "")) | set(detect_embedded_directives(text)))
+
+
 # ---------------------------------------------------------------- personal chatbot use
 
 _PERSONAL_RULES: list[tuple[str, re.Pattern[str]]] = [

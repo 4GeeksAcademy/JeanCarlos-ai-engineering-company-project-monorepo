@@ -14,6 +14,7 @@ from .database import get_inventory_engine, open_database
 from .core.security import get_settings
 from . import realtime
 from .core.login_throttle import LoginThrottle
+from .core.rate_limit import ModelRateLimiter
 from .routes import auth, auth_password, knowledge, profiles, rfp, suppliers, tasks, telemetry, users
 from .routers import incidents, inventory
 from services.reporting.router import router as reporting_router
@@ -51,6 +52,7 @@ async def lifespan(app: FastAPI):
     app.state.database = database
     app.state.database_lock = Lock()
     app.state.login_throttle = LoginThrottle()  # brute-force protection of /login (OWASP A07)
+    app.state.model_rate_limiter = ModelRateLimiter()  # cost/abuse control of model-backed endpoints (NIST Protect)
     realtime.install_shutdown_hook()  # SSE streams must not block a restart (services/api/realtime.py)
     try:
         yield

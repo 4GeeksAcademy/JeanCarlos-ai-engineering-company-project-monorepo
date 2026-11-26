@@ -1,0 +1,24 @@
+# API local real (uvicorn, rama feature/nist) — POST /knowledge/query
+# Modelo real (gateway LiteLLM). Lo que se rechaza en la entrada (422) o por límite (429) nunca llega al modelo.
+
+## BRIEFING §4 caso 1 — inyección directa
+HTTP 422 · {"detail":"Solo respondo preguntas sobre las políticas y protocolos de HealthCore; no puedo cambiar mis reglas ni ignorar las políticas. Reformula tu consulta como una pregunta sobre un procedimiento."}
+
+## La misma, ofuscada con caracteres invisibles (U+200B)
+HTTP 422 · {"detail":"Solo respondo preguntas sobre las políticas y protocolos de HealthCore; no puedo cambiar mis reglas ni ignorar las políticas. Reformula tu consulta como una pregunta sobre un procedimiento."}
+
+## Identificador de paciente (sintético)
+HTTP 422 · {"detail":"No puedo procesar información que identifique a un paciente (HIPAA en EE. UU., UK GDPR en Reino Unido). Reformula la pregunta sin nombres, fechas de nacimiento, números de historia ni diagnósticos de una persona."}
+
+## Rate limiting: 12 preguntas válidas seguidas (límite: 10 por minuto y usuario)
+códigos: 200 200 200 200 200 200 200 200 200 200 429 429
+(200 = respondió el modelo real; 429 = cortado antes de llamar al modelo, con Retry-After)
+HTTP/1.1 429 Too Many Requests
+retry-after: 31
+
+## Log de seguridad de la API (api.security)
+WARNING:     api.security knowledge input refused reason=instruction_override rules=ignore_instructions user=<id>
+WARNING:     api.security knowledge input refused reason=patient_identifiers categories=medical_record_number user=<id>
+WARNING:     api.security model rate limit scope=knowledge level=user user=<id> retry_after=31s
+WARNING:     api.security model rate limit scope=knowledge level=user user=<id> retry_after=31s
+WARNING:     api.security model rate limit scope=knowledge level=user user=<id> retry_after=31s

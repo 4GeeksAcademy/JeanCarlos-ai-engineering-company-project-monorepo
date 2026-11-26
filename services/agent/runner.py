@@ -80,11 +80,17 @@ class AgentRuntime:
 
     @staticmethod
     def screen(question: str) -> tuple[str, list[str]]:
-        """Patient-identifier guard BEFORE the graph: direct identifiers or a combination of
+        """Sanitization + patient-identifier guard BEFORE the graph: direct identifiers or a combination of
         quasi-identifiers (age + diagnosis + location…) never reach the state, the checkpoints or
         the trace; the graph only sees a placeholder and refuses, asking to reformulate."""
         from .harness.rules import detect_patient_identifiers
+        from .harness.sanitize import InvalidInput, sanitize_input
 
+        try:  # explicit sanitization first (NFKC, invisible/bidi/control characters): the guards
+            # and the model see the same clean text; empty/too long is decided by the graph itself
+            question = sanitize_input(question or "", max_chars=10_000, min_chars=0).text
+        except InvalidInput:
+            question = (question or "")[:10_000]
         categories = detect_patient_identifiers(question)
         if not categories:
             return question, []

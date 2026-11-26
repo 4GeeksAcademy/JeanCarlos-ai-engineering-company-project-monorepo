@@ -1,0 +1,6 @@
+# Expired development JWTs embedded in old Lighthouse reports (commit 7556de56, removed from the tree).
+# Reviewed in docs/security/owasp-top10-audit.md (REPO-01): exp 2026-11-18. Any NEW finding fails CI.
+7556de5611ffbdec7741a3c7392475f2224e2a19:audit/after/backoffice-inventory-desktop.report.html:jwt:20
+7556de5611ffbdec7741a3c7392475f2224e2a19:audit/baseline/backoffice-inventory-desktop.report.html:jwt:20
+7556de5611ffbdec7741a3c7392475f2224e2a19:audit/after/backoffice-inventory-mobile.report.html:jwt:20
+7556de5611ffbdec7741a3c7392475f2224e2a19:audit/baseline/backoffice-inventory-mobile.report.html:jwt:20

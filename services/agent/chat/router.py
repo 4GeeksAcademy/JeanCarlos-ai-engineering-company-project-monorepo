@@ -34,6 +34,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, HTTPException, Path, WebSocket, WebSocketDisconnect, status
 
 from services.api.core.dependencies import AuthenticatedUser, get_current_user
+from services.api.core.rate_limit import RateLimited, limiter_of
 
 from .bus import ChatBus
 from .manager import ChatError, ChatManager
@@ -194,6 +195,11 @@ async def chat_socket(websocket: WebSocket, session_id: str | None = None, token
                         raise ChatError("read_only", "Observas esta sesión en modo lectura.")
                     if data.get("session_id", session_id) != session_id:
                         raise ChatError("wrong_session", "El mensaje es de otra sesión.")
+                    if name in ("user_message", "interrupt_requested"):  # each one starts a model-backed turn
+                        try:
+                            limiter_of(websocket.app).check("agent", str(user.id))
+                        except RateLimited as limited:
+                            raise ChatError("rate_limited", f"Demasiados mensajes seguidos: espera {limited.retry_after} s.")
                     if name == "user_message":
                         await asyncio.to_thread(chat.manager.user_message, session_id, user.id, user.username,
                                                 data.get("text"))

@@ -17,10 +17,11 @@ import logging
 import re
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from fastapi.responses import JSONResponse
 
 from services.api.core.dependencies import AuthenticatedUser, require_admin
+from services.api.core.rate_limit import enforce
 
 from .runner import AgentRejected, AgentRunError, get_runtime
 from .schemas import AgentAnswer, AgentQuestion
@@ -31,8 +32,10 @@ RUN_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 
 @router.post("/query", response_model=AgentAnswer,
-             responses={422: {"description": "Question rejected"}, 503: {"description": "Agent unavailable"}})
-def agent_query(body: AgentQuestion, user: AuthenticatedUser) -> Any:
+             responses={422: {"description": "Question rejected"}, 429: {"description": "Rate limited"},
+                        503: {"description": "Agent unavailable"}})
+def agent_query(body: AgentQuestion, user: AuthenticatedUser, request: Request) -> Any:
+    enforce(request, "agent", user.id)  # model-backed: per-user window + global ceiling (NIST Protect)
     try:
         result = get_runtime().run(body.question, conversation_id=body.conversation_id, actor=user.username)
     except AgentRejected as rejected:

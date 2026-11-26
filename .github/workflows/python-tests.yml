@@ -16,6 +16,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # gitleaks scans the whole history
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.13"
@@ -39,6 +41,10 @@ jobs:
         run: node --no-warnings --test tests/realtime/sse-client.test.mts tests/realtime/chat-client.test.mts
       - name: Security fixes of the OWASP Top 10 audit (login throttle, API docs off, RFP sign-off by account, DB TLS)
         run: uv run python -m pytest services/api/tests/test_auth.py services/api/tests/test_password.py tests/pipelines/test_db_tls.py -v
+      - name: NIST protections (prompt injection direct/indirect, sanitization, output guard, rate limits, secrets, audit)
+        run: uv run python -m pytest tests/security -v
+      - name: Secret scanning of the whole history (gitleaks; reviewed expired findings in .gitleaksignore)
+        run: docker run --rm -v "$PWD":/repo zricethezav/gitleaks:v8.24.3 git /repo --no-banner --redact --gitleaks-ignore-path /repo/.gitleaksignore
       - name: Dependency audit (pip-audit on the locked runtime dependencies)
         run: uv export --frozen --no-hashes --no-dev > /tmp/requirements.txt && uvx pip-audit -r /tmp/requirements.txt
       - name: HealthCore MCP server (real server, test OAuth server, stand-in API)
