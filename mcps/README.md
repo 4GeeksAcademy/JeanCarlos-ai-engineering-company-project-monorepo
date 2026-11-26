@@ -8,3 +8,7 @@ Each subfolder inside `mcps/` must correspond to **one specific MCP server** (fo
 - **Recommendation**: document the tools and resources exposed by each MCP server.
 
 > _Spanish version: [README.es.md](./README.es.md)._
+
+## Servers
+
+- [`healthcore_mcp`](./healthcore_mcp/README.md): Incidents Manager tickets and read-only inventory over Streamable HTTP, OAuth 2.1 with MCP Auth.

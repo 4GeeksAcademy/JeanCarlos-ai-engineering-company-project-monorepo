@@ -84,34 +84,89 @@ python -m services.api.seed_inventory --user-id EXISTING_TINYDB_USER_UUID
 ```
 
 The command verifies that the user exists in TinyDB, creates missing inventory
-tables and inserts the six supplies from the briefing. Its four deliveries and
-three consumptions are **synthetic examples**, not actual clinic records.
+tables, adds the columns introduced for telemetry (`product_category`,
+`expiry_date`, `department`) to databases created earlier, and inserts ten
+supplies covering the four BRIEFING categories. Its 16 deliveries, 16
+consumptions (by department, never by patient) across clinics 1, 2 (US) and
+10, 11 (UK), and six per-clinic minimums are **synthetic examples**, not actual
+clinic records. They leave two pairs two units above their minimum
+(`HCR-WND-001` at clinic 1 and `HCR-MED-001` at clinic 2: an outbound order of
+3 units crosses it) and one vaccine expiring in 20 days.
 Repeating it with the same user does not duplicate matching example records;
 using another user creates another set of movements. Existing supplies with
-conflicting seed fields cause an error rather than being overwritten. The
-command is intended for initial development setup; `create_all` does not apply
-schema migrations to an existing database.
+conflicting seed fields cause an error rather than being overwritten; new
+fields are only filled when empty. The command is intended for initial
+development setup and only performs these additive schema changes.
 
 All `/inventory` routes require a valid bearer token:
 
 - `GET /inventory/products` and `GET /inventory/products/{id}` return supplies
   with computed `current_stock`; `POST /inventory/products` creates a supply.
   SKUs are unique, and duplicates return `409`.
+- `POST /inventory/products` requires `product_category` (`medication`, `ppe`,
+  `consumable` or `equipment`) and accepts an optional `expiry_date`; expiry
+  lives on the product, not on orders.
 - `POST /inventory/orders/inbound` accepts `supply_id`, `quantity`,
   `vendor_name` and `clinic_id`. `POST /inventory/orders/outbound` accepts
-  `supply_id`, `quantity`, `consumption_type` and `clinic_id`. Both derive
-  `user_uuid` from the authenticated user rather than accepting it from the
-  request.
+  `supply_id`, `quantity`, `consumption_type`, `department`
+  (`primary_care`, `general_consultation`, `specialty_care`, `chronic_care`;
+  a clinical area, never a patient) and `clinic_id`. Both derive `user_uuid`
+  from the authenticated user rather than accepting it from the request.
+- The outbound response includes `stock_threshold`: `null`, or
+  `{clinic_stock, min_stock_threshold}` when that order took the clinic below
+  its configured minimum (`clinic_stock_minimum` table).
+- `PUT`/`PATCH /inventory/clinics/{clinic_id}/products/{id}/stock` always
+  returns `403`: stock only changes through orders.
+- `GET /inventory/expiring?within_days=30` lists, per clinic with positive
+  stock, the supplies whose `expiry_date` falls within the window.
 - `GET /inventory/orders` returns `inbound` and `outbound` lists, each movement
   including its `supply` details. Quantities must be positive 32-bit integers;
   clinic IDs must be between 1 and 12.
 
-Stock is the global sum of deliveries minus consumptions for each supply, not
-stored in a column and not tracked separately per clinic. Movement creation
-locks the supply row in PostgreSQL so concurrent requests cannot overspend
-stock. A consumption exceeding available stock returns `400` without writing.
+Stock is delivered minus consumed units, not stored in a column. Catalog
+responses show the global total; an outbound order is validated against the
+stock of its own clinic, and `X-Available-Stock` reports that clinic stock.
+Movement creation locks the supply row in PostgreSQL so concurrent requests
+cannot overspend stock. A consumption exceeding available stock returns `400`
+without writing.
 
 The backoffice inventory interface is available at `/inventory/products`.
 Its low-stock badge is an informational UI threshold of 10 units or less; it
-does not change API stock validation. The outbound form shows global stock and
-the API remains authoritative if stock changes concurrently.
+does not change API stock validation and is not the per-clinic minimum. The
+outbound form shows global stock and the API remains authoritative.
+
+## Incident manager
+
+Incidents live in PostgreSQL (same `DATABASE_URL` as inventory), table
+`incident`. The table is created on first use or by the seed. Allowed values
+come from `packages/shared/incidents/catalog.json` and are enforced both in the
+API and as `CHECK` constraints. All routes require a Bearer token.
+
+| Method | Route | Result |
+| --- | --- | --- |
+| POST | `/api/incidents` | 201; `title`, `description`, `category`, `origin`, `branch` required, `status` defaults to `open` |
+| GET | `/api/incidents?status=&origin=&branch=&category=` | List (newest first), `[]` when empty |
+| GET | `/api/incidents/{id}` | Detail or 404 |
+| PATCH | `/api/incidents/{id}/status` | `{"status": "..."}`; `open → in_progress/discarded`, `in_progress → resolved/discarded`; `resolved`/`discarded` are final |
+| GET | `/api/incidents/summary` | Totals by status, category, origin and branch (all keys, zeros when empty) |
+
+Invalid input (missing fields, values outside the catalog, invalid filters,
+malformed JSON, invalid transitions) returns **400**:
+
+```json
+{"detail": "Some fields are missing or invalid.",
+ "errors": [{"field": "title", "message": "Title is required."}]}
+```
+
+Unexpected errors return a generic 500 without stack traces. The legacy
+`incident_id` is stored in the internal `legacy_ref` column (never returned)
+only to make the seed idempotent: `title + created_at` collides for 6 distinct
+valid CSV rows.
+
+Seed the historical customer incidents (94 valid of 100 rows) from the
+repository root, or inside the API container:
+
+```bash
+python scripts/seed_incidents.py                          # data/raw/incidents-healthcore.csv
+docker compose exec api python scripts/seed_incidents.py
+```

@@ -1,0 +1,211 @@
+{
+  "description": "Retrieval eval of the HealthCore knowledge base (BRIEFING Hito 7). A question is a hit when the expected chunk (source_document + chunk_index) is among the top 3 results of retrieve(question, k=3, min_score=0). Questions are paraphrased the way a patient coordinator would ask, not copied from the documents.",
+  "collection": "healthcore_knowledge",
+  "k": 3,
+  "target_recall_at_k": 0.8,
+  "queries": [
+    {
+      "id": "ins-01",
+      "question": "¿Aceptan Medicaid en la clínica de Georgia?",
+      "expected": {
+        "source_document": "insurance-coverage",
+        "chunk_index": 0,
+        "section": "Estados Unidos (Texas, Florida, Georgia)"
+      }
+    },
+    {
+      "id": "ins-02",
+      "question": "Un paciente sin seguro, ¿tiene algún descuento si paga el mismo día?",
+      "expected": {
+        "source_document": "insurance-coverage",
+        "chunk_index": 0,
+        "section": "Estados Unidos (Texas, Florida, Georgia)"
+      }
+    },
+    {
+      "id": "ins-03",
+      "question": "¿Atienden pacientes del NHS en Londres?",
+      "expected": {
+        "source_document": "insurance-coverage",
+        "chunk_index": 1,
+        "section": "Reino Unido (Londres y Manchester)"
+      }
+    },
+    {
+      "id": "ins-04",
+      "question": "¿Qué hago si el cupo mensual del NHS ya está lleno?",
+      "expected": {
+        "source_document": "insurance-coverage",
+        "chunk_index": 1,
+        "section": "Reino Unido (Londres y Manchester)"
+      }
+    },
+    {
+      "id": "ins-05",
+      "question": "El paciente tiene un seguro que no conozco, ¿puedo confirmarle que lo cubrimos?",
+      "expected": {
+        "source_document": "insurance-coverage",
+        "chunk_index": 2,
+        "section": "Cobertura de Seguros Aceptados"
+      }
+    },
+    {
+      "id": "ins-06",
+      "question": "¿Qué seguros privados aceptan?",
+      "expected": {
+        "source_document": "insurance-coverage",
+        "chunk_index": 0,
+        "section": "Estados Unidos (Texas, Florida, Georgia)"
+      }
+    },
+    {
+      "id": "app-01",
+      "question": "¿Cobran cargo por cancelación con 12 horas de anticipación?",
+      "expected": {
+        "source_document": "appointment-policy",
+        "chunk_index": 1,
+        "section": "Política de cancelación"
+      }
+    },
+    {
+      "id": "app-02",
+      "question": "¿A un paciente de Medicare se le cobra si no se presenta a la cita?",
+      "expected": {
+        "source_document": "appointment-policy",
+        "chunk_index": 1,
+        "section": "Política de cancelación"
+      }
+    },
+    {
+      "id": "app-03",
+      "question": "¿Cuántos días hay que esperar para una cita de rutina?",
+      "expected": {
+        "source_document": "appointment-policy",
+        "chunk_index": 0,
+        "section": "Reserva de citas"
+      }
+    },
+    {
+      "id": "app-04",
+      "question": "¿Hasta cuándo puede un paciente cambiar su cita desde el recordatorio?",
+      "expected": {
+        "source_document": "appointment-policy",
+        "chunk_index": 2,
+        "section": "Recordatorios automáticos"
+      }
+    },
+    {
+      "id": "app-05",
+      "question": "Un paciente ha faltado tres veces este semestre, ¿le puedo agendar otra cita normal?",
+      "expected": {
+        "source_document": "appointment-policy",
+        "chunk_index": 3,
+        "section": "Política de Citas y Cancelaciones"
+      }
+    },
+    {
+      "id": "ref-01",
+      "question": "¿Cómo funciona una referencia a un especialista dentro de la red?",
+      "expected": {
+        "source_document": "referral-process",
+        "chunk_index": 0,
+        "section": "Proceso de Referencia Interna"
+      }
+    },
+    {
+      "id": "ref-02",
+      "question": "¿Cuánto tarda en promedio una referencia interna hasta tener la cita?",
+      "expected": {
+        "source_document": "referral-process",
+        "chunk_index": 1,
+        "section": "Tiempo objetivo de referencia completada"
+      }
+    },
+    {
+      "id": "ref-03",
+      "question": "Pasaron 6 días hábiles y el paciente no tiene opciones de cita con el especialista, ¿qué hago?",
+      "expected": {
+        "source_document": "referral-process",
+        "chunk_index": 2,
+        "section": "Proceso de Referencia Interna"
+      }
+    },
+    {
+      "id": "ref-04",
+      "question": "¿Cómo se gestiona una referencia a un especialista que no es de HealthCore?",
+      "expected": {
+        "source_document": "referral-process",
+        "chunk_index": 3,
+        "section": "Proceso de Referencia Interna"
+      }
+    },
+    {
+      "id": "new-01",
+      "question": "¿Qué debo traer a mi primera cita?",
+      "expected": {
+        "source_document": "new-patient-checklist",
+        "chunk_index": 1,
+        "section": "Documentos que el paciente debe traer el día de la cita"
+      }
+    },
+    {
+      "id": "new-02",
+      "question": "¿Qué tiene que completar un paciente nuevo antes de su primera consulta?",
+      "expected": {
+        "source_document": "new-patient-checklist",
+        "chunk_index": 0,
+        "section": "Todo paciente nuevo debe completar antes de su primera cita"
+      }
+    },
+    {
+      "id": "new-03",
+      "question": "¿Qué formulario de consentimiento firma un paciente nuevo en Manchester?",
+      "expected": {
+        "source_document": "new-patient-checklist",
+        "chunk_index": 0,
+        "section": "Todo paciente nuevo debe completar antes de su primera cita"
+      }
+    },
+    {
+      "id": "new-04",
+      "question": "Si un paciente nuevo no llenó el historial médico, ¿lo pueden atender igual?",
+      "expected": {
+        "source_document": "new-patient-checklist",
+        "chunk_index": 2,
+        "section": "Checklist para Pacientes Nuevos"
+      }
+    }
+  ],
+  "off_topic": [
+    {
+      "id": "off-01",
+      "question": "¿Cuál es la receta de la paella valenciana?"
+    },
+    {
+      "id": "off-02",
+      "question": "¿Quién ganó el último mundial de fútbol?"
+    },
+    {
+      "id": "off-03",
+      "question": "¿Cómo configuro la impresora de la oficina?"
+    },
+    {
+      "id": "off-04",
+      "question": "Recomiéndame una película para el fin de semana."
+    }
+  ],
+  "unanswerable_in_domain": [
+    {
+      "id": "una-01",
+      "question": "¿Cuánto cuesta una resonancia magnética?"
+    },
+    {
+      "id": "una-02",
+      "question": "¿Aceptan el seguro Humana en Texas?"
+    },
+    {
+      "id": "una-03",
+      "question": "¿Las clínicas tienen estacionamiento gratuito?"
+    }
+  ]
+}

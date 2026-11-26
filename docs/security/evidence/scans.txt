@@ -1,0 +1,20 @@
+# Escaneos automáticos (2026-11-25)
+
+## pip-audit (dependencias Python, uv.lock sin dev)
+antes:  3 vulnerabilidades — ecdsa 0.19.2 CVE-2024-23342 (x2), python-jose 3.5.0 CVE-2026-85394 · después: 0 (pip-audit-before.json / pip-audit-after.json)
+
+## npm audit --omit=dev (uis/backoffice)
+{'info': 0, 'low': 0, 'moderate': 0, 'high': 0, 'critical': 0, 'total': 0}
+
+## bandit (código propio: services, data/pipelines, data/process, mcps; sin tests ni .venv)
+severidad: {'LOW': 4, 'MEDIUM': 2} en 120 archivos
+  MEDIUM B608 services/agent/memory/store.py:366 — falso positivo: la consulta concatena fragmentos constantes y el valor va como parámetro (?)
+  MEDIUM B608 services/agent/memory/store.py:372 — falso positivo: la consulta concatena fragmentos constantes y el valor va como parámetro (?)
+
+## gitleaks (historial git completo, --redact)
+4 hallazgos:
+  jwt audit/after/backoffice-inventory-desktop.report.html:20 (commit 7556de56)
+  jwt audit/baseline/backoffice-inventory-desktop.report.html:20 (commit 7556de56)
+  jwt audit/after/backoffice-inventory-mobile.report.html:20 (commit 7556de56)
+  jwt audit/baseline/backoffice-inventory-mobile.report.html:20 (commit 7556de56)
+  → JWT de sesión de desarrollo embebidos en informes Lighthouse de un commit antiguo; caducados (exp 2026-11-18), el archivo ya no está en el árbol. Riesgo bajo; mitigación: rotar JWT_SECRET_KEY / subir token_version si el entorno se reutiliza.

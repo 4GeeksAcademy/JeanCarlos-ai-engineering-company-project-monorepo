@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 from uuid import uuid4
 
@@ -11,6 +12,7 @@ from ..models.auth import (
 from .users import find_user
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
+audit_logger = logging.getLogger("api.audit")
 ProfileManager = Annotated[User, Depends(require_profile_manager)]
 
 
@@ -72,6 +74,8 @@ def update_profile(
 
 
 @router.delete("/{profile_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
-def delete_profile(profile_id: str, database: Database, _manager: ProfileManager):
+def delete_profile(profile_id: str, database: Database, manager: ProfileManager):
     find_profile(database, profile_id)
     database.table("profiles").remove(Query().id == profile_id)
+    audit_logger.warning("irreversible action=delete_profile target=%s by=%s role=%s", profile_id, manager.id,
+                         manager.role.value)

@@ -1,0 +1,28 @@
+# ANTES (API sin límite de intentos)
+$ for i in 1..8: curl -X POST /login -d username=auditoria.inexistente -d password=<incorrecta>
+  intento 1 → HTTP 401
+  intento 2 → HTTP 401
+  intento 3 → HTTP 401
+  intento 4 → HTTP 401
+  intento 5 → HTTP 401
+  intento 6 → HTTP 401
+  intento 7 → HTTP 401
+  intento 8 → HTTP 401
+
+# DESPUÉS (API con LoginThrottle: 5 fallos / 15 min por usuario)
+$ for i in 1..8: curl -X POST /login -d username=auditoria.inexistente -d password=<incorrecta>
+  intento 1 → HTTP 401
+  intento 2 → HTTP 401
+  intento 3 → HTTP 401
+  intento 4 → HTTP 401
+  intento 5 → HTTP 401
+  intento 6 → HTTP 429
+  intento 7 → HTTP 429
+  intento 8 → HTTP 429
+  cabecera del 6.º intento:
+    HTTP/1.1 429 Too Many Requests
+    retry-after: 900
+  log de seguridad de la API:
+    WARNING:     api.security login throttled user=aaf327c907df retry_after=900s
+    WARNING:     api.security login throttled user=aaf327c907df retry_after=900s
+    WARNING:     api.security login throttled user=aaf327c907df retry_after=900s

@@ -1,0 +1,532 @@
+{
+  "ticket_id": "0964daa6-ba6a-492f-b14a-3fdb83f29164",
+  "error": null,
+  "ready_for_generation": true,
+  "status": "analisis_completo",
+  "classification": {
+    "is_rfp": true,
+    "confidence": 0.95,
+    "document_type": "informal_request",
+    "requester_role": "client",
+    "reasons": [
+      "El remitente (Thames Valley University) es una institución educativa que solicita una propuesta para un servicio que HealthCore ofrece (red de referidos / alianza con una clínica).",
+      "La solicitud es informal (por correo) pero pide explícitamente una propuesta ('Could someone put together a proposal for us?').",
+      "Se menciona un plazo (inicio del próximo trimestre, ~25 días) y requisitos de cumplimiento (UK GDPR), lo que indica una intención seria de contratación."
+    ],
+    "decision": "accept",
+    "classifier": "model"
+  },
+  "created_at": "2026-11-24T00:01:32.933745+00:00",
+  "stage": "done",
+  "phi_detected": false,
+  "updated_at": "2026-11-24T00:02:30.631914+00:00",
+  "phi_categories": [],
+  "completed_at": "2026-11-24T00:02:30.627942+00:00",
+  "pdf_sha256": "6d40cacdb52d23eb112c4ce2e74f95fa25e5f03d3e00da0820916aca74608caf",
+  "compliance_review_required": false,
+  "pdf_bytes": 2262,
+  "created_by": "06703c27-4594-4ec3-85b8-e639d548688a",
+  "synthesis": {
+    "summary": "Thames Valley University solicita una red de derivación para 3,000 estudiantes, con un plazo de implementación de 25 días a partir del 28 de agosto. El acuerdo debe cumplir con UK GDPR e incluir un DPA. Se requiere un modelo de precios en GBP, selección de una clínica satélite cercana y capacidad operativa para manejar derivaciones de salud estudiantil.",
+    "next_steps": [
+      "Preparar propuesta de precios (tarifa por estudiante, paquete o por derivación) en GBP — Revenue Cycle (Tom Callahan)",
+      "Definir términos de pago alineados con el plazo de 25 días — Revenue Cycle (Tom Callahan)",
+      "Identificar la clínica satélite más cercana y evaluar su capacidad y personal — Clinical Operations (Dr. Marcus Reid)",
+      "Elaborar plan de implementación detallado para lanzar la red en 25 días — Clinical Operations (Dr. Marcus Reid)",
+      "Redactar DPA conforme a UK GDPR para el procesamiento de datos de salud estudiantil — Compliance (Claire Whitfield)",
+      "Confirmar roles de controlador/procesador y cubrir subcontratistas en el DPA — Compliance (Claire Whitfield)"
+    ],
+    "workstreams": [
+      {
+        "department_id": "revenue",
+        "department": "Revenue Cycle",
+        "owner": "Tom Callahan",
+        "owner_role": "Revenue Cycle Director",
+        "key_aspects": [
+          {
+            "aspect": "Pricing structure",
+            "detail": "Define a pricing model for the referral network covering 3,000 students, considering UK GDPR and DPA requirements.",
+            "source": "P4"
+          },
+          {
+            "aspect": "Payment terms",
+            "detail": "Establish payment terms that align with the tight 25-day timeline to start by August 28th.",
+            "source": "P5"
+          },
+          {
+            "aspect": "Currency and payment method",
+            "detail": "All financial terms must be in GBP, and payment methods must comply with UK regulations.",
+            "source": "metadata"
+          }
+        ],
+        "requests": [
+          "Prepare a pricing proposal for the referral network (e.g., per-student fee, bundled rate, or per-referral charge) based on the 3,000-student population.",
+          "Define payment terms (e.g., upfront payment, milestone payments, or monthly invoicing) that fit the 25-day implementation timeline.",
+          "Confirm that all financial figures are in GBP and that payment methods comply with UK GDPR and DPA requirements."
+        ],
+        "open_questions": [
+          "What is the budget range for this referral network?",
+          "What is the expected contract term (e.g., one academic year, multi-year)?",
+          "Are there any specific pricing constraints or preferences from the client?"
+        ],
+        "worker": "model"
+      },
+      {
+        "department_id": "clinical",
+        "department": "Clinical Operations",
+        "owner": "Dr. Marcus Reid",
+        "owner_role": "Clinical Operations",
+        "key_aspects": [
+          {
+            "aspect": "Satellite clinic selection",
+            "detail": "Identify which existing satellite clinic is geographically suitable to serve Thames Valley University's main campus and can handle referral volume from 3,000 students.",
+            "source": "P5"
+          },
+          {
+            "aspect": "Staffing capacity",
+            "detail": "Assess current staffing levels at the chosen satellite clinic to determine if they can absorb additional referrals without compromising existing services, and whether additional hires are needed.",
+            "source": "P4"
+          },
+          {
+            "aspect": "Scheduling and timeline",
+            "detail": "Evaluate whether the referral network can be operational within 25 days (by August 28th), including setup of referral pathways, IT systems, and staff training.",
+            "source": "P5"
+          },
+          {
+            "aspect": "Data processing agreement",
+            "detail": "Ensure the referral network complies with UK GDPR and a DPA is in place between HealthCore and Thames Valley University for handling student health data.",
+            "source": "metadata"
+          }
+        ],
+        "requests": [
+          "Prepare a feasibility report identifying the nearest satellite clinic to Thames Valley University, its current capacity, and staffing availability.",
+          "Propose a detailed implementation plan to launch the referral network within 25 days, including milestones for contracting, IT integration, and staff onboarding.",
+          "Confirm that the satellite clinic can accept referrals for the range of specialist services likely needed by students (e.g., mental health, primary care, etc.) and that referral protocols are established.",
+          "Ensure a DPA is drafted and ready for signature to meet UK GDPR requirements."
+        ],
+        "open_questions": [
+          "Which specific satellite clinic is closest to Thames Valley University's main campus?",
+          "What is the current patient load and available appointment slots at that clinic?",
+          "What specialist services are most commonly requested by the university's student population?",
+          "What is the expected referral volume per week/month from the 3,000 students?",
+          "Are there any existing relationships or contracts with Thames Valley University that could expedite setup?",
+          "What IT systems are needed to manage referrals and data sharing, and can they be integrated within 25 days?"
+        ],
+        "worker": "model"
+      },
+      {
+        "department_id": "compliance",
+        "department": "Compliance and Data Governance",
+        "owner": "Claire Whitfield",
+        "owner_role": "Chief Compliance Officer",
+        "key_aspects": [
+          {
+            "aspect": "UK GDPR compliance for student health data",
+            "detail": "The RFP explicitly requires full compliance with UK GDPR because the referral network involves student health data, which is a special category of personal data under the regulation.",
+            "source": "P6"
+          },
+          {
+            "aspect": "Data Processing Agreement (DPA) required",
+            "detail": "Metadata indicates the agreement type is DPA, and UK GDPR mandates a DPA between the university and HealthCore when processing health data on behalf of the university.",
+            "source": "metadata"
+          },
+          {
+            "aspect": "Handling of student health data in referral network",
+            "detail": "The proposal must address the lawful processing, security, and data subject rights for approximately 3,000 students' health data shared within the referral network.",
+            "source": "P4"
+          }
+        ],
+        "requests": [
+          "Prepare a UK GDPR-compliant DPA to be included in the proposal, covering the processing of student health data for the referral network.",
+          "Confirm and document the roles of controller and processor, and include required clauses on data subject rights, security measures, and breach notification.",
+          "Ensure that all subcontractors (if any) are covered in the DPA and that the proposal reflects UK GDPR obligations for special category data."
+        ],
+        "open_questions": [
+          "What specific categories of student health data will be processed in the referral network?",
+          "Is there any data transfer outside the UK?",
+          "What data retention period applies to the health data?",
+          "Are there any third-party processors involved in the referral network besides HealthCore?"
+        ],
+        "worker": "model"
+      }
+    ],
+    "conflicts": [],
+    "unmapped_requests": [],
+    "synthesizer": "model",
+    "open_questions": [
+      {
+        "department_id": "revenue",
+        "question": "La RFP no indica presupuesto de referencia."
+      },
+      {
+        "department_id": "revenue",
+        "question": "Fecha límite sin año explícito («around August 28th»): confirmar la fecha exacta con el cliente."
+      }
+    ],
+    "orchestrator": "model"
+  },
+  "rfp_id": "RFP-20261124-0964DA",
+  "handoff": {
+    "contract": "rfp_intake.handoff/v1",
+    "ticket_id": "0964daa6-ba6a-492f-b14a-3fdb83f29164",
+    "route": "proposal_generation",
+    "next_status": "generando_borrador",
+    "metadata": {
+      "rfp_reference": null,
+      "client_name": "Thames Valley University",
+      "client_type": "university",
+      "client_country": "UK",
+      "program_type": "referral_network",
+      "program_types": [
+        "referral_network"
+      ],
+      "covered_population": 3000,
+      "population_unit": "students",
+      "deadline": null,
+      "deadline_text": "around August 28th",
+      "budget_range": null,
+      "contract_term": null,
+      "currency": "GBP",
+      "regulation": "UK GDPR",
+      "agreement_type": "DPA",
+      "departments_needed": [
+        "revenue",
+        "clinical",
+        "compliance"
+      ]
+    },
+    "currency": "GBP",
+    "required_clauses": [
+      "DPA (Data Processing Agreement, UK GDPR)"
+    ],
+    "workstreams": [
+      {
+        "department_id": "revenue",
+        "owner": "Tom Callahan",
+        "key_aspects": [
+          {
+            "aspect": "Pricing structure",
+            "detail": "Define a pricing model for the referral network covering 3,000 students, considering UK GDPR and DPA requirements.",
+            "source": "P4"
+          },
+          {
+            "aspect": "Payment terms",
+            "detail": "Establish payment terms that align with the tight 25-day timeline to start by August 28th.",
+            "source": "P5"
+          },
+          {
+            "aspect": "Currency and payment method",
+            "detail": "All financial terms must be in GBP, and payment methods must comply with UK regulations.",
+            "source": "metadata"
+          }
+        ],
+        "requests": [
+          "Prepare a pricing proposal for the referral network (e.g., per-student fee, bundled rate, or per-referral charge) based on the 3,000-student population.",
+          "Define payment terms (e.g., upfront payment, milestone payments, or monthly invoicing) that fit the 25-day implementation timeline.",
+          "Confirm that all financial figures are in GBP and that payment methods comply with UK GDPR and DPA requirements."
+        ],
+        "open_questions": [
+          "What is the budget range for this referral network?",
+          "What is the expected contract term (e.g., one academic year, multi-year)?",
+          "Are there any specific pricing constraints or preferences from the client?"
+        ]
+      },
+      {
+        "department_id": "clinical",
+        "owner": "Dr. Marcus Reid",
+        "key_aspects": [
+          {
+            "aspect": "Satellite clinic selection",
+            "detail": "Identify which existing satellite clinic is geographically suitable to serve Thames Valley University's main campus and can handle referral volume from 3,000 students.",
+            "source": "P5"
+          },
+          {
+            "aspect": "Staffing capacity",
+            "detail": "Assess current staffing levels at the chosen satellite clinic to determine if they can absorb additional referrals without compromising existing services, and whether additional hires are needed.",
+            "source": "P4"
+          },
+          {
+            "aspect": "Scheduling and timeline",
+            "detail": "Evaluate whether the referral network can be operational within 25 days (by August 28th), including setup of referral pathways, IT systems, and staff training.",
+            "source": "P5"
+          },
+          {
+            "aspect": "Data processing agreement",
+            "detail": "Ensure the referral network complies with UK GDPR and a DPA is in place between HealthCore and Thames Valley University for handling student health data.",
+            "source": "metadata"
+          }
+        ],
+        "requests": [
+          "Prepare a feasibility report identifying the nearest satellite clinic to Thames Valley University, its current capacity, and staffing availability.",
+          "Propose a detailed implementation plan to launch the referral network within 25 days, including milestones for contracting, IT integration, and staff onboarding.",
+          "Confirm that the satellite clinic can accept referrals for the range of specialist services likely needed by students (e.g., mental health, primary care, etc.) and that referral protocols are established.",
+          "Ensure a DPA is drafted and ready for signature to meet UK GDPR requirements."
+        ],
+        "open_questions": [
+          "Which specific satellite clinic is closest to Thames Valley University's main campus?",
+          "What is the current patient load and available appointment slots at that clinic?",
+          "What specialist services are most commonly requested by the university's student population?",
+          "What is the expected referral volume per week/month from the 3,000 students?",
+          "Are there any existing relationships or contracts with Thames Valley University that could expedite setup?",
+          "What IT systems are needed to manage referrals and data sharing, and can they be integrated within 25 days?"
+        ]
+      },
+      {
+        "department_id": "compliance",
+        "owner": "Claire Whitfield",
+        "key_aspects": [
+          {
+            "aspect": "UK GDPR compliance for student health data",
+            "detail": "The RFP explicitly requires full compliance with UK GDPR because the referral network involves student health data, which is a special category of personal data under the regulation.",
+            "source": "P6"
+          },
+          {
+            "aspect": "Data Processing Agreement (DPA) required",
+            "detail": "Metadata indicates the agreement type is DPA, and UK GDPR mandates a DPA between the university and HealthCore when processing health data on behalf of the university.",
+            "source": "metadata"
+          },
+          {
+            "aspect": "Handling of student health data in referral network",
+            "detail": "The proposal must address the lawful processing, security, and data subject rights for approximately 3,000 students' health data shared within the referral network.",
+            "source": "P4"
+          }
+        ],
+        "requests": [
+          "Prepare a UK GDPR-compliant DPA to be included in the proposal, covering the processing of student health data for the referral network.",
+          "Confirm and document the roles of controller and processor, and include required clauses on data subject rights, security measures, and breach notification.",
+          "Ensure that all subcontractors (if any) are covered in the DPA and that the proposal reflects UK GDPR obligations for special category data."
+        ],
+        "open_questions": [
+          "What specific categories of student health data will be processed in the referral network?",
+          "Is there any data transfer outside the UK?",
+          "What data retention period applies to the health data?",
+          "Are there any third-party processors involved in the referral network besides HealthCore?"
+        ]
+      }
+    ],
+    "conflicts": [],
+    "open_questions": [
+      {
+        "department_id": "revenue",
+        "question": "La RFP no indica presupuesto de referencia."
+      },
+      {
+        "department_id": "revenue",
+        "question": "Fecha límite sin año explícito («around August 28th»): confirmar la fecha exacta con el cliente."
+      }
+    ],
+    "phi": {
+      "detected": false,
+      "categories": []
+    },
+    "document_ref": "rfp_ticket.document_markdown"
+  },
+  "metadata": {
+    "client_type": "university",
+    "budget_range": null,
+    "estimated_tokens": 204,
+    "extracted_at": "2026-11-24T00:01:53.932772+00:00",
+    "client_country": "UK",
+    "contract_term": null,
+    "pdf_pages": 1,
+    "program_type": "referral_network",
+    "currency": "GBP",
+    "flesch_kincaid_grade": 11.65,
+    "program_types": [
+      "referral_network"
+    ],
+    "regulation": "UK GDPR",
+    "flesch_reading_ease": 51.42,
+    "ticket_id": "0964daa6-ba6a-492f-b14a-3fdb83f29164",
+    "covered_population": 3000,
+    "agreement_type": "DPA",
+    "gunning_fog": 13.33,
+    "population_unit": "students",
+    "departments_needed": [
+      "revenue",
+      "clinical",
+      "compliance"
+    ],
+    "cost_band": "low",
+    "rfp_reference": null,
+    "deadline": null,
+    "open_questions": [
+      {
+        "department_id": "revenue",
+        "question": "La RFP no indica presupuesto de referencia."
+      },
+      {
+        "department_id": "revenue",
+        "question": "Fecha límite sin año explícito («around August 28th»): confirmar la fecha exacta con el cliente."
+      }
+    ],
+    "client_name": "Thames Valley University",
+    "deadline_text": "around August 28th",
+    "word_count": 140,
+    "readability": {
+      "words": 140,
+      "sentences": 6,
+      "characters": 818,
+      "estimated_tokens": 204,
+      "pages": 1,
+      "flesch_kincaid_grade": 11.65,
+      "flesch_reading_ease": 51.42,
+      "gunning_fog": 13.33,
+      "smog": null,
+      "cost_band": "low",
+      "notes": [
+        "SMOG requiere 30 frases"
+      ]
+    }
+  },
+  "sections": [
+    {
+      "key_aspects": [
+        {
+          "aspect": "Pricing structure",
+          "detail": "Define a pricing model for the referral network covering 3,000 students, considering UK GDPR and DPA requirements.",
+          "source": "P4"
+        },
+        {
+          "aspect": "Payment terms",
+          "detail": "Establish payment terms that align with the tight 25-day timeline to start by August 28th.",
+          "source": "P5"
+        },
+        {
+          "aspect": "Currency and payment method",
+          "detail": "All financial terms must be in GBP, and payment methods must comply with UK regulations.",
+          "source": "metadata"
+        }
+      ],
+      "ticket_id": "0964daa6-ba6a-492f-b14a-3fdb83f29164",
+      "department_id": "revenue",
+      "open_questions": [
+        "What is the budget range for this referral network?",
+        "What is the expected contract term (e.g., one academic year, multi-year)?",
+        "Are there any specific pricing constraints or preferences from the client?"
+      ],
+      "worker": "model",
+      "evaluation_results": {
+        "contains_phi": false
+      },
+      "approver": null,
+      "approved_at": null,
+      "owner": "Tom Callahan",
+      "id": 4,
+      "requests": [
+        "Prepare a pricing proposal for the referral network (e.g., per-student fee, bundled rate, or per-referral charge) based on the 3,000-student population.",
+        "Define payment terms (e.g., upfront payment, milestone payments, or monthly invoicing) that fit the 25-day implementation timeline.",
+        "Confirm that all financial figures are in GBP and that payment methods comply with UK GDPR and DPA requirements."
+      ],
+      "excerpt_ids": [
+        4,
+        5
+      ],
+      "draft_content": null,
+      "approval_status": "pending",
+      "created_at": "2026-11-24T00:02:05.088167+00:00"
+    },
+    {
+      "key_aspects": [
+        {
+          "aspect": "Satellite clinic selection",
+          "detail": "Identify which existing satellite clinic is geographically suitable to serve Thames Valley University's main campus and can handle referral volume from 3,000 students.",
+          "source": "P5"
+        },
+        {
+          "aspect": "Staffing capacity",
+          "detail": "Assess current staffing levels at the chosen satellite clinic to determine if they can absorb additional referrals without compromising existing services, and whether additional hires are needed.",
+          "source": "P4"
+        },
+        {
+          "aspect": "Scheduling and timeline",
+          "detail": "Evaluate whether the referral network can be operational within 25 days (by August 28th), including setup of referral pathways, IT systems, and staff training.",
+          "source": "P5"
+        },
+        {
+          "aspect": "Data processing agreement",
+          "detail": "Ensure the referral network complies with UK GDPR and a DPA is in place between HealthCore and Thames Valley University for handling student health data.",
+          "source": "metadata"
+        }
+      ],
+      "ticket_id": "0964daa6-ba6a-492f-b14a-3fdb83f29164",
+      "department_id": "clinical",
+      "open_questions": [
+        "Which specific satellite clinic is closest to Thames Valley University's main campus?",
+        "What is the current patient load and available appointment slots at that clinic?",
+        "What specialist services are most commonly requested by the university's student population?",
+        "What is the expected referral volume per week/month from the 3,000 students?",
+        "Are there any existing relationships or contracts with Thames Valley University that could expedite setup?",
+        "What IT systems are needed to manage referrals and data sharing, and can they be integrated within 25 days?"
+      ],
+      "worker": "model",
+      "evaluation_results": {
+        "contains_phi": false
+      },
+      "approver": null,
+      "approved_at": null,
+      "owner": "Dr. Marcus Reid",
+      "id": 5,
+      "requests": [
+        "Prepare a feasibility report identifying the nearest satellite clinic to Thames Valley University, its current capacity, and staffing availability.",
+        "Propose a detailed implementation plan to launch the referral network within 25 days, including milestones for contracting, IT integration, and staff onboarding.",
+        "Confirm that the satellite clinic can accept referrals for the range of specialist services likely needed by students (e.g., mental health, primary care, etc.) and that referral protocols are established.",
+        "Ensure a DPA is drafted and ready for signature to meet UK GDPR requirements."
+      ],
+      "excerpt_ids": [
+        4,
+        5
+      ],
+      "draft_content": null,
+      "approval_status": "pending",
+      "created_at": "2026-11-24T00:02:09.714601+00:00"
+    },
+    {
+      "key_aspects": [
+        {
+          "aspect": "UK GDPR compliance for student health data",
+          "detail": "The RFP explicitly requires full compliance with UK GDPR because the referral network involves student health data, which is a special category of personal data under the regulation.",
+          "source": "P6"
+        },
+        {
+          "aspect": "Data Processing Agreement (DPA) required",
+          "detail": "Metadata indicates the agreement type is DPA, and UK GDPR mandates a DPA between the university and HealthCore when processing health data on behalf of the university.",
+          "source": "metadata"
+        },
+        {
+          "aspect": "Handling of student health data in referral network",
+          "detail": "The proposal must address the lawful processing, security, and data subject rights for approximately 3,000 students' health data shared within the referral network.",
+          "source": "P4"
+        }
+      ],
+      "ticket_id": "0964daa6-ba6a-492f-b14a-3fdb83f29164",
+      "department_id": "compliance",
+      "open_questions": [
+        "What specific categories of student health data will be processed in the referral network?",
+        "Is there any data transfer outside the UK?",
+        "What data retention period applies to the health data?",
+        "Are there any third-party processors involved in the referral network besides HealthCore?"
+      ],
+      "worker": "model",
+      "evaluation_results": {
+        "contains_phi": false
+      },
+      "approver": null,
+      "approved_at": null,
+      "owner": "Claire Whitfield",
+      "id": 6,
+      "requests": [
+        "Prepare a UK GDPR-compliant DPA to be included in the proposal, covering the processing of student health data for the referral network.",
+        "Confirm and document the roles of controller and processor, and include required clauses on data subject rights, security measures, and breach notification.",
+        "Ensure that all subcontractors (if any) are covered in the DPA and that the proposal reflects UK GDPR obligations for special category data."
+      ],
+      "excerpt_ids": [
+        4,
+        6
+      ],
+      "draft_content": null,
+      "approval_status": "pending",
+      "created_at": "2026-11-24T00:02:23.918987+00:00"
+    }
+  ]
+}

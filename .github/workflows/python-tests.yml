@@ -1,0 +1,51 @@
+name: Python tests (sales forecast, RAG, agent, memory, guardrails, RFP intake, real-time, MCP server)
+
+on:
+  push:
+    branches: [main]
+  # No `paths` filter: GitHub only evaluates it over the first 300 changed files, and the PRs
+  # of this chained branch exceed that, so the workflow silently did not run. The job takes ~30 s.
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # gitleaks scans the whole history
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - name: Install locked dependencies
+        run: uv sync --locked
+      - name: Temporal CV, forecast and RAG tests (Qdrant and the LLM are stubbed)
+        run: uv run python -m pytest tests/pipelines/test_temporal_cv.py tests/pipelines/test_sales_forecast.py tests/pipelines/test_rag.py -v
+      - name: LangGraph agent tests and evals (evals read the recorded traces)
+        run: uv run python -m pytest tests/pipelines/test_agent_graph.py tests/pipelines/test_agent_tools.py tests/pipelines/test_agent_evals.py tests/pipelines/test_agent_memory.py tests/pipelines/test_agent_memory_evidence.py -v
+      - name: Agent harness and guardrails (deterministic; fails if a guardrail lets abuse through)
+        run: uv run python -m pytest tests/pipelines/test_agent_guardrails.py tests/pipelines/test_agent_guardrails_evidence.py services/api/tests/test_agent.py -v
+      - name: RFP flow, parts 1-3 (intake, generation/evaluation loop, approval with interrupt + SQLite checkpointer, E2E; model stubbed)
+        run: uv run python -m pytest tests/pipelines/test_rfp_intake.py tests/pipelines/test_rfp_response.py tests/pipelines/test_rfp_approval.py tests/pipelines/test_rfp_e2e.py services/api/tests/test_rfp.py -v
+      - name: Real time, server (SSE of RFP tickets on a real uvicorn server; WebSocket chat of the Compliance assistant)
+        run: uv run python -m pytest tests/realtime -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Real time, clients (SSE fetch + ReadableStream; WebSocket chat reducer + reconnection)
+        run: node --no-warnings --test tests/realtime/sse-client.test.mts tests/realtime/chat-client.test.mts
+      - name: Security fixes of the OWASP Top 10 audit (login throttle, API docs off, RFP sign-off by account, DB TLS)
+        run: uv run python -m pytest services/api/tests/test_auth.py services/api/tests/test_password.py tests/pipelines/test_db_tls.py -v
+      - name: NIST protections (prompt injection direct/indirect, sanitization, output guard, rate limits, secrets, audit)
+        run: uv run python -m pytest tests/security -v
+      - name: Secret scanning of the whole history (gitleaks; reviewed expired findings in .gitleaksignore)
+        run: docker run --rm -v "$PWD":/repo zricethezav/gitleaks:v8.24.3 git /repo --no-banner --redact --gitleaks-ignore-path /repo/.gitleaksignore
+      - name: Dependency audit (pip-audit on the locked runtime dependencies)
+        run: uv export --frozen --no-hashes --no-dev > /tmp/requirements.txt && uvx pip-audit -r /tmp/requirements.txt
+      - name: HealthCore MCP server (real server, test OAuth server, stand-in API)
+        run: uv run python -m pytest tests/mcps -v
